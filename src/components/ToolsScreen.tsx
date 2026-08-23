@@ -181,7 +181,7 @@ export const ToolsScreen: React.FC = () => {
               </span>
             </div>
             <div>
-              <span className="text-xs font-bold text-black dark:text-white block">luxStats</span>
+              <span className="text-xs font-bold text-black dark:text-white block">sonoraStats</span>
               <span className="text-[10px] text-[#75726b] dark:text-[#8a857b]">{stats.totalPlayTimeMinutes} min escuchados</span>
             </div>
           </div>

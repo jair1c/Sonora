@@ -1,0 +1,9 @@
+{
+  "appId": "com.luxtune.app",
+  "appName": "Sonora",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  }
+}

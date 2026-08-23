@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-canvas: #eae7e0;
+    --bg-screen: #f7f5ef;
+    --bg-card: #fdfcfb;
+    --text-primary: #121212;
+    --text-muted: #8e8d8a;
+    --accent-black: #111111;
+  }
+
+  .dark {
+    --bg-canvas: #0c0b0a;
+    --bg-screen: #141312;
+    --bg-card: #1c1a17;
+    --text-primary: #f5f2ea;
+    --text-muted: #969186;
+    --accent-black: #ffffff;
+  }
+
+  body, html, #root {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #dcd8cf;
+    color: #121212;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .dark body, .dark html, .dark #root {
+    background-color: #0c0b0a;
+    color: #f5f2ea;
+  }
+}
+
+/* Custom organic scallop shapes using SVG mask or clip-path */
+.scallop-shape-8 {
+  clip-path: polygon(
+    50% 0%, 65% 5%, 78% 0%, 88% 12%, 100% 22%, 95% 35%, 100% 50%,
+    95% 65%, 100% 78%, 88% 88%, 78% 100%, 65% 95%, 50% 100%,
+    35% 95%, 22% 100%, 12% 88%, 0% 78%, 5% 65%, 0% 50%,
+    5% 35%, 0% 22%, 12% 12%, 22% 0%, 35% 5%
+  );
+}
+
+.font-syne {
+  font-family: 'Syne', sans-serif;
+}
+
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Continuous vinyl spin animation */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s ease-in-out infinite;
+}

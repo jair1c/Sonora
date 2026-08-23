@@ -485,15 +485,17 @@ export const ToolsScreen: React.FC = () => {
         </div>
 
         {/* Sonora Version Info */}
-        <div className="text-center py-2 pb-6">
+        <div className="flex flex-col items-center justify-center py-2 pb-6 gap-1">
+          <img src="/sonora_logo.svg" alt="Sonora" className="w-10 h-10 rounded-xl shadow-md mb-1" />
           <span className="text-xs font-extrabold font-outfit uppercase tracking-widest text-black dark:text-white">
             Sonora
           </span>
-          <span className="text-[11px] font-mono text-[#75726b] dark:text-[#8a857b] block mt-0.5">
+          <span className="text-[11px] font-mono text-[#75726b] dark:text-[#8a857b] block">
             Versión 2.1.0 • Audio Engine Hi-Fi
           </span>
         </div>
       </div>
+
 
 
       {/* Modals */}

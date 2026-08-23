@@ -52,10 +52,12 @@ export const OnboardingScreen: React.FC = () => {
           initial={{ opacity: 0, x: -15 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="flex items-center tracking-tight"
+          className="flex items-center gap-2.5 tracking-tight"
         >
+          <img src="/sonora_logo.svg" alt="Sonora" className="w-7 h-7 rounded-lg shadow-sm" />
           <span className="font-extrabold text-[24px] tracking-tight font-outfit text-black dark:text-white">Sonora</span>
         </motion.div>
+
 
         {/* Skip button */}
         <motion.button

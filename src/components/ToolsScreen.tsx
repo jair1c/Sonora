@@ -113,8 +113,9 @@ export const ToolsScreen: React.FC = () => {
           </div>
         </div>
         <span className="px-2.5 py-1 bg-[#eae5da] dark:bg-[#1a1917] border border-[#ded8cd] dark:border-[#2a2824] text-black dark:text-[#f5f2ea] text-[11px] font-mono font-bold rounded-full">
-          luxTune v1.0 • Offline
+          Sonora v2.1.0 • Offline
         </span>
+
       </div>
 
       <div className="flex flex-col gap-6">

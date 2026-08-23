@@ -131,7 +131,7 @@ c:\app\luxTune\
 - Android Studio / Android SDK (plataforma 34 o 35)
 - Dispositivo Android conectado con Depuración USB habilitada
 
-### Comandos de Desarrollo:
+### Comandos de Compilación & Firma:
 ```powershell
 # 1. Iniciar servidor de desarrollo web
 npm run dev
@@ -140,17 +140,29 @@ npm run dev
 npm run build
 npx cap sync android
 
-# 3. Compilar APK Debug
+# 3. Compilar APK Release Firmada (Producción)
 cd android
-.\gradlew.bat assembleDebug
+.\gradlew.bat assembleRelease
 
-# 4. Instalar en dispositivo Android conectado mediante ADB
-adb install -r app\build\outputs\apk\debug\app-debug.apk
+# 4. Instalar APK Release en el dispositivo conectado
+adb install -r app\build\outputs\apk\release\app-release.apk
 ```
 
 ---
 
-## 💾 6. Claves de Almacenamiento Local (`localStorage`)
+## 🔐 6. Credenciales de Firma de Producción (Release Keystore)
+
+| Parámetro | Valor |
+|---|---|
+| **Ruta del Keystore** | `android/app/sonora-release-key.jks` |
+| **Alias de la Llave** | `sonora-key` |
+| **Contraseña del Almacén (Store Password)** | `SonoraMusic2026!` |
+| **Contraseña de la Llave (Key Password)** | `SonoraMusic2026!` |
+| **Algoritmo & Tamaño** | RSA 2048-bit (Validez: 10,000 días / 27 años) |
+
+---
+
+## 💾 7. Claves de Almacenamiento Local (`localStorage`)
 
 | Clave | Descripción |
 |---|---|
@@ -161,3 +173,4 @@ adb install -r app\build\outputs\apk\debug\app-debug.apk
 | `sonora_stats` | Minutos reproducidos, canciones escuchadas y artista más escuchado |
 | `sonora_custom_playlists` | Listas de reproducción locales creadas por el usuario |
 | `sonora_eq_settings` | Ajustes personalizados del ecualizador de 10 bandas |
+

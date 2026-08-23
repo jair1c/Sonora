@@ -178,15 +178,16 @@ export const PlayerScreen: React.FC = () => {
       </div>
 
       {/* 3. Central Symmetrical 8-Petal Vinyl Artwork & Wavy Scrubber Ring */}
-      <div className="relative flex items-center justify-center my-auto py-1 shrink-0 w-[340px] h-[340px] sm:w-[360px] sm:h-[360px] mx-auto">
+      <div className="relative flex items-center justify-center my-auto py-1 shrink-0 w-[340px] h-[340px] sm:w-[360px] sm:h-[360px] mx-auto overflow-visible">
         {/* Symmetrical Wavy Scrubber Ring */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto overflow-visible">
           <PlayerScallopedRing
             progressPercent={progressPercent}
             isPlaying={isPlaying}
             onSeekPercent={(percent) => seek((percent / 100) * duration)}
           />
         </div>
+
 
         {/* Album Artwork: 80% when playing, 60% when paused with scale animation */}
         <div

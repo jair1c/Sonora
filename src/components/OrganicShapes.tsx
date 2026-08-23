@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { usePlayer } from '../context/PlayerContext';
 
-// Symmetrical 8-Lobe Smooth Harmonic Wave generator (300x300 viewBox)
+// Symmetrical 8-Lobe Smooth Harmonic Wave generator (300x300 viewBox with safe padding)
 export function getFlower8ContourPath(roundness: number = 50): string {
   // roundness: 0 (pure circle) to 100 (deep wave)
-  const amp = (Math.max(0, Math.min(100, roundness)) / 100) * 22;
-  const rBase = 146 - amp;
+  const amp = (Math.max(0, Math.min(100, roundness)) / 100) * 18;
+  const rBase = 132 - amp; // Maximum peak radius is 132 (18px safe margin from 150 boundary)
   const steps = 64;
   const cx = 150;
   const cy = 150;
@@ -16,7 +16,7 @@ export function getFlower8ContourPath(roundness: number = 50): string {
     const r = rBase + amp * Math.cos(8 * (t + Math.PI / 2));
     const x = cx + r * Math.cos(t);
     const y = cy + r * Math.sin(t);
-    points.push({ x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) });
+    points.push({ x: Number(x.toFixed(4)), y: Number(y.toFixed(4)) });
   }
 
   let d = `M ${points[0].x} ${points[0].y}`;
@@ -29,7 +29,7 @@ export function getFlower8ContourPath(roundness: number = 50): string {
     const cp1y = p1.y + (p2.y - p0.y) / 6;
     const cp2x = p2.x - (p3.x - p1.x) / 6;
     const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+    d += ` C ${cp1x.toFixed(4)} ${cp1y.toFixed(4)}, ${cp2x.toFixed(4)} ${cp2y.toFixed(4)}, ${p2.x.toFixed(4)} ${p2.y.toFixed(4)}`;
   }
   d += ' Z';
   return d;
@@ -71,22 +71,22 @@ export function getFlower8ClipPath(roundness: number = 50): string {
 
 export const OrganicClipDefs: React.FC = () => {
   const { petalRoundness } = usePlayer();
-  const clipPathD = useMemo(() => getFlower8ClipPath(petalRoundness), [petalRoundness]);
+  const dynamicFlowerD = useMemo(() => getFlower8ClipPath(petalRoundness), [petalRoundness]);
 
   return (
-    <svg className="absolute w-0 h-0 pointer-events-none overflow-hidden" aria-hidden="true">
+    <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
       <defs>
-        {/* Dynamic Symmetrical 8-Petal Organic Harmonic Mask */}
+        {/* Dynamic Symmetrical 8-Petal Flower ClipPath (Controlled by user setting) */}
         <clipPath id="flower-8-smooth" clipPathUnits="objectBoundingBox">
-          <path d={clipPathD} />
+          <path d={dynamicFlowerD} />
         </clipPath>
 
-        {/* 12-point scalloped starburst */}
+        {/* 12-Lobe Starburst */}
         <clipPath id="scallop-star-12" clipPathUnits="objectBoundingBox">
-          <path d="M 0.5 0.03 C 0.54 0.03, 0.59 0.1, 0.64 0.07 C 0.7 0.04, 0.75 0.12, 0.8 0.11 C 0.87 0.1, 0.89 0.2, 0.94 0.22 C 0.99 0.24, 0.98 0.35, 1 0.4 C 1.02 0.46, 0.97 0.55, 0.98 0.61 C 0.98 0.68, 0.93 0.76, 0.9 0.82 C 0.86 0.88, 0.78 0.91, 0.73 0.95 C 0.67 0.98, 0.6 0.95, 0.54 0.99 C 0.47 1.01, 0.41 0.96, 0.35 0.98 C 0.29 0.99, 0.24 0.92, 0.19 0.9 C 0.13 0.88, 0.09 0.79, 0.06 0.73 C 0.03 0.66, 0.08 0.57, 0.06 0.5 C 0.04 0.43, 0.08 0.34, 0.09 0.27 C 0.11 0.19, 0.19 0.15, 0.24 0.1 C 0.3 0.05, 0.37 0.08, 0.43 0.04 C 0.46 0.02, 0.48 0.03, 0.5 0.03 Z" />
+          <path d="M 0.5 0.02 C 0.54 0.02, 0.59 0.08, 0.63 0.07 C 0.68 0.06, 0.72 0.12, 0.77 0.13 C 0.82 0.14, 0.85 0.21, 0.89 0.24 C 0.93 0.27, 0.94 0.35, 0.97 0.4 C 0.99 0.45, 0.97 0.53, 0.97 0.59 C 0.97 0.65, 0.93 0.73, 0.91 0.78 C 0.87 0.84, 0.81 0.89, 0.76 0.93 C 0.7 0.96, 0.63 0.96, 0.57 0.98 C 0.51 1.0, 0.43 0.97, 0.37 0.97 C 0.31 0.97, 0.25 0.91, 0.2 0.88 C 0.14 0.85, 0.09 0.78, 0.06 0.72 C 0.03 0.66, 0.05 0.57, 0.04 0.5 C 0.03 0.43, 0.06 0.34, 0.08 0.28 C 0.11 0.21, 0.17 0.16, 0.22 0.12 C 0.28 0.07, 0.35 0.07, 0.41 0.04 C 0.44 0.02, 0.47 0.02, 0.5 0.02 Z" />
         </clipPath>
 
-        {/* Soft Organic Cloud */}
+        {/* Organic Scallop Cloud */}
         <clipPath id="scallop-cloud" clipPathUnits="objectBoundingBox">
           <path d="M 0.5 0.05 C 0.65 0.02, 0.82 0.08, 0.92 0.22 C 1.01 0.37, 0.98 0.58, 0.96 0.74 C 0.93 0.9, 0.78 1.01, 0.6 0.99 C 0.42 0.98, 0.27 0.99, 0.14 0.88 C 0.01 0.76, -0.02 0.54, 0.03 0.36 C 0.08 0.19, 0.25 0.08, 0.42 0.06 Z" />
         </clipPath>
@@ -119,7 +119,7 @@ export const PlayerScallopedRing: React.FC<{
   const { petalRoundness } = usePlayer();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const pathRef = useRef<SVGPathElement | null>(null);
-  const [dotPos, setDotPos] = useState<{ x: number; y: number }>({ x: 150, y: 4 });
+  const [dotPos, setDotPos] = useState<{ x: number; y: number }>({ x: 150, y: 18 });
   const [pathLength, setPathLength] = useState<number>(0);
 
   const contourPathD = useMemo(() => getFlower8ContourPath(petalRoundness), [petalRoundness]);
@@ -154,7 +154,7 @@ export const PlayerScallopedRing: React.FC<{
   };
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center pointer-events-auto">
+    <div className="relative w-full h-full flex items-center justify-center pointer-events-auto overflow-visible">
       <svg
         ref={svgRef}
         viewBox="0 0 300 300"
@@ -165,7 +165,7 @@ export const PlayerScallopedRing: React.FC<{
         onPointerMove={(e) => {
           if (e.buttons === 1) handlePointerSeek(e);
         }}
-        className={`w-full h-full cursor-pointer select-none transition-transform duration-700 ${
+        className={`w-full h-full cursor-pointer select-none transition-transform duration-700 overflow-visible ${
           isPlaying ? 'scale-[1.01]' : 'scale-100'
         }`}
       >
@@ -204,6 +204,4 @@ export const PlayerScallopedRing: React.FC<{
       </svg>
     </div>
   );
-
-
 };

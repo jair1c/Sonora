@@ -95,20 +95,32 @@ export const OrganicClipDefs: React.FC = () => {
   );
 };
 
-// Background organic line decorations
+// Background organic line decorations with subtle breathing motion
 export const BackgroundCurves: React.FC = () => {
   return (
     <svg
-      className="absolute inset-0 w-full h-full pointer-events-none stroke-[#d3cec4] stroke-[1.2] fill-none opacity-80"
+      className="absolute inset-0 w-full h-full pointer-events-none stroke-[#ded8cd] dark:stroke-[#262420] stroke-[1.4] fill-none opacity-75 overflow-visible"
       viewBox="0 0 380 720"
       preserveAspectRatio="none"
     >
-      <path d="M 30,0 C 70,120 180,140 180,240 C 180,340 70,380 90,500 C 100,560 160,600 190,720" />
-      <path d="M 380,180 C 310,220 290,320 340,430 C 370,490 360,610 380,680" />
-      <path d="M 0,280 C 60,310 100,380 90,460" />
+      <path
+        d="M 30,0 C 70,120 180,140 180,240 C 180,340 70,380 90,500 C 100,560 160,600 190,720"
+        className="animate-pulse-subtle"
+      />
+      <path
+        d="M 380,180 C 310,220 290,320 340,430 C 370,490 360,610 380,680"
+        className="animate-pulse-subtle"
+        style={{ animationDelay: '1.5s' }}
+      />
+      <path
+        d="M 0,280 C 60,310 100,380 90,460"
+        className="animate-pulse-subtle"
+        style={{ animationDelay: '3s' }}
+      />
     </svg>
   );
 };
+
 
 // Symmetrical 8-Petal Wavy Contour Scrubber
 export const PlayerScallopedRing: React.FC<{

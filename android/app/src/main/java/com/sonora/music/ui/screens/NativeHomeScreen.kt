@@ -1016,12 +1016,15 @@ fun NativeHomeScreen(
                 .height(64.dp)
                 .background(bgColor)
                 .border(1.dp, borderCol.copy(alpha = 0.5f))
-                .padding(horizontal = 16.dp),
+                .clickable(enabled = false) {} // Intercept taps to prevent triggering underlying song items
+                .padding(horizontal = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 for (tabId in navTabs) {
@@ -1032,6 +1035,9 @@ fun NativeHomeScreen(
                             isSelected = currentTab == LibraryTab.CANCIONES,
                             isDark = isDark,
                             navLabelMode = navLabelMode,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             onClick = { currentTab = LibraryTab.CANCIONES }
                         )
                         "artistas" -> BottomNavItem(
@@ -1040,6 +1046,9 @@ fun NativeHomeScreen(
                             isSelected = currentTab == LibraryTab.ARTISTAS,
                             isDark = isDark,
                             navLabelMode = navLabelMode,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             onClick = { currentTab = LibraryTab.ARTISTAS }
                         )
                         "albumes" -> BottomNavItem(
@@ -1048,6 +1057,9 @@ fun NativeHomeScreen(
                             isSelected = currentTab == LibraryTab.ALBUMES,
                             isDark = isDark,
                             navLabelMode = navLabelMode,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             onClick = { currentTab = LibraryTab.ALBUMES }
                         )
                         "listas" -> BottomNavItem(
@@ -1056,6 +1068,9 @@ fun NativeHomeScreen(
                             isSelected = currentTab == LibraryTab.LISTAS,
                             isDark = isDark,
                             navLabelMode = navLabelMode,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             onClick = { currentTab = LibraryTab.LISTAS }
                         )
                         "carpetas" -> BottomNavItem(
@@ -1064,6 +1079,9 @@ fun NativeHomeScreen(
                             isSelected = currentTab == LibraryTab.CARPETAS,
                             isDark = isDark,
                             navLabelMode = navLabelMode,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             onClick = { currentTab = LibraryTab.CARPETAS }
                         )
                         "reproductor" -> BottomNavItem(
@@ -1072,6 +1090,9 @@ fun NativeHomeScreen(
                             isSelected = false,
                             isDark = isDark,
                             navLabelMode = navLabelMode,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             onClick = onOpenPlayer
                         )
                         "ajustes" -> BottomNavItem(
@@ -1080,6 +1101,9 @@ fun NativeHomeScreen(
                             isSelected = false,
                             isDark = isDark,
                             navLabelMode = navLabelMode,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             onClick = onOpenSettings
                         )
                     }
@@ -1121,6 +1145,7 @@ fun BottomNavItem(
     isSelected: Boolean,
     isDark: Boolean,
     navLabelMode: String = "active_only",
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val selectedColor = if (isDark) Color.White else Color(0xFF121212)
@@ -1132,27 +1157,34 @@ fun BottomNavItem(
         else -> isSelected
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 4.dp)
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (isSelected) selectedColor else unselectedColor,
-            modifier = Modifier.size(22.dp)
-        )
-        if (showLabel) {
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = label,
-                fontSize = 10.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) selectedColor else unselectedColor
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isSelected) selectedColor else unselectedColor,
+                modifier = Modifier.size(24.dp)
             )
+            if (showLabel) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = label,
+                    fontSize = 10.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) selectedColor else unselectedColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

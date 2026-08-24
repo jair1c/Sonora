@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { usePlayer } from '../context/PlayerContext';
 import { PlayerScallopedRing } from './OrganicShapes';
 import {
@@ -14,7 +14,6 @@ import {
   X,
   ChevronDown
 } from 'lucide-react';
-
 
 export const PlayerScreen: React.FC = () => {
   const {
@@ -36,12 +35,14 @@ export const PlayerScreen: React.FC = () => {
     setActiveScreen,
     previousScreen,
     tracks,
-    playTrack
+    playTrack,
+    audioQualityBadge
   } = usePlayer();
 
   const [expandedLyrics, setExpandedLyrics] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
   const activeLyricRef = useRef<HTMLParagraphElement | null>(null);
+  const activeQueueItemRef = useRef<HTMLDivElement | null>(null);
 
   // Swipe-down to dismiss player gesture
   const touchStartY = useRef(0);
@@ -106,6 +107,15 @@ export const PlayerScreen: React.FC = () => {
     return currentTime >= lyric.time && currentTime < nextLyric.time;
   });
 
+  // Dynamic sliding window of lyrics for collapsed view (Shows active line + next 3 lines)
+  const visibleLyricsPreview = useMemo(() => {
+    if (lyricsList.length === 0) return [];
+    const currentIdx = activeLyricIndex >= 0 ? activeLyricIndex : 0;
+    const start = Math.max(0, currentIdx);
+    const end = Math.min(lyricsList.length, currentIdx + 4);
+    return lyricsList.slice(start, end);
+  }, [lyricsList, activeLyricIndex]);
+
   // Auto-center currently playing lyric line in fullscreen mode
   useEffect(() => {
     if (expandedLyrics && activeLyricRef.current) {
@@ -115,6 +125,16 @@ export const PlayerScreen: React.FC = () => {
       });
     }
   }, [activeLyricIndex, expandedLyrics]);
+
+  // Auto-center current song in Queue modal
+  useEffect(() => {
+    if (showQueue && activeQueueItemRef.current) {
+      const timer = setTimeout(() => {
+        activeQueueItemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [showQueue, currentTrack?.id]);
 
   return (
     <div
@@ -128,7 +148,6 @@ export const PlayerScreen: React.FC = () => {
       }}
       className="fixed inset-0 w-full h-full max-h-screen bg-[#f5f2ea] dark:bg-[#0f0e0d] flex flex-col justify-between select-none text-[#121212] dark:text-[#f5f2ea] overflow-hidden pt-8 pb-5 px-5 font-sans touch-none overscroll-none transition-colors duration-300"
     >
-
       {/* 1. Header Navigation Bar */}
       <div className="flex items-center justify-between z-10 shrink-0">
         {/* Circular Back button / Compress chevron */}
@@ -170,10 +189,13 @@ export const PlayerScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Time Display: 01:23 | 03:40 */}
-      <div className="text-center py-0.5 z-10 shrink-0">
+      {/* 2. Time Display & Hi-Fi Badge */}
+      <div className="flex flex-col items-center justify-center py-0.5 z-10 shrink-0 gap-1">
         <span className="text-sm font-bold tracking-wider text-[#6b6760] dark:text-[#a19c93] font-outfit">
           {formatTime(currentTime)} <span className="text-[#9e9a91] dark:text-[#5e5a52] font-light mx-1.5">|</span> {formatTime(duration)}
+        </span>
+        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-[#eae5da] dark:bg-[#1a1917] rounded-full border border-[#ded8cd] dark:border-[#2a2824] text-[#4a4742] dark:text-[#aba496]">
+          {audioQualityBadge}
         </span>
       </div>
 
@@ -187,7 +209,6 @@ export const PlayerScreen: React.FC = () => {
             onSeekPercent={(percent) => seek((percent / 100) * duration)}
           />
         </div>
-
 
         {/* Album Artwork: 80% when playing, 60% when paused with scale animation */}
         <div
@@ -285,7 +306,7 @@ export const PlayerScreen: React.FC = () => {
         </button>
       </div>
 
-      {/* 6. Lyrics Bottom Preview Section */}
+      {/* 6. Dynamic Rolling Lyrics Bottom Preview Section */}
       <div className="px-2 pt-1 pb-1 z-10 shrink-0 pointer-events-auto">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-extrabold text-[#201f1d] dark:text-[#dedad2] font-outfit uppercase tracking-wider">
@@ -300,24 +321,26 @@ export const PlayerScreen: React.FC = () => {
           </button>
         </div>
 
-        {/* Multi-line Flowing Preview */}
+        {/* Multi-line Dynamic Sliding Window Preview */}
         <div
           onClick={() => setExpandedLyrics(true)}
-          className="cursor-pointer text-xs sm:text-[13px] leading-relaxed line-clamp-2 transition-all font-medium"
+          className="cursor-pointer text-xs sm:text-[13px] leading-relaxed line-clamp-2 transition-all font-medium min-h-[36px]"
         >
-          {lyricsList.length > 0 ? (
-            <div className="flex flex-wrap gap-x-1.5 items-center">
-              {lyricsList.slice(0, 6).map((line, idx) => {
-                const isActive = idx === activeLyricIndex;
+          {visibleLyricsPreview.length > 0 ? (
+            <div className="flex flex-wrap gap-x-2 items-center">
+              {visibleLyricsPreview.map((line, idx) => {
+                const isCurrentLine = line.text === lyricsList[activeLyricIndex]?.text;
                 return (
                   <span
                     key={idx}
-                    className={`transition-colors duration-200 ${
-                      isActive ? 'text-[#121212] dark:text-white font-black' : 'text-[#87837b]/80 dark:text-[#807b71] font-medium'
+                    className={`transition-all duration-300 ${
+                      isCurrentLine
+                        ? 'text-[#121212] dark:text-white font-black text-sm'
+                        : 'text-[#87837b]/75 dark:text-[#807b71] font-medium'
                     }`}
                   >
                     {line.text}
-                    {idx < 5 ? ',' : ''}
+                    {idx < visibleLyricsPreview.length - 1 ? ' • ' : ''}
                   </span>
                 );
               })}
@@ -359,9 +382,9 @@ export const PlayerScreen: React.FC = () => {
                     key={idx}
                     ref={isActive ? activeLyricRef : undefined}
                     onClick={() => seek(line.time)}
-                    className={`cursor-pointer transition-colors duration-300 font-outfit select-none px-4 max-w-full break-words whitespace-normal leading-snug ${
+                    className={`cursor-pointer transition-all duration-300 font-outfit select-none px-4 max-w-full break-words whitespace-normal leading-snug ${
                       isActive
-                        ? 'text-black dark:text-white text-2xl sm:text-3xl font-black opacity-100 my-2'
+                        ? 'text-black dark:text-white text-2xl sm:text-3xl font-black opacity-100 my-2 scale-105'
                         : 'text-[#75726b] dark:text-[#8a857b] text-base sm:text-lg font-medium opacity-60 hover:opacity-100 hover:text-black dark:hover:text-white'
                     }`}
                   >
@@ -379,7 +402,7 @@ export const PlayerScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Queue Drawer Modal */}
+      {/* Queue Drawer Modal (With Auto-Scroll to Active Song) */}
       {showQueue && (
         <div className="absolute inset-0 bg-[#f5f2ea]/95 dark:bg-[#0f0e0d]/95 backdrop-blur-md z-50 flex flex-col p-6 animate-fade-in touch-auto">
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#ded8cd] dark:border-[#2a2824] shrink-0">
@@ -400,33 +423,37 @@ export const PlayerScreen: React.FC = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-2 py-2 touch-pan-y">
-            {tracks.map((track, i) => (
-              <div
-                key={track.id}
-                onClick={() => {
-                  playTrack(track);
-                  setShowQueue(false);
-                }}
-                className={`flex items-center justify-between p-3 rounded-2xl transition-all cursor-pointer ${
-                  currentTrack.id === track.id
-                    ? 'bg-black dark:bg-white text-white dark:text-black shadow-md'
-                    : 'bg-[#eae5da] dark:bg-[#1a1917] text-[#121212] dark:text-[#f5f2ea] hover:bg-[#ded8cd] dark:hover:bg-[#252320]'
-                }`}
-              >
-                <div className="flex items-center gap-3 truncate">
-                  <span className="text-xs font-bold w-4 text-center">{i + 1}</span>
-                  <div className="flex flex-col truncate">
-                    <span className="text-xs font-bold truncate">{track.title}</span>
-                    <span className={`text-[11px] truncate ${currentTrack.id === track.id ? 'text-neutral-300 dark:text-neutral-700' : 'text-[#75726b] dark:text-[#8a857b]'}`}>
-                      {track.artist}
-                    </span>
+            {tracks.map((track, i) => {
+              const isCurrent = currentTrack.id === track.id;
+              return (
+                <div
+                  key={track.id}
+                  ref={isCurrent ? activeQueueItemRef : undefined}
+                  onClick={() => {
+                    playTrack(track);
+                    setShowQueue(false);
+                  }}
+                  className={`flex items-center justify-between p-3 rounded-2xl transition-all cursor-pointer ${
+                    isCurrent
+                      ? 'bg-black dark:bg-white text-white dark:text-black shadow-md'
+                      : 'bg-[#eae5da] dark:bg-[#1a1917] text-[#121212] dark:text-[#f5f2ea] hover:bg-[#ded8cd] dark:hover:bg-[#252320]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 truncate">
+                    <span className="text-xs font-bold w-4 text-center">{i + 1}</span>
+                    <div className="flex flex-col truncate">
+                      <span className="text-xs font-bold truncate">{track.title}</span>
+                      <span className={`text-[11px] truncate ${isCurrent ? 'text-neutral-300 dark:text-neutral-700' : 'text-[#75726b] dark:text-[#8a857b]'}`}>
+                        {track.artist}
+                      </span>
+                    </div>
                   </div>
+                  <span className={`text-xs font-medium ${isCurrent ? 'text-neutral-300 dark:text-neutral-700' : 'text-[#75726b] dark:text-[#8a857b]'}`}>
+                    {formatTime(track.duration || 180)}
+                  </span>
                 </div>
-                <span className={`text-xs font-medium ${currentTrack.id === track.id ? 'text-neutral-300 dark:text-neutral-700' : 'text-[#75726b] dark:text-[#8a857b]'}`}>
-                  {formatTime(track.duration || 180)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

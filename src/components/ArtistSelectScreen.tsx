@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { usePlayer } from '../context/PlayerContext';
 import { SongCover } from './SongCover';
 import { EqualizerModal } from './EqualizerModal';
@@ -22,8 +22,14 @@ import {
   Disc3,
   Music,
   Folder,
-  X
+  X,
+  ArrowUpDown,
+  Eye,
+  EyeOff,
+  Flame,
+  Clock
 } from 'lucide-react';
+
 import type { Track, Playlist } from '../data/musicData';
 
 export const ArtistSelectScreen: React.FC = () => {
@@ -49,7 +55,11 @@ export const ArtistSelectScreen: React.FC = () => {
     removeTrackFromPlaylist,
     scanLocalMusic,
     isScanning,
-    navTabsConfig
+    navTabsConfig,
+    blacklistedFolders,
+    toggleFolderBlacklist,
+    sortMode,
+    setSortMode
   } = usePlayer();
 
   const [showEqModal, setShowEqModal] = useState(false);
@@ -58,21 +68,36 @@ export const ArtistSelectScreen: React.FC = () => {
   const [showTagModal, setShowTagModal] = useState(false);
   const [selectedTagTrack, setSelectedTagTrack] = useState<Track | null>(null);
 
+  const [showSortModal, setShowSortModal] = useState(false);
   const [showNewPlInput, setShowNewPlInput] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [selectedPlaylistForManage, setSelectedPlaylistForManage] = useState<Playlist | null>(null);
   const [playlistAlert, setPlaylistAlert] = useState<string | null>(null);
   const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
 
-  React.useEffect(() => {
-    if (selectedPlaylistForManage || playlistToDelete) {
+  const activeSongRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll to currently playing song on tab open
+  useEffect(() => {
+    if (libraryTab === 'canciones' && activeSongRef.current) {
+      const timer = setTimeout(() => {
+        activeSongRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [libraryTab, currentTrack?.id]);
+
+  useEffect(() => {
+    if (selectedPlaylistForManage || playlistToDelete || showSortModal) {
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = '';
       };
     }
-  }, [selectedPlaylistForManage, playlistToDelete]);
-
+  }, [selectedPlaylistForManage, playlistToDelete, showSortModal]);
 
   const handleBack = () => {
     setActiveScreen('player');
@@ -99,15 +124,32 @@ export const ArtistSelectScreen: React.FC = () => {
     a.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredTracks = tracks.filter(
-    (t) =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.album && t.album.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredTracks = useMemo(() => {
+    const list = tracks.filter(
+      (t) =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.album && t.album.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    switch (sortMode) {
+      case 'az':
+        return list.sort((a, b) => a.title.localeCompare(b.title));
+      case 'za':
+        return list.sort((a, b) => b.title.localeCompare(a.title));
+      case 'artist':
+        return list.sort((a, b) => a.artist.localeCompare(b.artist));
+      case 'recent':
+        return list.sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0));
+      case 'duration':
+        return list.sort((a, b) => (b.duration || 0) - (a.duration || 0));
+      default:
+        return list;
+    }
+  }, [tracks, searchQuery, sortMode]);
 
   // Group tracks by album
-  const albumsMap = React.useMemo(() => {
+  const albumsMap = useMemo(() => {
     const map = new Map<string, { title: string; artist: string; count: number; cover: string; tracks: Track[] }>();
     tracks.forEach((t) => {
       const albName = t.album || 'Álbum Desconocido';
@@ -128,14 +170,23 @@ export const ArtistSelectScreen: React.FC = () => {
     return Array.from(map.values());
   }, [tracks]);
 
-  // Group tracks by folder path
-  const foldersMap = React.useMemo(() => {
-    const map = new Map<string, { folderName: string; count: number; tracks: Track[] }>();
-    tracks.forEach((t) => {
+  // Group tracks by folder path including blacklist status
+  const foldersMap = useMemo(() => {
+    const map = new Map<string, { folderName: string; count: number; tracks: Track[]; isBlacklisted: boolean }>();
+    
+    // We read all device tracks cached to see blacklisted folders as well
+    let baseList: Track[] = tracks;
+    try {
+      const cached = localStorage.getItem('luxTune_local_songs');
+      if (cached) baseList = JSON.parse(cached);
+    } catch (e) {}
+
+    baseList.forEach((t) => {
       const parts = t.filePath ? t.filePath.split('/') : [];
-      const folderName = parts.length > 1 ? parts[parts.length - 2] : 'Música Local';
+      const folderName = parts.length > 1 ? parts[parts.length - 2] : (t.album || 'Música Local');
+      const isBl = blacklistedFolders.includes(folderName);
       if (!map.has(folderName)) {
-        map.set(folderName, { folderName, count: 1, tracks: [t] });
+        map.set(folderName, { folderName, count: 1, tracks: [t], isBlacklisted: isBl });
       } else {
         const entry = map.get(folderName)!;
         entry.count += 1;
@@ -143,7 +194,20 @@ export const ArtistSelectScreen: React.FC = () => {
       }
     });
     return Array.from(map.values());
-  }, [tracks]);
+  }, [tracks, blacklistedFolders]);
+
+  // Smart Playlists Data
+  const favoriteTracks = useMemo(() => tracks.filter(t => t.isLiked), [tracks]);
+  const top25Tracks = useMemo(() => [...tracks].sort((a, b) => (b.playCount || 0) - (a.playCount || 0)).slice(0, 25), [tracks]);
+  const recentTracks = useMemo(() => [...tracks].sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0)).slice(0, 30), [tracks]);
+
+  const sortLabelMap = {
+    'az': 'Nombre (A → Z)',
+    'za': 'Nombre (Z → A)',
+    'artist': 'Artista (A → Z)',
+    'recent': 'Más Recientes',
+    'duration': 'Mayor Duración'
+  };
 
   return (
     <div className="relative w-full h-full min-h-screen bg-[#f5f2ea] dark:bg-[#0f0e0d] flex flex-col justify-between select-none text-[#121212] dark:text-[#f5f2ea] overflow-x-hidden pt-4 pb-20 transition-colors duration-300">
@@ -178,7 +242,7 @@ export const ArtistSelectScreen: React.FC = () => {
           </button>
           <button
             onClick={() => setShowStatsModal(true)}
-            title="Estadísticas luxStats"
+            title="Estadísticas sonoraStats"
             className="w-9 h-9 rounded-full border border-[#ded8cd] dark:border-[#2a2824] flex items-center justify-center hover:bg-[#eae5da] dark:hover:bg-[#1f1d1a] active:scale-95 transition-all text-[#2c2b29] dark:text-[#dedad2] bg-[#f5f2ea] dark:bg-[#141312] cursor-pointer"
           >
             <BarChart3 size={15} />
@@ -198,56 +262,59 @@ export const ArtistSelectScreen: React.FC = () => {
       {/* Hero Header */}
       <div className="px-6 pt-3 pb-2 z-10">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-[28px] sm:text-[32px] leading-tight font-extrabold font-outfit text-black dark:text-white tracking-tight">
-              {libraryTab === 'artistas' && 'Elige tus Artistas'}
-              {libraryTab === 'canciones' && 'Todas las Canciones'}
-              {libraryTab === 'albumes' && 'Tus Álbumes'}
-              {libraryTab === 'listas' && 'Listas de Reproducción'}
-              {libraryTab === 'carpetas' && 'Explorador de Carpetas'}
-            </h1>
-            <p className="text-xs text-[#716e68] dark:text-[#918c81] mt-0.5">
-              {tracks.length} canciones encontradas en el almacenamiento
-            </p>
-          </div>
-
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#121212] dark:text-white font-outfit uppercase">
+            Sonora
+          </h1>
           <button
-            onClick={scanLocalMusic}
+            onClick={() => scanLocalMusic()}
             disabled={isScanning}
-            className="flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 bg-[#eae5da] dark:bg-[#1a1917] hover:bg-[#ded8cd] dark:hover:bg-[#252320] rounded-full border border-[#ded8cd] dark:border-[#2a2824] transition-all text-[#121212] dark:text-[#f5f2ea] cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-[#716e68] dark:text-[#969186] hover:text-black dark:hover:text-white transition-colors cursor-pointer bg-[#eae5da] dark:bg-[#1f1d1a] px-3 py-1.5 rounded-full border border-[#ded8cd] dark:border-[#2a2824]"
           >
             <RefreshCw size={12} className={isScanning ? 'animate-spin' : ''} />
-            <span>{isScanning ? 'Buscando...' : 'Escanear'}</span>
+            <span>{isScanning ? 'Escaneando...' : 'Escanear'}</span>
           </button>
         </div>
+        <p className="text-xs text-[#716e68] dark:text-[#969186] mt-0.5 font-medium">
+          {tracks.length} canciones locales indexadas • 100% Offline
+        </p>
+      </div>
 
-        {/* Search Bar */}
-        <div className="mt-3 relative flex items-center">
-          <Search size={15} className="absolute left-3.5 text-[#75726b] dark:text-[#7d7970] pointer-events-none" />
+      {/* Search Input Bar */}
+      <div className="px-6 py-1 z-10">
+        <div className="flex items-center gap-2 bg-[#eae5da] dark:bg-[#1a1917] px-3.5 py-2 rounded-2xl border border-[#ded8cd] dark:border-[#2a2824] shadow-inner">
+          <Search size={15} className="text-[#716e68] dark:text-[#969186] shrink-0" />
           <input
             type="text"
-            placeholder="Buscar por artista, canción o álbum..."
+            placeholder="Buscar por canción, artista, álbum o carpeta..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#eae5da] dark:bg-[#1a1917] border border-[#ded8cd] dark:border-[#2a2824] rounded-full py-2 pl-9 pr-4 text-xs text-[#121212] dark:text-[#f5f2ea] placeholder-[#8f8b83] dark:placeholder-[#6b675e] outline-none focus:border-black dark:focus:border-white transition-colors"
+            className="bg-transparent border-none outline-none text-xs text-[#121212] dark:text-[#f5f2ea] w-full font-medium placeholder-[#8f8b83] dark:placeholder-[#6b675e]"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-[#716e68] dark:text-[#969186] hover:text-black dark:hover:text-white text-xs font-bold"
+            >
+              ✕
+            </button>
+          )}
         </div>
+      </div>
 
-        {/* Multi-Tab Selector Bar */}
-        <div className="flex items-center gap-2 mt-3 overflow-x-auto no-scrollbar pb-1">
+      {/* Modern Filter Category Tabs */}
+      <div className="px-6 py-2 z-10">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
           {[
-            { id: 'artistas', label: 'Artistas', icon: <Disc3 size={13} /> },
             { id: 'canciones', label: 'Canciones', icon: <Music size={13} /> },
+            { id: 'artistas', label: 'Artistas', icon: <Disc3 size={13} /> },
             { id: 'albumes', label: 'Álbumes', icon: <Disc3 size={13} /> },
-            ...(!navTabsConfig.some(t => t.id === 'listas' || t.targetTab === 'listas')
-              ? [{ id: 'listas', label: 'Listas ♡', icon: <Heart size={13} /> }]
-              : []),
+            { id: 'listas', label: 'Listas ♡', icon: <Heart size={13} /> },
             { id: 'carpetas', label: 'Carpetas', icon: <Folder size={13} /> }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setLibraryTab(tab.id as any)}
-              className={`flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 libraryTab === tab.id
                   ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
                   : 'bg-[#eae5da] dark:bg-[#1a1917] text-[#5e5b54] dark:text-[#a8a397] hover:bg-[#ded8cd] dark:hover:bg-[#252320] border border-[#ded8cd] dark:border-[#2a2824]'
@@ -300,30 +367,48 @@ export const ArtistSelectScreen: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 2: TODAS LAS CANCIONES */}
+        {/* TAB 2: TODAS LAS CANCIONES (With Sort Bar & Auto-Scroll) */}
         {libraryTab === 'canciones' && (
           <div className="flex flex-col gap-2 py-1">
-            {filteredTracks.map((track) => (
-              <SongRowItem
-                key={track.id}
-                track={track}
-                isCurrent={currentTrack.id === track.id}
-                isPlaying={isPlaying && currentTrack.id === track.id}
-                onPlay={() => {
-                  if (currentTrack && currentTrack.id === track.id) {
-                    if (!isPlaying) togglePlay();
-                  } else {
-                    playTrack(track);
-                  }
-                  setActiveScreen('player');
-                }}
-                onToggleLike={() => toggleLike(track.id)}
-                onEditTags={() => {
-                  setSelectedTagTrack(track);
-                  setShowTagModal(true);
-                }}
-              />
-            ))}
+            {/* Sort & Action Bar */}
+            <div className="flex items-center justify-between pb-1 px-1">
+              <span className="text-[11px] font-bold text-[#75726b] dark:text-[#8a857b] uppercase tracking-wider">
+                {filteredTracks.length} {filteredTracks.length === 1 ? 'canción' : 'canciones'}
+              </span>
+              <button
+                onClick={() => setShowSortModal(true)}
+                className="flex items-center gap-1 text-[11px] font-bold text-black dark:text-white bg-[#eae5da] dark:bg-[#1a1917] px-2.5 py-1 rounded-full border border-[#ded8cd] dark:border-[#2a2824] cursor-pointer hover:bg-[#ded8cd] dark:hover:bg-[#252320]"
+              >
+                <ArrowUpDown size={11} />
+                <span>{sortLabelMap[sortMode]}</span>
+              </button>
+            </div>
+
+            {filteredTracks.map((track) => {
+              const isCurr = currentTrack?.id === track.id;
+              return (
+                <div key={track.id} ref={isCurr ? activeSongRef : undefined}>
+                  <SongRowItem
+                    track={track}
+                    isCurrent={isCurr}
+                    isPlaying={isPlaying && isCurr}
+                    onPlay={() => {
+                      if (currentTrack && currentTrack.id === track.id) {
+                        if (!isPlaying) togglePlay();
+                      } else {
+                        playTrack(track);
+                      }
+                      setActiveScreen('player');
+                    }}
+                    onToggleLike={() => toggleLike(track.id)}
+                    onEditTags={() => {
+                      setSelectedTagTrack(track);
+                      setShowTagModal(true);
+                    }}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -362,11 +447,79 @@ export const ArtistSelectScreen: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 4: LISTAS (Playlists & Favorites) */}
+        {/* TAB 4: LISTAS (Smart Playlists + Custom Playlists) */}
         {libraryTab === 'listas' && (
-          <div className="flex flex-col gap-3 py-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#75726b] dark:text-[#8a857b]">Tus Listas de Reproducción</span>
+          <div className="flex flex-col gap-3.5 py-1">
+            {/* Smart Playlists Section */}
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#75726b] dark:text-[#8a857b] block mb-2 px-1">
+                Listas Inteligentes Automáticas
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                {/* 1. Favoritas */}
+                <div
+                  onClick={() => {
+                    if (favoriteTracks.length > 0) {
+                      playTrack(favoriteTracks[0]);
+                      setActiveScreen('player');
+                    } else {
+                      setPlaylistAlert('Aún no tienes canciones favoritas. Pulsa el corazón ♡ en cualquier canción para añadirla aquí.');
+                    }
+                  }}
+                  className="bg-[#eae5da] dark:bg-[#1a1917] p-3 rounded-2xl border border-[#ded8cd] dark:border-[#2a2824] flex flex-col items-center text-center cursor-pointer hover:bg-[#ded8cd] dark:hover:bg-[#252320] active:scale-95 transition-all"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-md mb-1.5">
+                    <Heart size={18} className="fill-current" />
+                  </div>
+                  <span className="text-xs font-bold text-black dark:text-white truncate w-full">Favoritas</span>
+                  <span className="text-[10px] text-[#75726b] dark:text-[#8a857b]">{favoriteTracks.length} canciones</span>
+                </div>
+
+                {/* 2. Top 25 Más Escuchadas */}
+                <div
+                  onClick={() => {
+                    if (top25Tracks.length > 0) {
+                      playTrack(top25Tracks[0]);
+                      setActiveScreen('player');
+                    } else {
+                      setPlaylistAlert('Escucha música para que tus canciones más reproducidas aparezcan aquí automáticamente.');
+                    }
+                  }}
+                  className="bg-[#eae5da] dark:bg-[#1a1917] p-3 rounded-2xl border border-[#ded8cd] dark:border-[#2a2824] flex flex-col items-center text-center cursor-pointer hover:bg-[#ded8cd] dark:hover:bg-[#252320] active:scale-95 transition-all"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md mb-1.5">
+                    <Flame size={18} className="fill-current" />
+                  </div>
+                  <span className="text-xs font-bold text-black dark:text-white truncate w-full">Top 25</span>
+                  <span className="text-[10px] text-[#75726b] dark:text-[#8a857b]">{top25Tracks.length} canciones</span>
+                </div>
+
+                {/* 3. Recientes */}
+                <div
+                  onClick={() => {
+                    if (recentTracks.length > 0) {
+                      playTrack(recentTracks[0]);
+                      setActiveScreen('player');
+                    } else {
+                      setPlaylistAlert('Tus canciones reproducidas recientemente aparecerán aquí.');
+                    }
+                  }}
+                  className="bg-[#eae5da] dark:bg-[#1a1917] p-3 rounded-2xl border border-[#ded8cd] dark:border-[#2a2824] flex flex-col items-center text-center cursor-pointer hover:bg-[#ded8cd] dark:hover:bg-[#252320] active:scale-95 transition-all"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-md mb-1.5">
+                    <Clock size={18} />
+                  </div>
+                  <span className="text-xs font-bold text-black dark:text-white truncate w-full">Recientes</span>
+                  <span className="text-[10px] text-[#75726b] dark:text-[#8a857b]">{recentTracks.length} canciones</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom User Playlists */}
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#75726b] dark:text-[#8a857b] px-1">
+                Tus Listas Creadas
+              </span>
               <button
                 onClick={() => setShowNewPlInput(!showNewPlInput)}
                 className="flex items-center gap-1 text-xs font-bold text-black dark:text-white bg-[#eae5da] dark:bg-[#1a1917] px-3 py-1.5 rounded-full border border-[#ded8cd] dark:border-[#2a2824] cursor-pointer"
@@ -399,12 +552,9 @@ export const ArtistSelectScreen: React.FC = () => {
               </div>
             )}
 
-            {/* List of Playlists */}
-            {playlists.map((pl) => {
-              const isFav = pl.id === 'favorites';
-              const plTracks = isFav
-                ? tracks.filter((t) => t.isLiked)
-                : tracks.filter((t) => pl.trackIds.includes(t.id));
+            {/* List of Custom Playlists */}
+            {playlists.filter(p => p.id !== 'favorites').map((pl) => {
+              const plTracks = tracks.filter((t) => pl.trackIds.includes(t.id));
 
               return (
                 <div
@@ -417,23 +567,19 @@ export const ArtistSelectScreen: React.FC = () => {
                         playTrack(plTracks[0]);
                       }
                       setActiveScreen('player');
-                    } else if (isFav) {
-                      setPlaylistAlert('Aún no tienes canciones favoritas. Pulsa el corazón ♡ en cualquier canción para añadirla aquí.');
                     } else {
                       setSelectedPlaylistForManage(pl);
                     }
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    if (!isFav) {
-                      setPlaylistToDelete(pl);
-                    }
+                    setPlaylistToDelete(pl);
                   }}
                   className="flex items-center justify-between p-3.5 bg-[#eae5da] dark:bg-[#1a1917] rounded-2xl hover:bg-[#ded8cd] dark:hover:bg-[#252320] active:scale-[0.99] transition-all cursor-pointer border border-[#ded8cd] dark:border-[#2a2824]"
                 >
                   <div className="flex items-center gap-3 truncate">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${isFav ? 'bg-red-500 text-white' : 'bg-black dark:bg-white text-[#f5f2ea] dark:text-black'}`}>
-                      {isFav ? <Heart size={18} className="fill-white" /> : pl.name.slice(0, 1).toUpperCase()}
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 bg-black dark:bg-white text-[#f5f2ea] dark:text-black">
+                      {pl.name.slice(0, 1).toUpperCase()}
                     </div>
                     <div className="flex flex-col truncate">
                       <span className="text-xs font-bold text-[#121212] dark:text-[#f5f2ea] truncate">{pl.name}</span>
@@ -444,55 +590,25 @@ export const ArtistSelectScreen: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 ml-2">
-                    {/* Manage / Add songs button */}
-                    {!isFav && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPlaylistForManage(pl);
-                        }}
-                        className="p-1.5 text-xs text-[#75726b] dark:text-[#8a857b] hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-                        title="Gestionar canciones"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    )}
-
-                    {/* Play button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (plTracks.length > 0) {
-                          if (currentTrack.id === plTracks[0].id) {
-                            if (!isPlaying) togglePlay();
-                          } else {
-                            playTrack(plTracks[0]);
-                          }
-                          setActiveScreen('player');
-                        } else if (isFav) {
-                          setPlaylistAlert('Añade canciones a Favoritos pulsando el icono del corazón ♡ en cualquier canción.');
-                        } else {
-                          setSelectedPlaylistForManage(pl);
-                        }
+                        setSelectedPlaylistForManage(pl);
                       }}
-                      className="p-1.5 bg-black dark:bg-white text-white dark:text-black rounded-full hover:scale-105 transition-transform cursor-pointer shadow-sm"
+                      className="px-2.5 py-1 text-[11px] font-bold bg-[#ded8cd] dark:bg-[#2a2824] hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg transition-colors text-[#121212] dark:text-[#f5f2ea]"
                     >
-                      <Play size={12} className="fill-current ml-0.5" />
+                      Editar
                     </button>
-
-                    {/* Delete button (except favorites) */}
-                    {!isFav && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPlaylistToDelete(pl);
-                        }}
-                        className="p-1.5 text-[#75726b] dark:text-[#8a857b] hover:text-red-500 transition-colors cursor-pointer"
-                        title="Eliminar lista"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlaylistToDelete(pl);
+                      }}
+                      className="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"
+                      title="Eliminar lista"
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
                 </div>
               );
@@ -500,36 +616,85 @@ export const ArtistSelectScreen: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 5: CARPETAS */}
+        {/* TAB 5: CARPETAS (With Blacklist / Hide Toggle) */}
         {libraryTab === 'carpetas' && (
           <div className="flex flex-col gap-2 py-1">
-            {foldersMap.map((folder, i) => (
-              <div
-                key={i}
-                onClick={() => {
-                  if (folder.tracks.length > 0) {
-                    if (currentTrack.id === folder.tracks[0].id) {
-                      if (!isPlaying) togglePlay();
-                    } else {
-                      playTrack(folder.tracks[0]);
+            <div className="flex items-center justify-between pb-1 px-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#75726b] dark:text-[#8a857b]">
+                {foldersMap.length} carpetas detectadas
+              </span>
+              <span className="text-[10px] text-[#75726b] dark:text-[#8a857b]">
+                Toca el ojo para ocultar/bloquear
+              </span>
+            </div>
+
+            {foldersMap.map((folder, i) => {
+              const isHidden = folder.isBlacklisted;
+
+              return (
+                <div
+                  key={i}
+                  onClick={() => {
+                    if (isHidden) {
+                      setPlaylistAlert(`Esta carpeta está oculta en la lista negra. Pulsa el icono para reactivarla.`);
+                      return;
                     }
-                    setActiveScreen('player');
-                  }
-                }}
-                className="flex items-center justify-between p-3.5 bg-[#eae5da] dark:bg-[#1a1917] rounded-2xl hover:bg-[#ded8cd] dark:hover:bg-[#252320] border border-[#ded8cd] dark:border-[#2a2824] transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-3 truncate">
-                  <div className="w-10 h-10 rounded-xl bg-[#ded8cd] dark:bg-[#2a2824] flex items-center justify-center text-[#121212] dark:text-[#f5f2ea]">
-                    <Folder size={18} />
+                    if (folder.tracks.length > 0) {
+                      if (currentTrack.id === folder.tracks[0].id) {
+                        if (!isPlaying) togglePlay();
+                      } else {
+                        playTrack(folder.tracks[0]);
+                      }
+                      setActiveScreen('player');
+                    }
+                  }}
+                  className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    isHidden
+                      ? 'bg-[#eae5da]/40 dark:bg-[#1a1917]/40 border-dashed border-[#ded8cd] dark:border-[#2a2824] opacity-60'
+                      : 'bg-[#eae5da] dark:bg-[#1a1917] hover:bg-[#ded8cd] dark:hover:bg-[#252320] border-[#ded8cd] dark:border-[#2a2824]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 truncate">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isHidden ? 'bg-neutral-300 dark:bg-neutral-800 text-neutral-500' : 'bg-[#ded8cd] dark:bg-[#2a2824] text-[#121212] dark:text-[#f5f2ea]'}`}>
+                      <Folder size={18} />
+                    </div>
+                    <div className="flex flex-col truncate">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className={`text-xs font-bold truncate ${isHidden ? 'line-through text-neutral-500' : 'text-black dark:text-white'}`}>
+                          {folder.folderName}
+                        </span>
+                        {isHidden && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-md">
+                            Oculta
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-[#75726b] dark:text-[#8a857b]">
+                        {folder.count} archivos de audio
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col truncate">
-                    <span className="text-xs font-bold truncate text-black dark:text-white">{folder.folderName}</span>
-                    <span className="text-[11px] text-[#75726b] dark:text-[#8a857b]">{folder.count} archivos de audio</span>
+
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFolderBlacklist(folder.folderName);
+                      }}
+                      className={`p-2 rounded-xl border transition-all ${
+                        isHidden
+                          ? 'bg-red-500 text-white border-red-600'
+                          : 'bg-[#ded8cd] dark:bg-[#2a2824] text-black dark:text-white border-[#ded8cd] dark:border-[#2a2824] hover:bg-black hover:text-white'
+                      }`}
+                      title={isHidden ? 'Quitar de lista negra' : 'Ocultar carpeta / Enviar a lista negra'}
+                    >
+                      {isHidden ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                    {!isHidden && <Play size={15} className="text-[#75726b] dark:text-[#8a857b] ml-1" />}
                   </div>
                 </div>
-                <Play size={16} className="text-[#75726b] dark:text-[#8a857b] shrink-0 ml-2" />
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -544,6 +709,56 @@ export const ArtistSelectScreen: React.FC = () => {
             <Play size={15} className="fill-current" />
             <span>Reproducir Mix ({selectedArtistIds.length} {selectedArtistIds.length === 1 ? 'artista' : 'artistas'})</span>
           </button>
+        </div>
+      )}
+
+      {/* Sort Options Modal */}
+      {showSortModal && (
+        <div
+          onClick={() => setShowSortModal(false)}
+          onTouchMove={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-fade-in touch-none overscroll-contain"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm bg-[#F5F2EA] dark:bg-[#161513] rounded-3xl p-6 shadow-2xl border border-[#DED8CD] dark:border-[#2a2824] flex flex-col gap-3 text-[#121212] dark:text-[#f5f2ea]"
+          >
+            <div className="flex items-center justify-between border-b border-[#ded8cd] dark:border-[#2a2824] pb-3">
+              <h3 className="font-bold text-base font-outfit text-black dark:text-white">Ordenar Canciones</h3>
+              <button
+                onClick={() => setShowSortModal(false)}
+                className="w-8 h-8 rounded-full border border-[#ded8cd] dark:border-[#2a2824] flex items-center justify-center text-black dark:text-white"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 py-1">
+              {[
+                { id: 'az', label: 'Nombre (A → Z)' },
+                { id: 'za', label: 'Nombre (Z → A)' },
+                { id: 'artist', label: 'Artista (A → Z)' },
+                { id: 'recent', label: 'Más Recientes' },
+                { id: 'duration', label: 'Mayor Duración' }
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => {
+                    setSortMode(opt.id as any);
+                    setShowSortModal(false);
+                  }}
+                  className={`flex items-center justify-between p-3 rounded-2xl text-xs font-bold transition-all cursor-pointer border ${
+                    sortMode === opt.id
+                      ? 'bg-black dark:bg-white text-white dark:text-black border-transparent shadow-sm'
+                      : 'bg-[#eae5da] dark:bg-[#1a1917] text-black dark:text-white border-[#ded8cd] dark:border-[#2a2824] hover:bg-[#ded8cd]'
+                  }`}
+                >
+                  <span>{opt.label}</span>
+                  {sortMode === opt.id && <Check size={16} />}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -599,7 +814,12 @@ export const ArtistSelectScreen: React.FC = () => {
                         <span className={`text-[10px] truncate ${inPl ? 'text-neutral-300 dark:text-neutral-700' : 'text-[#75726b] dark:text-[#8a857b]'}`}>{t.artist}</span>
                       </div>
                     </div>
-                    {inPl ? <Check size={16} className="text-white dark:text-black" /> : <Plus size={16} className="text-[#75726b] dark:text-[#8a857b]" />}
+
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${
+                      inPl ? 'bg-white dark:bg-black text-black dark:text-white border-transparent' : 'border-[#aba496]'
+                    }`}>
+                      {inPl && <Check size={12} strokeWidth={3} />}
+                    </div>
                   </div>
                 );
               })}
@@ -607,7 +827,7 @@ export const ArtistSelectScreen: React.FC = () => {
 
             <button
               onClick={() => setSelectedPlaylistForManage(null)}
-              className="w-full py-3 bg-black dark:bg-white text-white dark:text-black font-bold text-xs rounded-2xl cursor-pointer"
+              className="w-full py-3 bg-black dark:bg-white text-white dark:text-black rounded-full font-bold text-xs cursor-pointer shadow-md"
             >
               Listo
             </button>
@@ -615,7 +835,7 @@ export const ArtistSelectScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Friendly Alert Toast */}
+      {/* Quick Alert Toast */}
       {playlistAlert && (
         <div className="fixed top-12 left-6 right-6 max-w-md mx-auto z-50 bg-black dark:bg-white text-white dark:text-black p-4 rounded-2xl shadow-2xl flex items-center justify-between animate-fade-in text-xs font-medium border border-neutral-800 dark:border-neutral-200">
           <span>{playlistAlert}</span>
@@ -663,7 +883,6 @@ export const ArtistSelectScreen: React.FC = () => {
           </div>
         </div>
       )}
-
 
       {/* Modals */}
       <EqualizerModal isOpen={showEqModal} onClose={() => setShowEqModal(false)} />

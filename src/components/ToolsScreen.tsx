@@ -14,7 +14,9 @@ import {
   Check,
   Disc3,
   Sun,
-  Smartphone
+  Smartphone,
+  Download,
+  Upload
 } from 'lucide-react';
 
 import { usePlayer, AVAILABLE_NAV_OPTIONS } from '../context/PlayerContext';
@@ -42,8 +44,11 @@ export const ToolsScreen: React.FC = () => {
     setPetalRoundness,
     themeMode,
     setThemeMode,
-    setActiveScreen
+    setActiveScreen,
+    exportBackupData,
+    importBackupData
   } = usePlayer();
+
 
   const [showEq, setShowEq] = useState(false);
   const [showSleep, setShowSleep] = useState(false);
@@ -446,6 +451,49 @@ export const ToolsScreen: React.FC = () => {
           </div>
         </div>
 
+        {/* Backup & Data Management */}
+        <div className="flex flex-col gap-3 bg-[#eae5da] dark:bg-[#1a1917] p-4 rounded-3xl border border-[#ded8cd] dark:border-[#2a2824] transition-colors">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#75726b] dark:text-[#8a857b] flex items-center gap-1.5 font-outfit">
+            <Download size={14} /> Copia de Seguridad & Datos
+          </span>
+
+          <p className="text-xs text-[#75726b] dark:text-[#8a857b]">
+            Exporta tus listas creadas, favoritos y estadísticas a un archivo .json para restaurarlos en cualquier momento.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={exportBackupData}
+              className="py-2.5 px-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <Download size={13} /> Exportar
+            </button>
+            <label className="py-2.5 px-3 bg-[#ded8cd] dark:bg-[#2a2824] text-black dark:text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all text-center">
+              <Upload size={13} /> Restaurar
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const content = event.target?.result as string;
+                      if (content) {
+                        const success = importBackupData(content);
+                        if (success) alert('¡Copia de seguridad restaurada con éxito!');
+                        else alert('Error: El archivo no tiene un formato válido.');
+                      }
+                    };
+                    reader.readAsText(file);
+                  }
+                }}
+              />
+            </label>
+          </div>
+        </div>
+
         {/* Storage & Cache Management */}
         <div className="flex flex-col gap-3 bg-[#eae5da] dark:bg-[#1a1917] p-4 rounded-3xl border border-[#ded8cd] dark:border-[#2a2824] transition-colors">
           <span className="text-xs font-bold uppercase tracking-wider text-[#75726b] dark:text-[#8a857b] flex items-center gap-1.5 font-outfit">
@@ -483,6 +531,7 @@ export const ToolsScreen: React.FC = () => {
             </span>
           </div>
         </div>
+
 
         {/* Sonora Version Info */}
         <div className="flex flex-col items-center justify-center py-2 pb-6 gap-1">

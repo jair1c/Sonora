@@ -152,14 +152,30 @@ interface PlayerContextType {
   petalRoundness: number;
   setPetalRoundness: (val: number) => void;
 
+  // Folder Blacklist / Exclusion
+  blacklistedFolders: string[];
+  toggleFolderBlacklist: (folderName: string) => void;
+
+  // Song Sorting Mode
+  sortMode: 'az' | 'za' | 'artist' | 'recent' | 'duration';
+  setSortMode: (mode: 'az' | 'za' | 'artist' | 'recent' | 'duration') => void;
+
+  // Audio Quality Badge
+  audioQualityBadge: string;
+
+  // Backup and Restore
+  exportBackupData: () => void;
+  importBackupData: (jsonStr: string) => boolean;
+
   // Stats
   stats: LuxStats;
 }
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
 
+
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [tracks, setTracks] = useState<Track[]>(() => {
+  const [allTracks, setAllTracks] = useState<Track[]>(() => {
     const cached = localStorage.getItem('luxTune_local_songs');
     if (cached) {
       try { return JSON.parse(cached); } catch (e) { console.error(e); }
@@ -167,9 +183,50 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return sampleSongs;
   });
 
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  // Blacklisted / Hidden folders
+  const [blacklistedFolders, setBlacklistedFoldersState] = useState<string[]>(() => {
+    const cached = localStorage.getItem('sonora_blacklisted_folders');
+    return cached ? JSON.parse(cached) : [];
+  });
+
+  const toggleFolderBlacklist = useCallback((folderName: string) => {
+    setBlacklistedFoldersState((prev) => {
+      const updated = prev.includes(folderName)
+        ? prev.filter((f) => f !== folderName)
+        : [...prev, folderName];
+      localStorage.setItem('sonora_blacklisted_folders', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  // Filtered tracks excluding blacklisted folders
+  const tracks = React.useMemo(() => {
+    if (blacklistedFolders.length === 0) return allTracks;
+    return allTracks.filter((t) => {
+      const path = (t.filePath || t.audioUrl || '').toLowerCase();
+      const album = (t.album || '').toLowerCase();
+      return !blacklistedFolders.some((f) => path.includes(f.toLowerCase()) || album === f.toLowerCase());
+    });
+  }, [allTracks, blacklistedFolders]);
+
+  const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(() => {
+    const cached = localStorage.getItem('luxTune_local_songs');
+    const lastSavedId = localStorage.getItem('sonora_last_active_song_id');
+    if (cached && lastSavedId) {
+      try {
+        const list: Track[] = JSON.parse(cached);
+        const idx = list.findIndex((t) => t.id === lastSavedId);
+        if (idx !== -1) return idx;
+      } catch (e) { console.error(e); }
+    }
+    return 0;
+  });
+
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime, setCurrentTime] = useState<number>(() => {
+    const savedTime = localStorage.getItem('sonora_last_playback_time');
+    return savedTime ? parseFloat(savedTime) : 0;
+  });
   const [duration, setDuration] = useState(220);
   const [volume, setVolumeState] = useState(0.85);
   const [isShuffle, setIsShuffle] = useState(false);
@@ -180,6 +237,18 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return cached ? parseInt(cached, 10) : 2;
   });
   const [isScanning, setIsScanning] = useState(false);
+
+  // Sorting Mode for Songs tab
+  const [sortMode, setSortModeState] = useState<'az' | 'za' | 'artist' | 'recent' | 'duration'>(() => {
+    const cached = localStorage.getItem('sonora_sort_mode');
+    return (cached as 'az' | 'za' | 'artist' | 'recent' | 'duration') || 'az';
+  });
+
+  const setSortMode = useCallback((mode: 'az' | 'za' | 'artist' | 'recent' | 'duration') => {
+    setSortModeState(mode);
+    localStorage.setItem('sonora_sort_mode', mode);
+  }, []);
+
 
   const [activeScreen, setActiveScreenState] = useState<'onboarding' | 'artists' | 'player' | 'settings'>(() => {
     return localStorage.getItem('luxTune_onboarding_done') ? 'artists' : 'onboarding';
@@ -366,9 +435,18 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const scanned = await loadDeviceAudioFiles();
       if (scanned && scanned.length > 0) {
-        setTracks(scanned);
+        setAllTracks(scanned);
         tracksRef.current = scanned;
         localStorage.setItem('luxTune_local_songs', JSON.stringify(scanned));
+
+        const lastSavedId = localStorage.getItem('sonora_last_active_song_id');
+        if (lastSavedId) {
+          const idx = scanned.findIndex((t) => t.id === lastSavedId);
+          if (idx !== -1) {
+            setCurrentTrackIndex(idx);
+            currentTrackIndexRef.current = idx;
+          }
+        }
       }
     } catch (err) {
       console.error('Error scanning local music:', err);
@@ -403,6 +481,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setCurrentTime(0);
     setIsPlaying(true);
 
+    localStorage.setItem('sonora_last_active_song_id', track.id);
+    localStorage.setItem('sonora_last_playback_time', '0');
+
     const isNative = Capacitor.isNativePlatform();
 
     if (isNative) {
@@ -431,13 +512,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.title,
         artist: track.artist,
-        album: track.album || 'luxTune',
+        album: track.album || 'Sonora',
         artwork: track.coverUrl ? [{ src: track.coverUrl, sizes: '512x512', type: 'image/jpeg' }] : []
       });
     }
 
     // Increment play stats and update localStorage
-    setTracks(prev => prev.map(t => t.id === track.id ? { ...t, playCount: (t.playCount || 0) + 1, lastPlayed: Date.now() } : t));
+    setAllTracks(prev => prev.map(t => t.id === track.id ? { ...t, playCount: (t.playCount || 0) + 1, lastPlayed: Date.now() } : t));
     setStats(prev => {
       const updated: LuxStats = {
         totalTracksPlayed: prev.totalTracksPlayed + 1,
@@ -448,6 +529,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return updated;
     });
   }, [crossfadeSeconds]);
+
 
   const nextTrack = useCallback(() => {
     const list = tracksRef.current;
@@ -560,7 +642,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setCurrentTime(0);
         setIsPlaying(true);
         // Increment play stats
-        setTracks(prev => prev.map(t => t.id === track.id ? { ...t, playCount: (t.playCount || 0) + 1, lastPlayed: Date.now() } : t));
+        setAllTracks(prev => prev.map(t => t.id === track.id ? { ...t, playCount: (t.playCount || 0) + 1, lastPlayed: Date.now() } : t));
+
         setStats(prev => {
           const updated: LuxStats = {
             totalTracksPlayed: prev.totalTracksPlayed + 1,
@@ -749,12 +832,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const toggleLike = useCallback((trackId?: string) => {
     const targetId = trackId || currentTrack.id;
-    setTracks(prev => {
+    setAllTracks(prev => {
       const updated = prev.map(t => t.id === targetId ? { ...t, isLiked: !t.isLiked } : t);
       localStorage.setItem('luxTune_local_songs', JSON.stringify(updated));
       return updated;
     });
   }, [currentTrack.id]);
+
 
   const toggleArtistSelection = useCallback((artistId: string) => {
     setSelectedArtistIds((prev) =>
@@ -837,12 +921,84 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const updateTrackMetadata = useCallback((trackId: string, updatedData: Partial<Track>) => {
-    setTracks(prev => {
+    setAllTracks(prev => {
       const updated = prev.map(t => t.id === trackId ? { ...t, ...updatedData } : t);
       localStorage.setItem('luxTune_local_songs', JSON.stringify(updated));
       return updated;
     });
   }, []);
+
+  // Audio Quality Badge
+  const audioQualityBadge = React.useMemo(() => {
+    if (!currentTrack) return 'Hi-Fi Audio';
+    const path = (currentTrack.filePath || currentTrack.audioUrl || '').toLowerCase();
+    if (path.endsWith('.flac')) return 'FLAC • 24-bit Hi-Res';
+    if (path.endsWith('.wav')) return 'WAV • Lossless';
+    if (path.endsWith('.m4a') || path.endsWith('.aac')) return 'AAC • 256 kbps';
+    if (path.endsWith('.ogg')) return 'OGG • 320 kbps';
+    if (path.endsWith('.mp3')) return 'MP3 • 320 kbps';
+    return 'Hi-Fi • 48 kHz';
+  }, [currentTrack]);
+
+  // Export Backup Data
+  const exportBackupData = useCallback(() => {
+    const backupObj = {
+      version: '2.1.0',
+      appName: 'Sonora',
+      exportedAt: new Date().toISOString(),
+      playlists,
+      stats,
+      blacklistedFolders,
+      petalRoundness,
+      themeMode,
+      crossfadeSeconds,
+      navTabsConfig,
+      equalizer,
+      favorites: tracks.filter(t => t.isLiked).map(t => ({ id: t.id, title: t.title, artist: t.artist }))
+    };
+
+    const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sonora_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [playlists, stats, blacklistedFolders, petalRoundness, themeMode, crossfadeSeconds, navTabsConfig, equalizer, tracks]);
+
+  // Import Backup Data
+  const importBackupData = useCallback((jsonStr: string) => {
+    try {
+      const data = JSON.parse(jsonStr);
+      if (data.playlists) {
+        setPlaylists(data.playlists);
+        localStorage.setItem('luxTune_playlists', JSON.stringify(data.playlists));
+      }
+      if (data.stats) {
+        setStats(data.stats);
+        localStorage.setItem('luxTune_stats', JSON.stringify(data.stats));
+      }
+      if (data.blacklistedFolders) {
+        setBlacklistedFoldersState(data.blacklistedFolders);
+        localStorage.setItem('sonora_blacklisted_folders', JSON.stringify(data.blacklistedFolders));
+      }
+      if (data.themeMode) {
+        setThemeMode(data.themeMode);
+      }
+      if (data.petalRoundness !== undefined) {
+        setPetalRoundness(data.petalRoundness);
+      }
+      if (data.navTabsConfig) {
+        setNavTabsConfig(data.navTabsConfig);
+      }
+      return true;
+    } catch (err) {
+      console.error('Error importing Sonora backup:', err);
+      return false;
+    }
+  }, [setThemeMode, setPetalRoundness, setNavTabsConfig]);
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -905,14 +1061,20 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         resetNavTabsConfig,
         petalRoundness,
         setPetalRoundness,
+        blacklistedFolders,
+        toggleFolderBlacklist,
+        sortMode,
+        setSortMode,
+        audioQualityBadge,
+        exportBackupData,
+        importBackupData,
         stats
       }}
-
-
     >
       {children}
     </PlayerContext.Provider>
   );
+
 };
 
 export const usePlayer = () => {

@@ -5,6 +5,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.sonora.music.data.model.Song
@@ -77,14 +78,28 @@ class SonoraAudioPlayer(private val context: Context) {
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_READY) {
-                _durationMs.value = player.duration.coerceAtLeast(0L)
-                equalizerManager.attachAudioSession(player.audioSessionId)
-            } else if (playbackState == Player.STATE_ENDED) {
-                nextTrack()
+            _isPlaying.value = player.isPlaying
+            when (playbackState) {
+                Player.STATE_READY -> {
+                    _durationMs.value = player.duration.coerceAtLeast(0L)
+                    equalizerManager.attachAudioSession(player.audioSessionId)
+                }
+                Player.STATE_ENDED -> {
+                    nextTrack()
+                }
+                Player.STATE_IDLE -> {
+                    // Idle state
+                }
+                Player.STATE_BUFFERING -> {
+                    // Buffering
+                }
             }
         }
 
+        override fun onPlayerError(error: PlaybackException) {
+            _isPlaying.value = false
+            stopPositionTracking()
+        }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             val currentIdx = player.currentMediaItemIndex
@@ -96,70 +111,73 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun playSong(song: Song, newPlaylist: List<Song> = emptyList()) {
-        if (newPlaylist.isNotEmpty()) {
-            _playlist.value = newPlaylist
-            val mediaItems = newPlaylist.map { s ->
-                MediaItem.Builder()
-                    .setUri(s.contentUri)
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle(s.title)
-                            .setArtist(s.artist)
-                            .setAlbumTitle(s.album)
-                            .setArtworkUri(s.coverUri)
-                            .build()
-                    )
-                    .build()
-            }
-            player.setMediaItems(mediaItems)
-            val index = newPlaylist.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
-            player.seekTo(index, 0L)
-        } else {
-            _playlist.value = listOf(song)
-            val item = MediaItem.Builder()
-                .setUri(song.contentUri)
+        val listToUse = if (newPlaylist.isNotEmpty()) newPlaylist else listOf(song)
+        _playlist.value = listToUse
+
+        val mediaItems = listToUse.map { s ->
+            MediaItem.Builder()
+                .setUri(s.contentUri)
+                .setMediaId(s.id.toString())
                 .setMediaMetadata(
                     MediaMetadata.Builder()
-                        .setTitle(song.title)
-                        .setArtist(song.artist)
-                        .setAlbumTitle(song.album)
-                        .setArtworkUri(song.coverUri)
+                        .setTitle(s.title)
+                        .setArtist(s.artist)
+                        .setAlbumTitle(s.album)
+                        .setArtworkUri(s.coverUri)
                         .build()
                 )
                 .build()
-            player.setMediaItem(item)
         }
 
+        val targetIndex = listToUse.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
+
+        player.stop()
+        player.clearMediaItems()
+        player.setMediaItems(mediaItems, targetIndex, 0L)
         _currentSong.value = song
         player.prepare()
+        player.playWhenReady = true
         player.play()
+        _isPlaying.value = true
     }
 
     fun play() {
+        resume()
+    }
+
+    fun resume() {
+        if (player.playbackState == Player.STATE_IDLE) {
+            player.prepare()
+        } else if (player.playbackState == Player.STATE_ENDED) {
+            player.seekTo(0, 0L)
+        }
+        player.playWhenReady = true
         player.play()
+        _isPlaying.value = true
     }
 
     fun pause() {
         player.pause()
-    }
-
-    fun resume() {
-        player.play()
+        _isPlaying.value = false
     }
 
     fun togglePlay() {
         if (player.isPlaying) {
-            player.pause()
+            pause()
         } else {
-            player.play()
+            resume()
         }
     }
 
     fun nextTrack() {
         if (player.hasNextMediaItem()) {
             player.seekToNextMediaItem()
+            player.playWhenReady = true
+            player.play()
         } else if (_playlist.value.isNotEmpty()) {
             player.seekTo(0, 0L)
+            player.playWhenReady = true
+            player.play()
         }
     }
 
@@ -168,8 +186,12 @@ class SonoraAudioPlayer(private val context: Context) {
             player.seekTo(0L)
         } else if (player.hasPreviousMediaItem()) {
             player.seekToPreviousMediaItem()
+            player.playWhenReady = true
+            player.play()
         } else if (_playlist.value.isNotEmpty()) {
             player.seekTo(_playlist.value.size - 1, 0L)
+            player.playWhenReady = true
+            player.play()
         }
     }
 
@@ -209,7 +231,6 @@ class SonoraAudioPlayer(private val context: Context) {
         progressJob = null
     }
 
-
     fun startSleepTimer(minutes: Int) {
         cancelSleepTimer()
         var seconds = minutes * 60
@@ -221,7 +242,7 @@ class SonoraAudioPlayer(private val context: Context) {
                 _sleepTimerSecondsLeft.value = seconds
             }
             if (seconds <= 0) {
-                player.pause()
+                pause()
                 _sleepTimerSecondsLeft.value = null
             }
         }
@@ -245,4 +266,3 @@ class SonoraAudioPlayer(private val context: Context) {
         player.release()
     }
 }
-

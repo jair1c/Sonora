@@ -89,6 +89,7 @@ fun NativeHomeScreen(
 
     var showSleepModal by remember { mutableStateOf(false) }
     var showStatsModal by remember { mutableStateOf(false) }
+    val navTabs = remember { sonoraPrefs.getNavTabs() }
 
     val blacklistedFolders = remember { mutableStateListOf<String>().apply { addAll(sonoraPrefs.getBlacklistedFolders()) } }
     val likedSongIds = remember { mutableStateListOf<Long>().apply { addAll(sonoraPrefs.getLikedSongIds()) } }
@@ -178,7 +179,7 @@ fun NativeHomeScreen(
                     color = textPrimary
                 )
 
-                // 4 Right Circular Action Buttons
+                // Right Circular Action Buttons (Intelligent Detection)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -237,22 +238,44 @@ fun NativeHomeScreen(
                         )
                     }
 
-                    // 4. Settings Button
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
-                            .border(1.dp, borderCol, CircleShape)
-                            .clickable { onOpenSettings() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = "Ajustes",
-                            tint = textPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
+                    // 4. Listas Button (Shown ONLY if NOT in bottom nav bar)
+                    if (!navTabs.contains("listas")) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
+                                .border(1.dp, borderCol, CircleShape)
+                                .clickable { currentTab = LibraryTab.LISTAS },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Listas",
+                                tint = textPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    // 5. Settings Button (Shown ONLY if NOT in bottom nav bar)
+                    if (!navTabs.contains("ajustes")) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
+                                .border(1.dp, borderCol, CircleShape)
+                                .clickable { onOpenSettings() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Ajustes",
+                                tint = textPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -986,32 +1009,59 @@ fun NativeHomeScreen(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Canciones
-                BottomNavItem(
-                    icon = Icons.Default.MusicNote,
-                    label = "Canciones",
-                    isSelected = currentTab == LibraryTab.CANCIONES,
-                    isDark = isDark,
-                    onClick = { currentTab = LibraryTab.CANCIONES }
-                )
-
-                // Listas ♡
-                BottomNavItem(
-                    icon = Icons.Default.Favorite,
-                    label = "Listas ♡",
-                    isSelected = currentTab == LibraryTab.LISTAS,
-                    isDark = isDark,
-                    onClick = { currentTab = LibraryTab.LISTAS }
-                )
-
-                // Ajustes
-                BottomNavItem(
-                    icon = Icons.Default.Tune,
-                    label = "Ajustes",
-                    isSelected = false,
-                    isDark = isDark,
-                    onClick = onOpenSettings
-                )
+                for (tabId in navTabs) {
+                    when (tabId) {
+                        "canciones", "biblioteca" -> BottomNavItem(
+                            icon = Icons.Default.MusicNote,
+                            label = "Canciones",
+                            isSelected = currentTab == LibraryTab.CANCIONES,
+                            isDark = isDark,
+                            onClick = { currentTab = LibraryTab.CANCIONES }
+                        )
+                        "artistas" -> BottomNavItem(
+                            icon = Icons.Default.Person,
+                            label = "Artistas",
+                            isSelected = currentTab == LibraryTab.ARTISTAS,
+                            isDark = isDark,
+                            onClick = { currentTab = LibraryTab.ARTISTAS }
+                        )
+                        "albumes" -> BottomNavItem(
+                            icon = Icons.Default.Album,
+                            label = "Álbumes",
+                            isSelected = currentTab == LibraryTab.ALBUMES,
+                            isDark = isDark,
+                            onClick = { currentTab = LibraryTab.ALBUMES }
+                        )
+                        "listas" -> BottomNavItem(
+                            icon = Icons.Default.Favorite,
+                            label = "Listas ♡",
+                            isSelected = currentTab == LibraryTab.LISTAS,
+                            isDark = isDark,
+                            onClick = { currentTab = LibraryTab.LISTAS }
+                        )
+                        "carpetas" -> BottomNavItem(
+                            icon = Icons.Default.Folder,
+                            label = "Carpetas",
+                            isSelected = currentTab == LibraryTab.CARPETAS,
+                            isDark = isDark,
+                            onClick = { currentTab = LibraryTab.CARPETAS }
+                        )
+                        "reproductor" -> BottomNavItem(
+                            icon = Icons.Default.PlayCircle,
+                            label = "Reproductor",
+                            isSelected = false,
+                            isDark = isDark,
+                            onClick = onOpenPlayer
+                        )
+                        "ajustes" -> BottomNavItem(
+                            icon = Icons.Default.Tune,
+                            label = "Ajustes",
+                            isSelected = false,
+                            isDark = isDark,
+                            onClick = onOpenSettings
+                        )
+                    }
+                }
             }
         }
     }

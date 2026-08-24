@@ -51,6 +51,7 @@ fun SonoraTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = SonoraTypography,
         content = content
     )
 }

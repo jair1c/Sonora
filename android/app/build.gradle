@@ -88,6 +88,9 @@ dependencies {
     // Navigation Compose
     implementation 'androidx.navigation:navigation-compose:2.8.4'
 
+    // Google Fonts for Compose (Plus Jakarta Sans)
+    implementation 'androidx.compose.ui:ui-text-google-fonts:1.7.5'
+
     // Legacy support while transitioning
     implementation "androidx.media:media:1.7.0"
     implementation project(':capacitor-android')

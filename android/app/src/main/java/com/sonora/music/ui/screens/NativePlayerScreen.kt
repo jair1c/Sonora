@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import coil.compose.AsyncImage
+import com.sonora.music.data.local.SonoraPreferences
 import com.sonora.music.data.model.Song
 import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.Organic8PetalShape
@@ -77,6 +78,7 @@ import kotlin.math.roundToInt
 @Composable
 fun NativePlayerScreen(
     audioPlayer: SonoraAudioPlayer,
+    sonoraPrefs: SonoraPreferences,
     onDismiss: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
@@ -92,7 +94,9 @@ fun NativePlayerScreen(
     val repeatMode by audioPlayer.repeatMode.collectAsState()
 
     var showExpandedLyrics by remember { mutableStateOf(false) }
+    var showQueueSheet by remember { mutableStateOf(false) }
     var offsetY by remember { mutableFloatStateOf(0f) }
+    var isLiked by remember(currentSong) { mutableStateOf(currentSong?.let { sonoraPrefs.isSongLiked(it.id) } ?: false) }
 
     val safeDuration = if (durationMs > 0) durationMs else (currentSong?.durationMs ?: 180000L)
     val progress = if (safeDuration > 0) (currentPositionMs.toFloat() / safeDuration.toFloat()).coerceIn(0f, 1f) else 0f
@@ -135,7 +139,7 @@ fun NativePlayerScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // 1. Top Bar
+            // 1. Top Bar with Back, Title, Queue, and Heart
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -165,20 +169,42 @@ fun NativePlayerScreen(
                     color = textColor
                 )
 
-                IconButton(
-                    onClick = { /* Toggle Favorite */ },
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                ) {
-                    Icon(
-                        imageVector = if (currentSong?.isLiked == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorito",
-                        tint = if (currentSong?.isLiked == true) Color(0xFFEF4444) else textColor
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconButton(
+                        onClick = { showQueueSheet = true },
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QueueMusic,
+                            contentDescription = "Cola",
+                            tint = textColor
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            currentSong?.let { s ->
+                                val nowLiked = sonoraPrefs.toggleLikeSong(s.id)
+                                isLiked = nowLiked
+                            }
+                        },
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                    ) {
+                        Icon(
+                            imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorito",
+                            tint = if (isLiked) Color(0xFFEF4444) else textColor
+                        )
+                    }
                 }
             }
+
 
             // 2. Time & Audio Quality Badge
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -451,5 +477,13 @@ fun NativePlayerScreen(
                 }
             }
         }
+
+        if (showQueueSheet) {
+            com.sonora.music.ui.components.QueueBottomSheet(
+                audioPlayer = audioPlayer,
+                onDismiss = { showQueueSheet = false }
+            )
+        }
     }
 }
+

@@ -27,12 +27,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -59,6 +61,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.sonora.music.data.local.SonoraPreferences
+import com.sonora.music.data.model.Album
+import com.sonora.music.data.model.Artist
+import com.sonora.music.data.model.FolderGroup
 import com.sonora.music.data.model.Song
 import com.sonora.music.data.model.SortMode
 import com.sonora.music.service.SonoraAudioPlayer
@@ -80,8 +86,12 @@ enum class LibraryTab(val label: String, val icon: ImageVector) {
 fun NativeHomeScreen(
     allSongs: List<Song>,
     audioPlayer: SonoraAudioPlayer,
+    sonoraPrefs: SonoraPreferences,
     onOpenPlayer: () -> Unit,
-    onRefresh: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenArtistDetail: (String) -> Unit,
+    onOpenAlbumDetail: (String) -> Unit,
+    onSongOptions: (Song) -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
     val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
@@ -92,7 +102,7 @@ fun NativeHomeScreen(
     var currentTab by remember { mutableStateOf(LibraryTab.CANCIONES) }
     var searchQuery by remember { mutableStateOf("") }
     var sortMode by remember { mutableStateOf(SortMode.TITLE_AZ) }
-    val blacklistedFolders = remember { mutableStateListOf<String>() }
+    val blacklistedFolders = remember { mutableStateListOf<String>().apply { addAll(sonoraPrefs.getBlacklistedFolders()) } }
 
     val currentSong by audioPlayer.currentSong.collectAsState()
     val isPlaying by audioPlayer.isPlaying.collectAsState()
@@ -115,10 +125,10 @@ fun NativeHomeScreen(
         }
 
         when (sortMode) {
-            SortMode.TITLE_AZ -> searched.sortedBy { it.title }
-            SortMode.TITLE_ZA -> searched.sortedByDescending { it.title }
-            SortMode.ARTIST_AZ -> searched.sortedBy { it.artist }
-            SortMode.DATE_ADDED_DESC -> searched.sortedByDescending { it.dateAdded.takeIf { d -> d > 0 } ?: it.dateModified }
+            SortMode.TITLE_AZ -> searched.sortedBy { it.title.lowercase() }
+            SortMode.TITLE_ZA -> searched.sortedByDescending { it.title.lowercase() }
+            SortMode.ARTIST_AZ -> searched.sortedBy { it.artist.lowercase() }
+            SortMode.DATE_ADDED_DESC -> searched.sortedByDescending { if (it.dateAdded > 0) it.dateAdded else it.dateModified }
             SortMode.DURATION_DESC -> searched.sortedByDescending { it.durationMs }
         }
     }
@@ -127,10 +137,10 @@ fun NativeHomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(bgColor)
-            .padding(top = 16.dp)
+            .padding(top = 8.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // 1. Header with App Title & Scan
+            // 1. Header Bar: SONORA + Settings Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,7 +154,7 @@ fun NativeHomeScreen(
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Black,
                         color = textColor,
-                        letterSpacing = 1.sp
+                        letterSpacing = 1.5.sp
                     )
                     Text(
                         text = "${availableSongs.size} canciones locales • 100% Offline",
@@ -155,22 +165,23 @@ fun NativeHomeScreen(
                 }
 
                 IconButton(
-                    onClick = onRefresh,
+                    onClick = onOpenSettings,
                     modifier = Modifier
+                        .size(44.dp)
                         .clip(CircleShape)
                         .background(cardBg)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Escanear",
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Ajustes",
                         tint = textColor
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // 2. Search Field
+            // 2. Search Text Field
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -193,7 +204,7 @@ fun NativeHomeScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // 3. Category Tab Pills
+            // 3. Category Tab Pills Row
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -228,9 +239,9 @@ fun NativeHomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 4. Main Tab Contents
+            // 4. Tab Views
             when (currentTab) {
                 LibraryTab.CANCIONES -> {
                     // Sort Row
@@ -253,7 +264,6 @@ fun NativeHomeScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(cardBg)
                                 .clickable {
-                                    // Cycle Sort Mode
                                     sortMode = when (sortMode) {
                                         SortMode.TITLE_AZ -> SortMode.TITLE_ZA
                                         SortMode.TITLE_ZA -> SortMode.ARTIST_AZ
@@ -272,7 +282,7 @@ fun NativeHomeScreen(
                         }
                     }
 
-                    // Virtualized 120 FPS Song List
+                    // 120 FPS Virtualized Songs List
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -288,7 +298,7 @@ fun NativeHomeScreen(
                                     .background(if (isCurrent) textColor else cardBg)
                                     .clickable {
                                         audioPlayer.playSong(song, availableSongs)
-                                        onOpenPlayer()
+                                        sonoraPrefs.recordPlay(song.id)
                                     }
                                     .padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -298,6 +308,14 @@ fun NativeHomeScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.weight(1f)
                                 ) {
+                                    if (isCurrent) {
+                                        Icon(
+                                            imageVector = Icons.Default.GraphicEq,
+                                            contentDescription = null,
+                                            tint = bgColor,
+                                            modifier = Modifier.size(20.dp).padding(end = 4.dp)
+                                        )
+                                    }
                                     AsyncImage(
                                         model = song.coverUri ?: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600&auto=format&fit=crop",
                                         contentDescription = song.title,
@@ -326,48 +344,51 @@ fun NativeHomeScreen(
                                     }
                                 }
 
-                                Text(
-                                    text = song.durationFormatted,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isCurrent) bgColor else subtextColor,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = song.durationFormatted,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (isCurrent) bgColor else subtextColor
+                                    )
+                                    IconButton(onClick = { onSongOptions(song) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.MoreVert,
+                                            contentDescription = "Opciones",
+                                            tint = if (isCurrent) bgColor else subtextColor,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
-                        item { Spacer(modifier = Modifier.height(80.dp)) }
+                        item { Spacer(modifier = Modifier.height(100.dp)) }
                     }
                 }
 
                 LibraryTab.ARTISTAS -> {
                     val artists = remember(availableSongs) {
                         availableSongs.groupBy { it.artist }.map { (name, songs) ->
-                            com.sonora.music.data.model.Artist(name, songs.size, songs.firstOrNull()?.coverUri)
-                        }
+                            Artist(name, songs.size, songs.firstOrNull()?.coverUri)
+                        }.sortedBy { it.name.lowercase() }
                     }
 
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(3),
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(20.dp),
+                            .padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(artists) { artist ->
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.clickable {
-                                    val artistSongs = availableSongs.filter { it.artist == artist.name }
-                                    if (artistSongs.isNotEmpty()) {
-                                        audioPlayer.playSong(artistSongs[0], artistSongs)
-                                        onOpenPlayer()
-                                    }
-                                }
+                                modifier = Modifier.clickable { onOpenArtistDetail(artist.name) }
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(86.dp)
+                                        .size(88.dp)
                                         .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.08f))
                                         .background(cardBg),
                                     contentAlignment = Alignment.Center
@@ -384,7 +405,64 @@ fun NativeHomeScreen(
                                 Text("${artist.trackCount} canciones", fontSize = 10.sp, color = subtextColor)
                             }
                         }
+                        item { Spacer(modifier = Modifier.height(100.dp)) }
                     }
+                }
+
+                LibraryTab.ALBUMES -> {
+                    val albums = remember(availableSongs) {
+                        availableSongs.groupBy { it.album }.map { (title, songs) ->
+                            Album(title, songs.firstOrNull()?.artist ?: "Varios", songs.size, songs.firstOrNull()?.coverUri, songs)
+                        }.sortedBy { it.title.lowercase() }
+                    }
+
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        items(albums) { album ->
+                            Column(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(cardBg)
+                                    .clickable { onOpenAlbumDetail(album.title) }
+                                    .padding(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(130.dp)
+                                        .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.06f))
+                                        .background(cardBg),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AsyncImage(
+                                        model = album.coverUri ?: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600&auto=format&fit=crop",
+                                        contentDescription = album.title,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(album.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("${album.artist} • ${album.trackCount} pistas", fontSize = 11.sp, color = subtextColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                        item { Spacer(modifier = Modifier.height(100.dp)) }
+                    }
+                }
+
+                LibraryTab.LISTAS -> {
+                    PlaylistsScreen(
+                        allSongs = availableSongs,
+                        sonoraPrefs = sonoraPrefs,
+                        audioPlayer = audioPlayer,
+                        onSongOptions = onSongOptions
+                    )
                 }
 
                 LibraryTab.CARPETAS -> {
@@ -393,19 +471,19 @@ fun NativeHomeScreen(
                             val parts = s.filePath.split("/")
                             if (parts.size > 1) parts[parts.size - 2] else s.album
                         }.map { (name, songs) ->
-                            com.sonora.music.data.model.FolderGroup(
+                            FolderGroup(
                                 folderName = name,
                                 songCount = songs.size,
                                 isBlacklisted = blacklistedFolders.contains(name),
                                 songs = songs
                             )
-                        }
+                        }.sortedBy { it.folderName.lowercase() }
                     }
 
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(20.dp),
+                            .padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(folders) { folder ->
@@ -418,7 +496,6 @@ fun NativeHomeScreen(
                                     .clickable {
                                         if (!isHidden && folder.songs.isNotEmpty()) {
                                             audioPlayer.playSong(folder.songs[0], folder.songs)
-                                            onOpenPlayer()
                                         }
                                     }
                                     .padding(14.dp),
@@ -441,10 +518,11 @@ fun NativeHomeScreen(
 
                                 IconButton(
                                     onClick = {
-                                        if (blacklistedFolders.contains(folder.folderName)) {
-                                            blacklistedFolders.remove(folder.folderName)
-                                        } else {
+                                        val isBlocked = sonoraPrefs.toggleBlacklistFolder(folder.folderName)
+                                        if (isBlocked) {
                                             blacklistedFolders.add(folder.folderName)
+                                        } else {
+                                            blacklistedFolders.remove(folder.folderName)
                                         }
                                     }
                                 ) {
@@ -456,13 +534,7 @@ fun NativeHomeScreen(
                                 }
                             }
                         }
-                    }
-                }
-
-                else -> {
-                    // Albums & Playlists view
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Listas Inteligentes & Álbumes cargados", fontSize = 13.sp, color = subtextColor)
+                        item { Spacer(modifier = Modifier.height(100.dp)) }
                     }
                 }
             }

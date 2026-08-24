@@ -36,8 +36,11 @@ class SonoraAudioPlayer(private val context: Context) {
             }
     }
 
+    val equalizerManager = SonoraEqualizerManager()
+
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var progressJob: Job? = null
+    private var sleepTimerJob: Job? = null
 
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong = _currentSong.asStateFlow()
@@ -60,19 +63,28 @@ class SonoraAudioPlayer(private val context: Context) {
     private val _repeatMode = MutableStateFlow(Player.REPEAT_MODE_OFF)
     val repeatMode = _repeatMode.asStateFlow()
 
+    private val _sleepTimerSecondsLeft = MutableStateFlow<Int?>(null)
+    val sleepTimerSecondsLeft = _sleepTimerSecondsLeft.asStateFlow()
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
             _isPlaying.value = playing
             if (playing) startPositionTracking() else stopPositionTracking()
         }
 
+        override fun onAudioSessionIdChanged(audioSessionId: Int) {
+            equalizerManager.attachAudioSession(audioSessionId)
+        }
+
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_READY) {
                 _durationMs.value = player.duration.coerceAtLeast(0L)
+                equalizerManager.attachAudioSession(player.audioSessionId)
             } else if (playbackState == Player.STATE_ENDED) {
                 nextTrack()
             }
         }
+
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             val currentIdx = player.currentMediaItemIndex
@@ -185,9 +197,36 @@ class SonoraAudioPlayer(private val context: Context) {
         progressJob = null
     }
 
+
+    fun startSleepTimer(minutes: Int) {
+        cancelSleepTimer()
+        var seconds = minutes * 60
+        _sleepTimerSecondsLeft.value = seconds
+        sleepTimerJob = scope.launch {
+            while (seconds > 0 && isActive) {
+                delay(1000)
+                seconds--
+                _sleepTimerSecondsLeft.value = seconds
+            }
+            if (seconds <= 0) {
+                player.pause()
+                _sleepTimerSecondsLeft.value = null
+            }
+        }
+    }
+
+    fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        _sleepTimerSecondsLeft.value = null
+    }
+
     fun release() {
+        cancelSleepTimer()
         stopPositionTracking()
+        equalizerManager.release()
         player.removeListener(playerListener)
         player.release()
     }
 }
+

@@ -75,3 +75,11 @@ enum class SortMode(val label: String) {
     DATE_ADDED_DESC("Fecha de Adición (Más Recientes)"),
     DURATION_DESC("Mayor Duración")
 }
+
+data class Playlist(
+    val id: String,
+    val name: String,
+    val songIds: List<Long> = emptyList(),
+    val icon: String = "playlist"
+)
+

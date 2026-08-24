@@ -464,6 +464,7 @@ fun SettingsScreen(
                                 .clickable {
                                     crossfadeSeconds = sec
                                     sonoraPrefs.setCrossfadeSeconds(sec)
+                                    audioPlayer.setCrossfadeSeconds(sec)
                                 },
                             contentAlignment = Alignment.Center
                         ) {

@@ -42,6 +42,9 @@ class SonoraAudioPlayer(private val context: Context) {
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var progressJob: Job? = null
     private var sleepTimerJob: Job? = null
+    private var crossfadeJob: Job? = null
+
+    private var crossfadeSeconds: Int = 0
 
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong = _currentSong.asStateFlow()
@@ -106,8 +109,17 @@ class SonoraAudioPlayer(private val context: Context) {
             val list = _playlist.value
             if (currentIdx in list.indices) {
                 _currentSong.value = list[currentIdx]
+                if (crossfadeSeconds > 0) {
+                    fadeInVolume(crossfadeSeconds)
+                } else {
+                    player.volume = 1.0f
+                }
             }
         }
+    }
+
+    fun setCrossfadeSeconds(seconds: Int) {
+        crossfadeSeconds = seconds.coerceIn(0, 12)
     }
 
     fun playSong(song: Song, newPlaylist: List<Song> = emptyList()) {
@@ -139,6 +151,12 @@ class SonoraAudioPlayer(private val context: Context) {
         player.playWhenReady = true
         player.play()
         _isPlaying.value = true
+
+        if (crossfadeSeconds > 0) {
+            fadeInVolume(crossfadeSeconds)
+        } else {
+            player.volume = 1.0f
+        }
     }
 
     fun play() {
@@ -216,11 +234,39 @@ class SonoraAudioPlayer(private val context: Context) {
         _repeatMode.value = nextMode
     }
 
+    private fun fadeInVolume(seconds: Int) {
+        crossfadeJob?.cancel()
+        crossfadeJob = scope.launch {
+            val totalSteps = (seconds * 10).coerceAtLeast(5)
+            val stepDelay = (seconds * 1000L) / totalSteps
+            player.volume = 0f
+            for (i in 1..totalSteps) {
+                delay(stepDelay)
+                player.volume = (i.toFloat() / totalSteps.toFloat()).coerceIn(0f, 1f)
+            }
+            player.volume = 1.0f
+        }
+    }
+
     private fun startPositionTracking() {
         progressJob?.cancel()
         progressJob = scope.launch {
             while (isActive) {
-                _currentPositionMs.value = player.currentPosition.coerceAtLeast(0L)
+                val pos = player.currentPosition.coerceAtLeast(0L)
+                val dur = player.duration.coerceAtLeast(0L)
+                _currentPositionMs.value = pos
+                if (dur > 0L) _durationMs.value = dur
+
+                // Crossfade fade-out when near track end
+                if (crossfadeSeconds > 0 && dur > crossfadeSeconds * 2000L) {
+                    val remainingMs = dur - pos
+                    val crossfadeMs = crossfadeSeconds * 1000L
+                    if (remainingMs in 0..crossfadeMs) {
+                        val factor = (remainingMs.toFloat() / crossfadeMs.toFloat()).coerceIn(0.05f, 1.0f)
+                        player.volume = factor
+                    }
+                }
+
                 delay(200)
             }
         }
@@ -259,6 +305,7 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun release() {
+        crossfadeJob?.cancel()
         cancelSleepTimer()
         stopPositionTracking()
         equalizerManager.release()

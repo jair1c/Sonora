@@ -67,6 +67,9 @@ class SonoraNativeActivity : ComponentActivity() {
         mediaRepo = MediaStoreRepository(this)
         sonoraPrefs = SonoraPreferences(this)
 
+        audioPlayer.setCrossfadeSeconds(sonoraPrefs.getCrossfadeSeconds())
+        audioPlayer.setPlaybackSpeed(sonoraPrefs.getPlaybackSpeed())
+
         setContent {
             var currentThemeMode by remember { mutableStateOf(sonoraPrefs.getThemeMode()) }
             val isDark = when (currentThemeMode) {

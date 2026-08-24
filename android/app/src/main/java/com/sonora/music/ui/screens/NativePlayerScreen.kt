@@ -304,38 +304,64 @@ fun NativePlayerScreen(
                 )
             }
 
-            // 5. Playback Controls Row
+            // 5. Modern Playback Controls Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { audioPlayer.toggleRepeat() }) {
-                    Icon(
-                        imageVector = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
-                        contentDescription = "Repetir",
-                        tint = if (repeatMode != Player.REPEAT_MODE_OFF) textColor else subtextColor
-                    )
+                // Repeat Button with Active Indicator
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    IconButton(
+                        onClick = { audioPlayer.toggleRepeat() },
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(if (repeatMode != Player.REPEAT_MODE_OFF) (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)) else Color.Transparent)
+                    ) {
+                        Icon(
+                            imageVector = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
+                            contentDescription = "Repetir",
+                            tint = if (repeatMode != Player.REPEAT_MODE_OFF) textColor else subtextColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    if (repeatMode != Player.REPEAT_MODE_OFF) {
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(textColor)
+                        )
+                    }
                 }
 
-                IconButton(
-                    onClick = { audioPlayer.prevTrack() },
-                    modifier = Modifier.size(48.dp)
+                // Skip Previous Button (Modern Circle)
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                        .clickable { audioPlayer.prevTrack() },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipPrevious,
                         contentDescription = "Anterior",
                         tint = textColor,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
-                // Large Play/Pause Circular Button
+                // Center Play/Pause Floating Action Circle (72dp Luxury)
                 Box(
                     modifier = Modifier
-                        .size(68.dp)
+                        .size(72.dp)
                         .clip(CircleShape)
                         .background(textColor)
                         .clickable { audioPlayer.togglePlay() },
@@ -343,51 +369,79 @@ fun NativePlayerScreen(
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = "Reproducir",
+                        contentDescription = if (isPlaying) "Pausar" else "Reproducir",
                         tint = bgColor,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(38.dp)
                     )
                 }
 
-                IconButton(
-                    onClick = { audioPlayer.nextTrack() },
-                    modifier = Modifier.size(48.dp)
+                // Skip Next Button (Modern Circle)
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                        .clickable { audioPlayer.nextTrack() },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipNext,
                         contentDescription = "Siguiente",
                         tint = textColor,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
-                IconButton(onClick = { audioPlayer.toggleShuffle() }) {
-                    Icon(
-                        imageVector = Icons.Default.Shuffle,
-                        contentDescription = "Aleatorio",
-                        tint = if (isShuffle) textColor else subtextColor
-                    )
+                // Shuffle Button with Active Indicator
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    IconButton(
+                        onClick = { audioPlayer.toggleShuffle() },
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(if (isShuffle) (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)) else Color.Transparent)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Shuffle,
+                            contentDescription = "Aleatorio",
+                            tint = if (isShuffle) textColor else subtextColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    if (isShuffle) {
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(textColor)
+                        )
+                    }
                 }
             }
 
-            // 6. Dynamic Lyrics Preview
+            // 6. Dynamic Realtime Lyrics Preview Pill
             val lyrics = currentSong?.lyrics ?: emptyList()
-            val currentLyricIdx = lyrics.indexOfLast { currentPositionMs >= it.timeMs }.coerceAtLeast(0)
+            val currentLyricIdx = if (lyrics.isNotEmpty()) {
+                lyrics.indexOfLast { currentPositionMs >= it.timeMs }.coerceAtLeast(0)
+            } else 0
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(18.dp))
                     .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                     .clickable { showExpandedLyrics = true }
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .padding(horizontal = 18.dp, vertical = 12.dp)
             ) {
                 if (lyrics.isNotEmpty() && currentLyricIdx in lyrics.indices) {
                     val activeLine = lyrics[currentLyricIdx].text
                     val nextLine = lyrics.getOrNull(currentLyricIdx + 1)?.text
-                    Column {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            text = activeLine,
+                            text = "♪ $activeLine",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = textColor,
@@ -418,14 +472,16 @@ fun NativePlayerScreen(
             }
         }
 
-        // Fullscreen Lyrics Overlay
+        // Fullscreen Synchronized Lyrics Overlay with Smooth Auto-Centering
         if (showExpandedLyrics) {
             val listState = rememberLazyListState()
             val lyrics = currentSong?.lyrics ?: emptyList()
-            val activeIdx = lyrics.indexOfLast { currentPositionMs >= it.timeMs }.coerceAtLeast(0)
+            val activeIdx = if (lyrics.isNotEmpty()) {
+                lyrics.indexOfLast { currentPositionMs >= it.timeMs }.coerceAtLeast(0)
+            } else 0
 
             LaunchedEffect(activeIdx) {
-                if (activeIdx in lyrics.indices) {
+                if (lyrics.isNotEmpty() && activeIdx in lyrics.indices) {
                     listState.animateScrollToItem(activeIdx)
                 }
             }
@@ -434,43 +490,65 @@ fun NativePlayerScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(bgColor)
-                    .padding(20.dp)
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "LETRAS SINCRONIZADAS",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.sp,
-                            color = textColor
-                        )
-                        IconButton(onClick = { showExpandedLyrics = false }) {
-                            Icon(imageVector = Icons.Default.KeyboardArrowDown, contentDescription = "Cerrar", tint = textColor)
+                        Column {
+                            Text(
+                                text = "LETRAS SINCRONIZADAS",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 2.sp,
+                                color = textColor
+                            )
+                            Text(
+                                text = currentSong?.title ?: "",
+                                fontSize = 11.sp,
+                                color = subtextColor,
+                                maxLines = 1
+                            )
+                        }
+                        IconButton(
+                            onClick = { showExpandedLyrics = false },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Cerrar",
+                                tint = textColor
+                            )
                         }
                     }
 
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 220.dp, bottom = 280.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         itemsIndexed(lyrics) { idx, line ->
                             val isActive = idx == activeIdx
                             Text(
                                 text = line.text,
-                                fontSize = if (isActive) 22.sp else 16.sp,
-                                fontWeight = if (isActive) FontWeight.Black else FontWeight.Medium,
-                                color = if (isActive) textColor else subtextColor,
+                                fontSize = if (isActive) 24.sp else 16.sp,
+                                fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
+                                color = if (isActive) textColor else subtextColor.copy(alpha = 0.45f),
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier
-                                    .padding(vertical = 12.dp)
+                                    .fillMaxWidth()
                                     .clickable { audioPlayer.seekTo(line.timeMs) }
+                                    .padding(vertical = 6.dp)
                             )
                         }
                     }

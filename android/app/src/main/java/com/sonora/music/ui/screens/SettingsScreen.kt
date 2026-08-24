@@ -58,6 +58,7 @@ fun SettingsScreen(
     var crossfadeSeconds by remember { mutableIntStateOf(sonoraPrefs.getCrossfadeSeconds()) }
     var playbackSpeed by remember { mutableFloatStateOf(sonoraPrefs.getPlaybackSpeed()) }
     var activeNavTabs by remember { mutableStateOf(sonoraPrefs.getNavTabs()) }
+    var navLabelMode by remember { mutableStateOf(sonoraPrefs.getNavLabelMode()) }
 
     val totalPlayedSongs = songs.count { it.playCount > 0 }
     val totalMinutes = songs.sumOf { (it.playCount * (it.durationMs / 1000L / 60L)).toInt() }
@@ -704,6 +705,50 @@ fun SettingsScreen(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Visualización de Etiquetas de Texto:",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        Pair("active_only", "Solo Activa"),
+                        Pair("always", "Siempre"),
+                        Pair("never", "Solo Iconos")
+                    ).forEach { (mode, label) ->
+                        val isSel = navLabelMode == mode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSel) activePillBg else subCardBg)
+                                .border(1.dp, if (isSel) Color.Transparent else borderCol, RoundedCornerShape(10.dp))
+                                .clickable {
+                                    navLabelMode = mode
+                                    sonoraPrefs.setNavLabelMode(mode)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSel) activePillText else textPrimary
+                            )
                         }
                     }
                 }

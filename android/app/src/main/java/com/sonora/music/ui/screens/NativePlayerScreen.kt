@@ -79,9 +79,13 @@ import kotlin.math.roundToInt
 fun NativePlayerScreen(
     audioPlayer: SonoraAudioPlayer,
     sonoraPrefs: SonoraPreferences,
+    isDark: Boolean = when (sonoraPrefs.getThemeMode()) {
+        "dark" -> true
+        "light" -> false
+        else -> isSystemInDarkTheme()
+    },
     onDismiss: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
     val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
     val textColor = if (isDark) Color.White else Color(0xFF121212)
     val subtextColor = if (isDark) Color(0xFFA19C93) else Color(0xFF6B6760)

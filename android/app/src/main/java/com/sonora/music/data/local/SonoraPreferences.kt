@@ -28,9 +28,13 @@ class SonoraPreferences(context: Context) {
         private const val KEY_CROSSFADE_SECONDS = "sonora_crossfade_seconds"
         private const val KEY_PLAYBACK_SPEED = "sonora_playback_speed"
         private const val KEY_NAV_TABS = "sonora_nav_tabs_json"
+        private const val KEY_NAV_LABEL_MODE = "sonora_nav_label_mode" // "active_only", "always", "never"
     }
 
     // --- TOOLS & PREFERENCES ---
+    fun getNavLabelMode(): String = prefs.getString(KEY_NAV_LABEL_MODE, "active_only") ?: "active_only"
+    fun setNavLabelMode(mode: String) = prefs.edit().putString(KEY_NAV_LABEL_MODE, mode).apply()
+
     fun getPetalRoundness(): Int = prefs.getInt(KEY_PETAL_ROUNDNESS, 30)
     fun setPetalRoundness(value: Int) = prefs.edit().putInt(KEY_PETAL_ROUNDNESS, value).apply()
 

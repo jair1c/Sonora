@@ -219,6 +219,7 @@ class SonoraNativeActivity : ComponentActivity() {
                             NativePlayerScreen(
                                 audioPlayer = audioPlayer,
                                 sonoraPrefs = sonoraPrefs,
+                                isDark = isDark,
                                 onDismiss = { isPlayerOpen = false }
                             )
                         }

@@ -922,6 +922,13 @@ fun NativeHomeScreen(
 
         // 6. FLOATING MINIPLAYER (At bottom above nav bar)
         if (currentSong != null) {
+            val miniPlayerBg = if (isDark) Color(0xFF1A1917) else Color(0xFFFAF7F0)
+            val miniPlayerBorder = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
+            val miniPlayerTitle = if (isDark) Color.White else Color(0xFF121212)
+            val miniPlayerSub = if (isDark) Color(0xFFA19C93) else Color(0xFF75726B)
+            val miniPlayBtnBg = if (isDark) Color.White else Color(0xFF121212)
+            val miniPlayBtnIcon = if (isDark) Color.Black else Color.White
+
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -929,8 +936,8 @@ fun NativeHomeScreen(
                     .fillMaxWidth()
                     .height(58.dp)
                     .clip(RoundedCornerShape(100.dp))
-                    .background(if (isDark) Color(0xFF1A1917) else Color(0xFF121212))
-                    .border(1.dp, if (isDark) Color(0xFF2A2824) else Color.Transparent, RoundedCornerShape(100.dp))
+                    .background(miniPlayerBg)
+                    .border(1.dp, miniPlayerBorder, RoundedCornerShape(100.dp))
                     .clickable { onOpenPlayer() }
                     .padding(horizontal = 10.dp),
                 contentAlignment = Alignment.Center
@@ -949,7 +956,7 @@ fun NativeHomeScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(Color.DarkGray)
+                                .background(if (isDark) Color.DarkGray else Color(0xFFEAE5DA))
                         ) {
                             AsyncImage(
                                 model = currentSong!!.coverUri,
@@ -964,14 +971,14 @@ fun NativeHomeScreen(
                                 text = currentSong!!.title,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White,
+                                color = miniPlayerTitle,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = currentSong!!.artist,
                                 fontSize = 10.sp,
-                                color = Color(0xFFA19C93),
+                                color = miniPlayerSub,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -983,7 +990,7 @@ fun NativeHomeScreen(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(Color.White)
+                            .background(miniPlayBtnBg)
                             .clickable {
                                 if (isPlaying) audioPlayer.pause() else audioPlayer.resume()
                             },
@@ -992,7 +999,7 @@ fun NativeHomeScreen(
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (isPlaying) "Pausa" else "Reproducir",
-                            tint = Color.Black,
+                            tint = miniPlayBtnIcon,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -1001,6 +1008,7 @@ fun NativeHomeScreen(
         }
 
         // 7. BOTTOM NAVIGATION BAR (Fixed)
+        val navLabelMode = remember(sonoraPrefs) { sonoraPrefs.getNavLabelMode() }
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -1008,7 +1016,7 @@ fun NativeHomeScreen(
                 .height(64.dp)
                 .background(bgColor)
                 .border(1.dp, borderCol.copy(alpha = 0.5f))
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -1023,6 +1031,7 @@ fun NativeHomeScreen(
                             label = "Canciones",
                             isSelected = currentTab == LibraryTab.CANCIONES,
                             isDark = isDark,
+                            navLabelMode = navLabelMode,
                             onClick = { currentTab = LibraryTab.CANCIONES }
                         )
                         "artistas" -> BottomNavItem(
@@ -1030,6 +1039,7 @@ fun NativeHomeScreen(
                             label = "Artistas",
                             isSelected = currentTab == LibraryTab.ARTISTAS,
                             isDark = isDark,
+                            navLabelMode = navLabelMode,
                             onClick = { currentTab = LibraryTab.ARTISTAS }
                         )
                         "albumes" -> BottomNavItem(
@@ -1037,6 +1047,7 @@ fun NativeHomeScreen(
                             label = "Álbumes",
                             isSelected = currentTab == LibraryTab.ALBUMES,
                             isDark = isDark,
+                            navLabelMode = navLabelMode,
                             onClick = { currentTab = LibraryTab.ALBUMES }
                         )
                         "listas" -> BottomNavItem(
@@ -1044,6 +1055,7 @@ fun NativeHomeScreen(
                             label = "Listas ♡",
                             isSelected = currentTab == LibraryTab.LISTAS,
                             isDark = isDark,
+                            navLabelMode = navLabelMode,
                             onClick = { currentTab = LibraryTab.LISTAS }
                         )
                         "carpetas" -> BottomNavItem(
@@ -1051,6 +1063,7 @@ fun NativeHomeScreen(
                             label = "Carpetas",
                             isSelected = currentTab == LibraryTab.CARPETAS,
                             isDark = isDark,
+                            navLabelMode = navLabelMode,
                             onClick = { currentTab = LibraryTab.CARPETAS }
                         )
                         "reproductor" -> BottomNavItem(
@@ -1058,6 +1071,7 @@ fun NativeHomeScreen(
                             label = "Reproductor",
                             isSelected = false,
                             isDark = isDark,
+                            navLabelMode = navLabelMode,
                             onClick = onOpenPlayer
                         )
                         "ajustes" -> BottomNavItem(
@@ -1065,6 +1079,7 @@ fun NativeHomeScreen(
                             label = "Ajustes",
                             isSelected = false,
                             isDark = isDark,
+                            navLabelMode = navLabelMode,
                             onClick = onOpenSettings
                         )
                     }
@@ -1105,30 +1120,39 @@ fun BottomNavItem(
     label: String,
     isSelected: Boolean,
     isDark: Boolean,
+    navLabelMode: String = "active_only",
     onClick: () -> Unit
 ) {
     val selectedColor = if (isDark) Color.White else Color(0xFF121212)
     val unselectedColor = if (isDark) Color(0xFF75726B) else Color(0xFF8A857B)
+    val showLabel = when (navLabelMode) {
+        "active_only" -> isSelected
+        "always" -> true
+        "never" -> false
+        else -> isSelected
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 6.dp, vertical = 4.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
             tint = if (isSelected) selectedColor else unselectedColor,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(22.dp)
         )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) selectedColor else unselectedColor
-        )
+        if (showLabel) {
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = if (isSelected) selectedColor else unselectedColor
+            )
+        }
     }
 }

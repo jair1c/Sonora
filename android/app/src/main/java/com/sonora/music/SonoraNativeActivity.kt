@@ -80,7 +80,8 @@ class SonoraNativeActivity : ComponentActivity() {
 
             SonoraTheme(darkTheme = isDark) {
                 val scope = rememberCoroutineScope()
-                var songList by remember { mutableStateOf<List<Song>>(emptyList()) }
+                val cachedInitial = remember { sonoraPrefs.getCachedSongs() }
+                var songList by remember { mutableStateOf(cachedInitial) }
                 var hasSeenWelcome by remember { mutableStateOf(sonoraPrefs.hasSeenWelcome()) }
 
                 // Navigation states
@@ -94,7 +95,10 @@ class SonoraNativeActivity : ComponentActivity() {
                 fun loadSongs() {
                     scope.launch {
                         val localSongs = mediaRepo.queryLocalSongs()
-                        songList = localSongs
+                        if (localSongs.isNotEmpty()) {
+                            songList = localSongs
+                            sonoraPrefs.setCachedSongs(localSongs)
+                        }
                     }
                 }
 

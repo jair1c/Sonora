@@ -1,13 +1,17 @@
 package com.sonora.music.data.local
 
+import android.content.ContentUris
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
+import android.provider.MediaStore
 import com.sonora.music.data.model.Playlist
 import com.sonora.music.data.model.Song
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 
-class SonoraPreferences(context: Context) {
+class SonoraPreferences(private val context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences("sonora_native_prefs", Context.MODE_PRIVATE)
@@ -363,5 +367,70 @@ class SonoraPreferences(context: Context) {
         } catch (_: Exception) {
             false
         }
+    }
+
+    // --- INSTANT STARTUP CACHED SONGS ---
+    fun getCachedSongs(): List<Song> {
+        val cacheFile = File(context.filesDir, "sonora_songs_cache.json")
+        if (!cacheFile.exists()) return emptyList()
+        return try {
+            val json = cacheFile.readText()
+            val arr = JSONArray(json)
+            val list = ArrayList<Song>(arr.length())
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val id = obj.getLong("id")
+                val albumId = obj.optLong("albumId", 0L)
+                val contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
+                val coverUri = if (albumId > 0) {
+                    ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), albumId)
+                } else null
+
+                list.add(
+                    Song(
+                        id = id,
+                        title = obj.getString("title"),
+                        artist = obj.getString("artist"),
+                        album = obj.getString("album"),
+                        durationMs = obj.getLong("durationMs"),
+                        contentUri = contentUri,
+                        filePath = obj.optString("filePath", ""),
+                        coverUri = coverUri,
+                        dateAdded = obj.optLong("dateAdded", 0L),
+                        dateModified = obj.optLong("dateModified", 0L),
+                        sizeBytes = obj.optLong("sizeBytes", 0L),
+                        year = obj.optInt("year", 0),
+                        lyrics = emptyList()
+                    )
+                )
+            }
+            list
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    fun setCachedSongs(songs: List<Song>) {
+        try {
+            val cacheFile = File(context.filesDir, "sonora_songs_cache.json")
+            val arr = JSONArray()
+            songs.forEach { song ->
+                val obj = JSONObject()
+                obj.put("id", song.id)
+                obj.put("title", song.title)
+                obj.put("artist", song.artist)
+                obj.put("album", song.album)
+                obj.put("durationMs", song.durationMs)
+                obj.put("filePath", song.filePath)
+                obj.put("dateAdded", song.dateAdded)
+                obj.put("dateModified", song.dateModified)
+                obj.put("sizeBytes", song.sizeBytes)
+                obj.put("year", song.year)
+                val albumId = song.coverUri?.lastPathSegment?.toLongOrNull() ?: 0L
+                obj.put("albumId", albumId)
+                arr.put(obj)
+            }
+            cacheFile.writeText(arr.toString())
+        } catch (_: Exception) {}
     }
 }

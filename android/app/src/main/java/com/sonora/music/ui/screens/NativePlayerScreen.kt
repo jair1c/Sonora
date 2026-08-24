@@ -1,9 +1,12 @@
 package com.sonora.music.ui.screens
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -114,6 +117,16 @@ fun NativePlayerScreen(
             animation = tween(durationMillis = 20000, easing = LinearEasing)
         ),
         label = "rotation"
+    )
+
+    // Smooth organic spring scaling for the entire flower artwork upon Play/Pause
+    val flowerScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1f else 0.88f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "flower_scale"
     )
 
     Box(
@@ -255,11 +268,11 @@ fun NativePlayerScreen(
                     }
                 )
 
-                // 8-Petal Vinyl Image
+                // 8-Petal Vinyl Image (Smooth organic scale for the entire flower and artwork)
                 Box(
                     modifier = Modifier
                         .size(240.dp)
-                        .scale(if (isPlaying) 1f else 0.85f)
+                        .scale(flowerScale)
                         .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.08f))
                         .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                         .clickable { audioPlayer.togglePlay() },

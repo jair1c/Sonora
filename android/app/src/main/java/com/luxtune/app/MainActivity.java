@@ -317,7 +317,9 @@ public class MainActivity extends BridgeActivity {
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.SIZE,
                 MediaStore.Audio.Media.ALBUM_ID,
-                MediaStore.Audio.Media.YEAR
+                MediaStore.Audio.Media.YEAR,
+                MediaStore.Audio.Media.DATE_ADDED,
+                MediaStore.Audio.Media.DATE_MODIFIED
             };
 
             String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0 AND " + MediaStore.Audio.Media.DURATION + " >= 20000";
@@ -345,6 +347,8 @@ public class MainActivity extends BridgeActivity {
                     int sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE);
                     int albumIdCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
                     int yearCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR);
+                    int dateAddedCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED);
+                    int dateModifiedCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_MODIFIED);
 
                     do {
                         long id = cursor.getLong(idCol);
@@ -356,6 +360,9 @@ public class MainActivity extends BridgeActivity {
                         long size = cursor.getLong(sizeCol);
                         long albumId = cursor.getLong(albumIdCol);
                         int year = cursor.getInt(yearCol);
+                        long dateAdded = cursor.getLong(dateAddedCol);
+                        long dateModified = cursor.getLong(dateModifiedCol);
+
 
                         // Extract and cache real embedded album cover art
                         String coverUrl = "";
@@ -430,9 +437,12 @@ public class MainActivity extends BridgeActivity {
                         songObj.put("coverUrl", coverUrl);
                         songObj.put("size", size);
                         songObj.put("year", year);
+                        songObj.put("dateAdded", dateAdded * 1000L);
+                        songObj.put("dateModified", dateModified * 1000L);
                         songObj.put("lyrics", lrcContent);
 
                         songsArray.put(songObj);
+
                     } while (cursor.moveToNext());
                 }
             } catch (Exception e) {

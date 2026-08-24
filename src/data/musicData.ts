@@ -20,7 +20,10 @@ export interface Track {
   isLiked?: boolean;
   playCount?: number;
   lastPlayed?: number;
+  dateAdded?: number;
+  dateModified?: number;
 }
+
 
 export interface Artist {
   id: string;

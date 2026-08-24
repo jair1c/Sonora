@@ -140,7 +140,11 @@ export const ArtistSelectScreen: React.FC = () => {
       case 'artist':
         return list.sort((a, b) => a.artist.localeCompare(b.artist));
       case 'recent':
-        return list.sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0));
+        return list.sort((a, b) => {
+          const timeA = a.dateAdded || a.dateModified || a.lastPlayed || 0;
+          const timeB = b.dateAdded || b.dateModified || b.lastPlayed || 0;
+          return timeB - timeA;
+        });
       case 'duration':
         return list.sort((a, b) => (b.duration || 0) - (a.duration || 0));
       default:
@@ -199,15 +203,20 @@ export const ArtistSelectScreen: React.FC = () => {
   // Smart Playlists Data
   const favoriteTracks = useMemo(() => tracks.filter(t => t.isLiked), [tracks]);
   const top25Tracks = useMemo(() => [...tracks].sort((a, b) => (b.playCount || 0) - (a.playCount || 0)).slice(0, 25), [tracks]);
-  const recentTracks = useMemo(() => [...tracks].sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0)).slice(0, 30), [tracks]);
+  const recentTracks = useMemo(() => [...tracks].sort((a, b) => {
+    const timeA = a.dateAdded || a.dateModified || a.lastPlayed || 0;
+    const timeB = b.dateAdded || b.dateModified || b.lastPlayed || 0;
+    return timeB - timeA;
+  }).slice(0, 30), [tracks]);
 
   const sortLabelMap = {
     'az': 'Nombre (A → Z)',
     'za': 'Nombre (Z → A)',
     'artist': 'Artista (A → Z)',
-    'recent': 'Más Recientes',
+    'recent': 'Fecha Más Reciente',
     'duration': 'Mayor Duración'
   };
+
 
   return (
     <div className="relative w-full h-full min-h-screen bg-[#f5f2ea] dark:bg-[#0f0e0d] flex flex-col justify-between select-none text-[#121212] dark:text-[#f5f2ea] overflow-x-hidden pt-4 pb-20 transition-colors duration-300">
@@ -738,7 +747,8 @@ export const ArtistSelectScreen: React.FC = () => {
                 { id: 'az', label: 'Nombre (A → Z)' },
                 { id: 'za', label: 'Nombre (Z → A)' },
                 { id: 'artist', label: 'Artista (A → Z)' },
-                { id: 'recent', label: 'Más Recientes' },
+                { id: 'recent', label: 'Fecha de Adición (Más Recientes)' },
+
                 { id: 'duration', label: 'Mayor Duración' }
               ].map((opt) => (
                 <button

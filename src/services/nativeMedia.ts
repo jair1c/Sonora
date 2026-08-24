@@ -37,9 +37,12 @@ export async function loadDeviceAudioFiles(): Promise<Track[]> {
         filePath: s.filePath,
         size: s.size,
         year: s.year,
+        dateAdded: s.dateAdded,
+        dateModified: s.dateModified,
         isLiked: false,
         lyrics: parseLrcString(s.lyrics, s.duration || 180)
       }));
+
 
       // Cache locally in localStorage for fast immediate reload
       localStorage.setItem('luxTune_local_songs', JSON.stringify(mappedSongs));

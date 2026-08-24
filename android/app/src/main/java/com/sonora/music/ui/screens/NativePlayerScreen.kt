@@ -9,7 +9,9 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.sonora.music.ui.theme.SonoraGold
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -321,122 +323,58 @@ fun NativePlayerScreen(
                 )
             }
 
-            // 5. Modern Playback Controls Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Repeat Button with Active Indicator
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    IconButton(
-                        onClick = { audioPlayer.toggleRepeat() },
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(if (repeatMode != Player.REPEAT_MODE_OFF) (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)) else Color.Transparent)
-                    ) {
-                        Icon(
-                            imageVector = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
-                            contentDescription = "Repetir",
-                            tint = if (repeatMode != Player.REPEAT_MODE_OFF) textColor else subtextColor,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    if (repeatMode != Player.REPEAT_MODE_OFF) {
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(textColor)
-                        )
-                    }
-                }
-
-                // Skip Previous Button (Modern Circle)
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                        .clickable { audioPlayer.prevTrack() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.SkipPrevious,
-                        contentDescription = "Anterior",
-                        tint = textColor,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-
-                // Center Play/Pause Floating Action Circle (72dp Luxury)
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .clip(CircleShape)
-                        .background(textColor)
-                        .clickable { audioPlayer.togglePlay() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                        tint = bgColor,
-                        modifier = Modifier.size(38.dp)
-                    )
-                }
-
-                // Skip Next Button (Modern Circle)
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                        .clickable { audioPlayer.nextTrack() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.SkipNext,
-                        contentDescription = "Siguiente",
-                        tint = textColor,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-
-                // Shuffle Button with Active Indicator
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    IconButton(
-                        onClick = { audioPlayer.toggleShuffle() },
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(if (isShuffle) (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)) else Color.Transparent)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Shuffle,
-                            contentDescription = "Aleatorio",
-                            tint = if (isShuffle) textColor else subtextColor,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    if (isShuffle) {
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(textColor)
-                        )
-                    }
-                }
+            // 5. Dynamic Luxury Playback Controls (5 Estilos Seleccionables)
+            when (sonoraPrefs.getPlayerControlsStyle()) {
+                "circles" -> PlaybackControlsCircles(
+                    isPlaying = isPlaying,
+                    repeatMode = repeatMode,
+                    isShuffle = isShuffle,
+                    isDark = isDark,
+                    textColor = textColor,
+                    subtextColor = subtextColor,
+                    bgColor = bgColor,
+                    audioPlayer = audioPlayer
+                )
+                "organic" -> PlaybackControlsOrganic(
+                    isPlaying = isPlaying,
+                    repeatMode = repeatMode,
+                    isShuffle = isShuffle,
+                    isDark = isDark,
+                    textColor = textColor,
+                    subtextColor = subtextColor,
+                    bgColor = bgColor,
+                    audioPlayer = audioPlayer
+                )
+                "squircle" -> PlaybackControlsSquircle(
+                    isPlaying = isPlaying,
+                    repeatMode = repeatMode,
+                    isShuffle = isShuffle,
+                    isDark = isDark,
+                    textColor = textColor,
+                    subtextColor = subtextColor,
+                    bgColor = bgColor,
+                    audioPlayer = audioPlayer
+                )
+                "waveform" -> PlaybackControlsWaveform(
+                    isPlaying = isPlaying,
+                    repeatMode = repeatMode,
+                    isShuffle = isShuffle,
+                    isDark = isDark,
+                    textColor = textColor,
+                    subtextColor = subtextColor,
+                    bgColor = bgColor,
+                    audioPlayer = audioPlayer
+                )
+                else -> PlaybackControlsDock(
+                    isPlaying = isPlaying,
+                    repeatMode = repeatMode,
+                    isShuffle = isShuffle,
+                    isDark = isDark,
+                    textColor = textColor,
+                    subtextColor = subtextColor,
+                    bgColor = bgColor,
+                    audioPlayer = audioPlayer
+                )
             }
 
             // 6. Dynamic Realtime Lyrics Preview Pill
@@ -578,6 +516,543 @@ fun NativePlayerScreen(
                 audioPlayer = audioPlayer,
                 isDark = isDark,
                 onDismiss = { showQueueSheet = false }
+            )
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// 5 LUXURY PLAYBACK CONTROLS STYLES
+// -------------------------------------------------------------
+
+// 1. Cápsula Flotante Studio (Glassmorphic Floating Dock)
+@Composable
+private fun PlaybackControlsDock(
+    isPlaying: Boolean,
+    repeatMode: Int,
+    isShuffle: Boolean,
+    isDark: Boolean,
+    textColor: Color,
+    subtextColor: Color,
+    bgColor: Color,
+    audioPlayer: com.sonora.music.service.SonoraAudioPlayer
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(36.dp))
+            .background(if (isDark) Color(0xFF161513) else Color(0xFFEAE5DA))
+            .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(36.dp))
+            .padding(horizontal = 14.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = { audioPlayer.toggleRepeat() },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
+                    contentDescription = "Repetir",
+                    tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else subtextColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            IconButton(
+                onClick = { audioPlayer.prevTrack() },
+                modifier = Modifier.size(44.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SkipPrevious,
+                    contentDescription = "Anterior",
+                    tint = textColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(64.dp))
+
+            IconButton(
+                onClick = { audioPlayer.nextTrack() },
+                modifier = Modifier.size(44.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SkipNext,
+                    contentDescription = "Siguiente",
+                    tint = textColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
+            IconButton(
+                onClick = { audioPlayer.toggleShuffle() },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Shuffle,
+                    contentDescription = "Aleatorio",
+                    tint = if (isShuffle) SonoraGold else subtextColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .size(68.dp)
+                .clip(CircleShape)
+                .background(textColor)
+                .clickable { audioPlayer.togglePlay() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                tint = bgColor,
+                modifier = Modifier.size(36.dp)
+            )
+        }
+    }
+}
+
+// 2. Pura Geometría Suiza (Swiss Luxury Circles)
+@Composable
+private fun PlaybackControlsCircles(
+    isPlaying: Boolean,
+    repeatMode: Int,
+    isShuffle: Boolean,
+    isDark: Boolean,
+    textColor: Color,
+    subtextColor: Color,
+    bgColor: Color,
+    audioPlayer: com.sonora.music.service.SonoraAudioPlayer
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(
+                    if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) 2.dp else 1.dp,
+                    if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)),
+                    CircleShape
+                )
+                .clickable { audioPlayer.toggleRepeat() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
+                contentDescription = "Repetir",
+                tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else subtextColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(CircleShape)
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
+                .clickable { audioPlayer.prevTrack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SkipPrevious,
+                contentDescription = "Anterior",
+                tint = textColor,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .clip(CircleShape)
+                .background(textColor)
+                .clickable { audioPlayer.togglePlay() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                tint = bgColor,
+                modifier = Modifier.size(40.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(CircleShape)
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
+                .clickable { audioPlayer.nextTrack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SkipNext,
+                contentDescription = "Siguiente",
+                tint = textColor,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(
+                    if (isShuffle) 2.dp else 1.dp,
+                    if (isShuffle) SonoraGold else (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)),
+                    CircleShape
+                )
+                .clickable { audioPlayer.toggleShuffle() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Shuffle,
+                contentDescription = "Aleatorio",
+                tint = if (isShuffle) SonoraGold else subtextColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+// 3. Orgánico Esculpido (Firma Sonora - Flor y Pétalos)
+@Composable
+private fun PlaybackControlsOrganic(
+    isPlaying: Boolean,
+    repeatMode: Int,
+    isShuffle: Boolean,
+    isDark: Boolean,
+    textColor: Color,
+    subtextColor: Color,
+    bgColor: Color,
+    audioPlayer: com.sonora.music.service.SonoraAudioPlayer
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { audioPlayer.toggleRepeat() },
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)) else Color.Transparent)
+        ) {
+            Icon(
+                imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
+                contentDescription = "Repetir",
+                tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else subtextColor,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(width = 58.dp, height = 48.dp)
+                .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = 8.dp, bottomEnd = 8.dp))
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = 8.dp, bottomEnd = 8.dp))
+                .clickable { audioPlayer.prevTrack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SkipPrevious,
+                contentDescription = "Anterior",
+                tint = textColor,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(74.dp)
+                .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.12f))
+                .background(textColor)
+                .clickable { audioPlayer.togglePlay() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                tint = bgColor,
+                modifier = Modifier.size(38.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(width = 58.dp, height = 48.dp)
+                .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 24.dp, bottomEnd = 24.dp))
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 24.dp, bottomEnd = 24.dp))
+                .clickable { audioPlayer.nextTrack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SkipNext,
+                contentDescription = "Siguiente",
+                tint = textColor,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        IconButton(
+            onClick = { audioPlayer.toggleShuffle() },
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(if (isShuffle) (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)) else Color.Transparent)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Shuffle,
+                contentDescription = "Aleatorio",
+                tint = if (isShuffle) SonoraGold else subtextColor,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+    }
+}
+
+// 4. Audiófilo Hi-Fi Streamline (Modern Squircle)
+@Composable
+private fun PlaybackControlsSquircle(
+    isPlaying: Boolean,
+    repeatMode: Int,
+    isShuffle: Boolean,
+    isDark: Boolean,
+    textColor: Color,
+    subtextColor: Color,
+    bgColor: Color,
+    audioPlayer: com.sonora.music.service.SonoraAudioPlayer
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else (if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA)))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(12.dp))
+                .clickable { audioPlayer.toggleRepeat() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
+                contentDescription = "Repetir",
+                tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) Color.Black else subtextColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(16.dp))
+                .clickable { audioPlayer.prevTrack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SkipPrevious,
+                contentDescription = "Anterior",
+                tint = textColor,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(68.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(textColor)
+                .clickable { audioPlayer.togglePlay() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                tint = bgColor,
+                modifier = Modifier.size(38.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(16.dp))
+                .clickable { audioPlayer.nextTrack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SkipNext,
+                contentDescription = "Siguiente",
+                tint = textColor,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (isShuffle) SonoraGold else (if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA)))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(12.dp))
+                .clickable { audioPlayer.toggleShuffle() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Shuffle,
+                contentDescription = "Aleatorio",
+                tint = if (isShuffle) Color.Black else subtextColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+// 5. Dynamic Waveform Action Pill (Píldora Interactiva)
+@Composable
+private fun PlaybackControlsWaveform(
+    isPlaying: Boolean,
+    repeatMode: Int,
+    isShuffle: Boolean,
+    isDark: Boolean,
+    textColor: Color,
+    subtextColor: Color,
+    bgColor: Color,
+    audioPlayer: com.sonora.music.service.SonoraAudioPlayer
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { audioPlayer.toggleRepeat() },
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
+                contentDescription = "Repetir",
+                tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else subtextColor,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
+                .clickable { audioPlayer.prevTrack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SkipPrevious,
+                contentDescription = "Anterior",
+                tint = textColor,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .height(58.dp)
+                .width(126.dp)
+                .clip(RoundedCornerShape(29.dp))
+                .background(textColor)
+                .clickable { audioPlayer.togglePlay() }
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                    tint = bgColor,
+                    modifier = Modifier.size(30.dp)
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.height(24.dp)
+                ) {
+                    val barHeights = if (isPlaying) listOf(16.dp, 22.dp, 12.dp, 19.dp) else listOf(4.dp, 4.dp, 4.dp, 4.dp)
+                    barHeights.forEach { h ->
+                        Box(
+                            modifier = Modifier
+                                .width(3.5.dp)
+                                .height(h)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(bgColor)
+                        )
+                    }
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
+                .clickable { audioPlayer.nextTrack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SkipNext,
+                contentDescription = "Siguiente",
+                tint = textColor,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+
+        IconButton(
+            onClick = { audioPlayer.toggleShuffle() },
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Shuffle,
+                contentDescription = "Aleatorio",
+                tint = if (isShuffle) SonoraGold else subtextColor,
+                modifier = Modifier.size(22.dp)
             )
         }
     }

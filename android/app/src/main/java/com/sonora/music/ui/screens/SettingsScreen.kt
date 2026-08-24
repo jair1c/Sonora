@@ -59,6 +59,7 @@ fun SettingsScreen(
     var playbackSpeed by remember { mutableFloatStateOf(sonoraPrefs.getPlaybackSpeed()) }
     var activeNavTabs by remember { mutableStateOf(sonoraPrefs.getNavTabs()) }
     var navLabelMode by remember { mutableStateOf(sonoraPrefs.getNavLabelMode()) }
+    var playerControlsStyle by remember { mutableStateOf(sonoraPrefs.getPlayerControlsStyle()) }
 
     val totalPlayedSongs = songs.count { it.playCount > 0 }
     val totalMinutes = songs.sumOf { (it.playCount * (it.durationMs / 1000L / 60L)).toInt() }
@@ -293,7 +294,105 @@ fun SettingsScreen(
             }
         }
 
-        // 4. REDONDEZ DE LOS PÉTALOS
+        // 4. ESTILO DE CONTROLES DE REPRODUCCIÓN (5 Opciones de Lujo)
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayCircle,
+                            contentDescription = null,
+                            tint = textPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "ESTILO DE BOTONES DE REPRODUCCIÓN",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            color = textPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Elige la estética y disposición de los botones en la pantalla de reproducción completa.",
+                    fontSize = 11.sp,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        Triple("dock", "Cápsula Flotante Studio", "Barra horizontal continua con efecto dock y botón Play 72dp"),
+                        Triple("circles", "Geometría Suiza (Círculos)", "Esferas independientes de alta relojería con anillos de luz"),
+                        Triple("organic", "Orgánico Esculpido (Flor)", "Botón central con 8 pétalos florales y gotas laterales"),
+                        Triple("squircle", "Audiófilo Hi-Fi (Squircle)", "Cuadrado redondeado geométrico y líneas minimalistas"),
+                        Triple("waveform", "Dynamic Action Pill (Mini-Onda)", "Píldora interactiva con ecualizador animado en vivo")
+                    ).forEach { (id, title, subtitle) ->
+                        val isSelected = playerControlsStyle == id
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (isSelected) (if (isDark) Color(0xFF262420) else Color(0xFFDFD9CE)) else subCardBg)
+                                .border(1.dp, if (isSelected) (if (isDark) Color.White else Color.Black) else borderCol, RoundedCornerShape(14.dp))
+                                .clickable {
+                                    playerControlsStyle = id
+                                    sonoraPrefs.setPlayerControlsStyle(id)
+                                }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = title,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = textPrimary
+                                )
+                                Text(
+                                    text = subtitle,
+                                    fontSize = 11.sp,
+                                    color = textSecondary
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = {
+                                    playerControlsStyle = id
+                                    sonoraPrefs.setPlayerControlsStyle(id)
+                                },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = if (isDark) Color.White else Color.Black,
+                                    unselectedColor = borderCol
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. REDONDEZ DE LOS PÉTALOS
         item {
             Column(
                 modifier = Modifier

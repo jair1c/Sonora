@@ -29,9 +29,13 @@ class SonoraPreferences(context: Context) {
         private const val KEY_PLAYBACK_SPEED = "sonora_playback_speed"
         private const val KEY_NAV_TABS = "sonora_nav_tabs_json"
         private const val KEY_NAV_LABEL_MODE = "sonora_nav_label_mode" // "active_only", "always", "never"
+        private const val KEY_PLAYER_CONTROLS_STYLE = "sonora_player_controls_style" // "dock", "circles", "organic", "squircle", "waveform"
     }
 
     // --- TOOLS & PREFERENCES ---
+    fun getPlayerControlsStyle(): String = prefs.getString(KEY_PLAYER_CONTROLS_STYLE, "dock") ?: "dock"
+    fun setPlayerControlsStyle(style: String) = prefs.edit().putString(KEY_PLAYER_CONTROLS_STYLE, style).apply()
+
     fun getNavLabelMode(): String = prefs.getString(KEY_NAV_LABEL_MODE, "active_only") ?: "active_only"
     fun setNavLabelMode(mode: String) = prefs.edit().putString(KEY_NAV_LABEL_MODE, mode).apply()
 

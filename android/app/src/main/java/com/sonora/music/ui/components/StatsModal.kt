@@ -9,10 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,9 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import com.sonora.music.data.local.SonoraPreferences
 import com.sonora.music.data.model.Song
 
 @Composable
@@ -33,9 +33,21 @@ fun StatsModal(
     onClose: () -> Unit,
     songs: List<Song>,
     isDark: Boolean,
+    sonoraPrefs: SonoraPreferences? = null,
     onPlaySong: (Song) -> Unit
 ) {
     if (!isOpen) return
+
+    val context = LocalContext.current
+    val prefs = remember(sonoraPrefs) { sonoraPrefs ?: SonoraPreferences(context) }
+    val playCounts = remember(songs, isOpen) { prefs.getPlayCounts() }
+
+    val songsWithPlays: List<Song> = remember(songs, playCounts) {
+        songs.map { song ->
+            val count = playCounts[song.id] ?: song.playCount
+            if (count != song.playCount) song.copy(playCount = count) else song
+        }
+    }
 
     val bgCard = if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA)
     val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
@@ -43,12 +55,13 @@ fun StatsModal(
     val textSecondary = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
     val subCardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFEAE5DA)
 
-    // Calculate stats
-    val totalPlayedSongs = songs.count { it.playCount > 0 }
-    val totalMinutes = songs.sumOf { (it.playCount * (it.durationMs / 1000L / 60L)).toInt() }
-    val hours = totalMinutes / 60
-    val minutes = totalMinutes % 60
-    val topTracks = songs.filter { it.playCount > 0 }.sortedByDescending { it.playCount }.take(3)
+    // Calculate stats accurately
+    val totalPlayedSongs: Int = songsWithPlays.count { it.playCount > 0 }
+    val calculatedMinutes: Int = songsWithPlays.sumOf { (it.playCount * (it.durationMs / 1000L / 60L)).toInt() }
+    val totalMinutes: Int = calculatedMinutes.coerceAtLeast(prefs.getTotalListeningMinutes())
+    val hours: Int = totalMinutes / 60
+    val minutes: Int = totalMinutes % 60
+    val topTracks: List<Song> = songsWithPlays.filter { it.playCount > 0 }.sortedByDescending { it.playCount }.take(5)
 
     Dialog(
         onDismissRequest = onClose,
@@ -193,9 +206,9 @@ fun StatsModal(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Top 3 Most Played Tracks
+                // Top 5 Most Played Tracks
                 Text(
-                    text = "TOP 3 MÁS ESCUCHADAS",
+                    text = "TOP 5 MÁS ESCUCHADAS",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = textSecondary

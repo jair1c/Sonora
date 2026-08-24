@@ -1,38 +1,22 @@
 package com.sonora.music.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,24 +24,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.sonora.music.data.local.SonoraPreferences
 import com.sonora.music.service.SonoraAudioPlayer
-import com.sonora.music.ui.theme.SonoraObsidianCard
-import com.sonora.music.ui.theme.SonoraObsidianDark
-import com.sonora.music.ui.theme.SonoraPaperBeige
-import com.sonora.music.ui.theme.SonoraPaperCard
 
 @Composable
-fun EqualizerScreen(
+fun EqualizerModal(
+    isOpen: Boolean,
+    onClose: () -> Unit,
     audioPlayer: SonoraAudioPlayer,
     sonoraPrefs: SonoraPreferences,
-    isDark: Boolean,
-    onBack: () -> Unit
+    isDark: Boolean
 ) {
-    val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
-    val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
-    val textColor = if (isDark) Color.White else Color(0xFF121212)
-    val subtextColor = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
+    if (!isOpen) return
+
+    val bgCard = if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA)
+    val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
+    val textPrimary = if (isDark) Color(0xFFF5F2EA) else Color(0xFF121212)
+    val textSecondary = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
+    val subCardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFEAE5DA)
 
     val eq = audioPlayer.equalizerManager
     val presets = remember { eq.getPresets() }
@@ -74,152 +60,228 @@ fun EqualizerScreen(
         }
     }
 
-    var bassBoostLevel by remember { mutableStateOf(sonoraPrefs.getBassBoost().toFloat()) }
+    var bassBoostLevel by remember { mutableFloatStateOf(sonoraPrefs.getBassBoost().toFloat()) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(bgColor)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Regresar", tint = textColor)
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "ECUALIZADOR DE AUDIO",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp,
-                color = textColor
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Presets Chips
-        Text(
-            text = "PRESETS",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 1.sp,
-            color = subtextColor
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            itemsIndexed(presets) { idx, presetName ->
-                val isSelected = selectedPreset == idx
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) textColor else cardBg)
-                        .clickable {
-                            selectedPreset = idx
-                            sonoraPrefs.setEqualizerPreset(idx)
-                            eq.usePreset(idx.toShort())
-                            for (i in 0 until bandCount) {
-                                bandLevels[i] = eq.getBandLevel(i.toShort()).toFloat()
-                            }
-                        }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = presetName,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isSelected) bgColor else textColor
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 5-Band Sliders Card
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(cardBg)
-                .padding(16.dp)
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.65f))
+                .clickable(onClick = onClose),
+            contentAlignment = Alignment.Center
         ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.GraphicEq, contentDescription = null, tint = textColor, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("BANDAS DE FRECUENCIA", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor)
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-
-                for (i in 0 until bandCount) {
-                    val freqHz = eq.getBandFrequency(i.toShort())
-                    val freqLabel = if (freqHz >= 1000) "${freqHz / 1000} kHz" else "$freqHz Hz"
-                    val currentVal = bandLevels.getOrNull(i) ?: 0f
-
-                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .fillMaxHeight(0.85f)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(bgCard)
+                    .border(1.dp, borderCol, RoundedCornerShape(28.dp))
+                    .clickable(enabled = false) {}
+                    .padding(22.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isDark) Color.White else Color(0xFF121212)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(freqLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = subtextColor)
-                            Text("${(currentVal / 100).toInt()} dB", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = textColor)
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = "Ecualizador",
+                                tint = if (isDark) Color.Black else Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
+                        Column {
+                            Text(
+                                text = "Ecualizador de Audio",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textPrimary
+                            )
+                            Text(
+                                text = "Calibra el sonido a tu gusto",
+                                fontSize = 11.sp,
+                                color = textSecondary
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .border(1.dp, borderCol, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = textPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Presets
+                    Column {
+                        Text(
+                            text = "PRESETS",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            color = textSecondary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            itemsIndexed(presets) { idx, presetName ->
+                                val isSelected = selectedPreset == idx
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (isSelected) (if (isDark) Color.White else Color(0xFF121212)) else subCardBg)
+                                        .border(1.dp, if (isSelected) Color.Transparent else borderCol, RoundedCornerShape(16.dp))
+                                        .clickable {
+                                            selectedPreset = idx
+                                            sonoraPrefs.setEqualizerPreset(idx)
+                                            eq.usePreset(idx.toShort())
+                                            for (i in 0 until bandCount) {
+                                                bandLevels[i] = eq.getBandLevel(i.toShort()).toFloat()
+                                            }
+                                        }
+                                        .padding(horizontal = 14.dp, vertical = 7.dp)
+                                ) {
+                                    Text(
+                                        text = presetName,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) (if (isDark) Color.Black else Color.White) else textPrimary
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // 5-Band Sliders Card
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(subCardBg)
+                            .border(1.dp, borderCol, RoundedCornerShape(18.dp))
+                            .padding(14.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.GraphicEq, contentDescription = null, tint = textPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("BANDAS DE FRECUENCIA", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        for (i in 0 until bandCount) {
+                            val freqHz = eq.getBandFrequency(i.toShort())
+                            val freqLabel = if (freqHz >= 1000) "${freqHz / 1000} kHz" else "$freqHz Hz"
+                            val currentVal = bandLevels.getOrNull(i) ?: 0f
+
+                            Column(modifier = Modifier.padding(vertical = 2.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(freqLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textSecondary)
+                                    Text("${(currentVal / 100).toInt()} dB", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = textPrimary)
+                                }
+                                Slider(
+                                    value = currentVal,
+                                    onValueChange = { newVal ->
+                                        bandLevels[i] = newVal
+                                        eq.setBandLevel(i.toShort(), newVal.toInt().toShort())
+                                    },
+                                    valueRange = minRange.toFloat()..maxRange.toFloat(),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = textPrimary,
+                                        activeTrackColor = textPrimary,
+                                        inactiveTrackColor = borderCol
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    // Bass Boost Card
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(subCardBg)
+                            .border(1.dp, borderCol, RoundedCornerShape(18.dp))
+                            .padding(14.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.VolumeUp, contentDescription = null, tint = textPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("BASS BOOST (REFUERZO DE GRAVES)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
                         Slider(
-                            value = currentVal,
+                            value = bassBoostLevel,
                             onValueChange = { newVal ->
-                                bandLevels[i] = newVal
-                                eq.setBandLevel(i.toShort(), newVal.toInt().toShort())
+                                bassBoostLevel = newVal
+                                sonoraPrefs.setBassBoost(newVal.toInt())
+                                eq.setBassBoost(newVal.toInt().toShort())
                             },
-                            valueRange = minRange.toFloat()..maxRange.toFloat(),
+                            valueRange = 0f..1000f,
                             colors = SliderDefaults.colors(
-                                thumbColor = textColor,
-                                activeTrackColor = textColor,
-                                inactiveTrackColor = if (isDark) Color(0xFF2C2A26) else Color(0xFFD5CFC2)
+                                thumbColor = textPrimary,
+                                activeTrackColor = textPrimary,
+                                inactiveTrackColor = borderCol
                             )
                         )
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Bass Boost Card
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(cardBg)
-                .padding(16.dp)
-        ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.VolumeUp, contentDescription = null, tint = textColor, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("BASS BOOST (REFUERZO DE GRAVES)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor)
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Slider(
-                    value = bassBoostLevel,
-                    onValueChange = { newVal ->
-                        bassBoostLevel = newVal
-                        sonoraPrefs.setBassBoost(newVal.toInt())
-                        eq.setBassBoost(newVal.toInt().toShort())
-                    },
-                    valueRange = 0f..1000f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = textColor,
-                        activeTrackColor = textColor,
-                        inactiveTrackColor = if (isDark) Color(0xFF2C2A26) else Color(0xFFD5CFC2)
-                    )
-                )
-            }
-        }
     }
 }
+
+// Backward-compatible alias
+@Composable
+fun EqualizerScreen(
+    audioPlayer: SonoraAudioPlayer,
+    sonoraPrefs: SonoraPreferences,
+    isDark: Boolean,
+    onBack: () -> Unit
+) {
+    EqualizerModal(
+        isOpen = true,
+        onClose = onBack,
+        audioPlayer = audioPlayer,
+        sonoraPrefs = sonoraPrefs,
+        isDark = isDark
+    )
+}
+

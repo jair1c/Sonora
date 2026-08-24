@@ -20,6 +20,7 @@ class SonoraPreferences(private val context: Context) {
         private const val KEY_LIKED_IDS = "sonora_liked_song_ids"
         private const val KEY_RECENT_IDS = "sonora_recent_song_ids"
         private const val KEY_PLAY_COUNTS = "sonora_play_counts_json"
+        private const val KEY_TOTAL_LISTENING_SECONDS = "sonora_total_listening_seconds"
         private const val KEY_BLACKLISTED_FOLDERS = "sonora_blacklisted_folders"
         private const val KEY_CUSTOM_PLAYLISTS = "sonora_custom_playlists_json"
         private const val KEY_LAST_SONG_ID = "sonora_last_song_id"
@@ -94,13 +95,20 @@ class SonoraPreferences(private val context: Context) {
     }
 
     // --- PLAY COUNTS (Top 25) ---
-    fun recordPlay(songId: Long) {
+    fun recordPlay(songId: Long, durationMs: Long = 0L) {
         // Update Play Count
         val countsJson = prefs.getString(KEY_PLAY_COUNTS, "{}") ?: "{}"
         val jsonObj = try { JSONObject(countsJson) } catch (_: Exception) { JSONObject() }
         val currentCount = jsonObj.optInt(songId.toString(), 0)
         jsonObj.put(songId.toString(), currentCount + 1)
-        prefs.edit().putString(KEY_PLAY_COUNTS, jsonObj.toString()).apply()
+
+        // Update Listening Duration
+        val addedSec = if (durationMs > 0) (durationMs / 1000L).coerceAtLeast(30L) else 180L
+        val currentTotalSec = prefs.getLong(KEY_TOTAL_LISTENING_SECONDS, 0L)
+        prefs.edit()
+            .putString(KEY_PLAY_COUNTS, jsonObj.toString())
+            .putLong(KEY_TOTAL_LISTENING_SECONDS, currentTotalSec + addedSec)
+            .apply()
 
         // Update Recents
         val recentList = getRecentSongIds().toMutableList()
@@ -112,6 +120,11 @@ class SonoraPreferences(private val context: Context) {
         val arr = JSONArray()
         recentList.forEach { arr.put(it) }
         prefs.edit().putString(KEY_RECENT_IDS, arr.toString()).apply()
+    }
+
+    fun getTotalListeningMinutes(): Int {
+        val totalSec = prefs.getLong(KEY_TOTAL_LISTENING_SECONDS, 0L)
+        return (totalSec / 60L).toInt()
     }
 
     fun getPlayCounts(): Map<Long, Int> {

@@ -71,6 +71,7 @@ class SonoraAudioPlayer(private val context: Context) {
     val sleepTimerSecondsLeft = _sleepTimerSecondsLeft.asStateFlow()
 
     private val mediaRepo = com.sonora.music.data.repository.MediaStoreRepository(context)
+    private val sonoraPrefs = com.sonora.music.data.local.SonoraPreferences(context)
 
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
@@ -112,6 +113,7 @@ class SonoraAudioPlayer(private val context: Context) {
             if (currentIdx in list.indices) {
                 val nextSong = list[currentIdx]
                 _currentSong.value = nextSong
+                sonoraPrefs.recordPlay(nextSong.id, nextSong.durationMs)
                 scope.launch(Dispatchers.IO) {
                     val lyrics = mediaRepo.getLyricsForSong(nextSong)
                     if (lyrics.isNotEmpty() && _currentSong.value?.id == nextSong.id) {
@@ -156,6 +158,7 @@ class SonoraAudioPlayer(private val context: Context) {
         player.clearMediaItems()
         player.setMediaItems(mediaItems, targetIndex, 0L)
         _currentSong.value = song
+        sonoraPrefs.recordPlay(song.id, song.durationMs)
         scope.launch(Dispatchers.IO) {
             val lyrics = mediaRepo.getLyricsForSong(song)
             if (lyrics.isNotEmpty() && _currentSong.value?.id == song.id) {

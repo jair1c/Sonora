@@ -68,9 +68,10 @@ fun SongOptionsModal(
     onNavigateToAlbum: (String) -> Unit,
     onBlacklistFolder: (String) -> Unit
 ) {
-    val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
-    val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
-    val textColor = if (isDark) Color.White else Color(0xFF121212)
+    val bgCard = if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA)
+    val cardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFEAE5DA)
+    val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
+    val textColor = if (isDark) Color(0xFFF5F2EA) else Color(0xFF121212)
     val subtextColor = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -80,7 +81,19 @@ fun SongOptionsModal(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = bgColor
+        containerColor = bgCard,
+        contentColor = textColor,
+        scrimColor = Color.Black.copy(alpha = 0.65f),
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 10.dp)
+                    .width(36.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(if (isDark) Color(0xFF3E3B35) else Color(0xFFC0BAB0))
+            )
+        }
     ) {
         Column(
             modifier = Modifier
@@ -128,7 +141,7 @@ fun SongOptionsModal(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = cardBg, thickness = 1.dp)
+            HorizontalDivider(color = borderCol, thickness = 1.dp)
             Spacer(modifier = Modifier.height(8.dp))
 
             if (!showPlaylistPicker && !showDetailsDialog) {

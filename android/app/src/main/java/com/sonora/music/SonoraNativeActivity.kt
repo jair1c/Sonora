@@ -36,6 +36,7 @@ import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.SongOptionsModal
 import com.sonora.music.ui.screens.AlbumDetailScreen
 import com.sonora.music.ui.screens.ArtistDetailScreen
+import com.sonora.music.ui.screens.EqualizerModal
 import com.sonora.music.ui.screens.EqualizerScreen
 import com.sonora.music.ui.screens.NativeHomeScreen
 import com.sonora.music.ui.screens.NativePlayerScreen
@@ -203,19 +204,14 @@ class SonoraNativeActivity : ComponentActivity() {
                             )
                         }
 
-                        // 5. Equalizer Screen
-                        AnimatedVisibility(
-                            visible = isEqualizerOpen,
-                            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-                            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-                        ) {
-                            EqualizerScreen(
-                                audioPlayer = audioPlayer,
-                                sonoraPrefs = sonoraPrefs,
-                                isDark = isDark,
-                                onBack = { isEqualizerOpen = false }
-                            )
-                        }
+                        // 5. Equalizer Modal
+                        EqualizerModal(
+                            isOpen = isEqualizerOpen,
+                            onClose = { isEqualizerOpen = false },
+                            audioPlayer = audioPlayer,
+                            sonoraPrefs = sonoraPrefs,
+                            isDark = isDark
+                        )
 
                         // 6. Fullscreen Luxury Player
                         AnimatedVisibility(

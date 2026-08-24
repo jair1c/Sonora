@@ -1132,6 +1132,7 @@ fun NativeHomeScreen(
         onClose = { showStatsModal = false },
         songs = allSongs,
         isDark = isDark,
+        sonoraPrefs = sonoraPrefs,
         onPlaySong = { song ->
             audioPlayer.playSong(song, allSongs)
         }

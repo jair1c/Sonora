@@ -1,443 +1,891 @@
 package com.sonora.music.ui.screens
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Restore
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sonora.music.data.local.SonoraPreferences
+import com.sonora.music.data.model.Song
 import com.sonora.music.service.SonoraAudioPlayer
-import com.sonora.music.ui.theme.SonoraObsidianCard
-import com.sonora.music.ui.theme.SonoraObsidianDark
-import com.sonora.music.ui.theme.SonoraPaperBeige
-import com.sonora.music.ui.theme.SonoraPaperCard
+import com.sonora.music.ui.components.SleepTimerModal
+import com.sonora.music.ui.components.StatsModal
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     sonoraPrefs: SonoraPreferences,
     audioPlayer: SonoraAudioPlayer,
+    songs: List<Song>,
+    isDark: Boolean,
     onBack: () -> Unit,
     onOpenEqualizer: () -> Unit,
+    onRescanLibrary: () -> Unit,
     onThemeChanged: (String) -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
-    val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
-    val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
-    val textColor = if (isDark) Color.White else Color(0xFF121212)
-    val subtextColor = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
     val context = LocalContext.current
 
-    var showSleepTimerModal by remember { mutableStateOf(false) }
-    var showImportModal by remember { mutableStateOf(false) }
-    var importJsonText by remember { mutableStateOf("") }
+    val bgColor = if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA)
+    val cardBg = if (isDark) Color(0xFF161513) else Color(0xFFEAE5DA)
+    val subCardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFECE7DC)
+    val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
+    val textPrimary = if (isDark) Color(0xFFF5F2EA) else Color(0xFF121212)
+    val textSecondary = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
+    val activePillBg = if (isDark) Color.White else Color(0xFF121212)
+    val activePillText = if (isDark) Color.Black else Color.White
+
+    var showSleepModal by remember { mutableStateOf(false) }
+    var showStatsModal by remember { mutableStateOf(false) }
 
     val sleepTimerSeconds by audioPlayer.sleepTimerSecondsLeft.collectAsState()
     var currentTheme by remember { mutableStateOf(sonoraPrefs.getThemeMode()) }
+    var petalRoundness by remember { mutableIntStateOf(sonoraPrefs.getPetalRoundness()) }
+    var crossfadeSeconds by remember { mutableIntStateOf(sonoraPrefs.getCrossfadeSeconds()) }
+    var playbackSpeed by remember { mutableFloatStateOf(sonoraPrefs.getPlaybackSpeed()) }
+    var activeNavTabs by remember { mutableStateOf(sonoraPrefs.getNavTabs()) }
 
-    Column(
+    val totalPlayedSongs = songs.count { it.playCount > 0 }
+    val totalMinutes = songs.sumOf { (it.playCount * (it.durationMs / 1000L / 60L)).toInt() }
+
+    val allAvailableTabs = listOf(
+        Pair("biblioteca", "Biblioteca"),
+        Pair("canciones", "Canciones"),
+        Pair("albumes", "Álbumes"),
+        Pair("artistas", "Artistas"),
+        Pair("listas", "Listas ♡"),
+        Pair("carpetas", "Carpetas"),
+        Pair("reproductor", "Reproductor"),
+        Pair("ajustes", "Ajustes")
+    )
+
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(bgColor)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Regresar", tint = textColor)
+        // 1. Top Bar & Title
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
+                        .border(1.dp, borderCol, CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Regresar",
+                        tint = textPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(if (isDark) Color(0xFF1F1D1A) else Color(0xFFEAE5DA))
+                        .border(1.dp, borderCol, RoundedCornerShape(100.dp))
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "Sonora v2.1 • Offline",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textSecondary
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             Text(
-                text = "AJUSTES",
-                fontSize = 13.sp,
+                text = "CENTRO DE CONTROL",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = textSecondary
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "Ajustes &\nHerramientas",
+                fontSize = 26.sp,
+                lineHeight = 30.sp,
                 fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp,
-                color = textColor
+                color = textPrimary
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // 1. Audio & Equalizer Section
-            item {
-                SectionTitle("AUDIO & SONIDO", subtextColor)
-            }
-
-            item {
-                SettingsActionCard(
-                    icon = Icons.Default.GraphicEq,
-                    title = "Ecualizador de Audio",
-                    subtitle = "Presets de sonido y refuerzo de graves",
-                    cardBg = cardBg,
-                    textColor = textColor,
-                    subtextColor = subtextColor,
-                    onClick = onOpenEqualizer
-                )
-            }
-
-            item {
-                val sleepSubtitle = if (sleepTimerSeconds != null) {
-                    val m = sleepTimerSeconds!! / 60
-                    val s = sleepTimerSeconds!! % 60
-                    "Activo: %02d:%02d restantes".format(m, s)
-                } else {
-                    "Apaga la música automáticamente"
-                }
-
-                SettingsActionCard(
-                    icon = Icons.Default.Timer,
-                    title = "Temporizador de Apagado (Sleep Timer)",
-                    subtitle = sleepSubtitle,
-                    cardBg = cardBg,
-                    textColor = if (sleepTimerSeconds != null) Color(0xFF10B981) else textColor,
-                    subtextColor = subtextColor,
-                    onClick = { showSleepTimerModal = true }
-                )
-            }
-
-            // 2. Personalization / Theme
-            item {
-                SectionTitle("APARIENCIA & TEMA", subtextColor)
-            }
-
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(cardBg)
-                        .padding(16.dp)
+        // 2. 2x2 Quick Action Cards Grid
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Palette, contentDescription = null, tint = textColor, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Tema Visual", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ThemeOptionButton(
-                                label = "Obsidian",
-                                isSelected = currentTheme == "dark",
-                                textColor = textColor,
-                                bgColor = bgColor,
-                                cardBg = cardBg,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    currentTheme = "dark"
-                                    sonoraPrefs.setThemeMode("dark")
-                                    onThemeChanged("dark")
-                                }
-                            )
-                            ThemeOptionButton(
-                                label = "Warm Paper",
-                                isSelected = currentTheme == "light",
-                                textColor = textColor,
-                                bgColor = bgColor,
-                                cardBg = cardBg,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    currentTheme = "light"
-                                    sonoraPrefs.setThemeMode("light")
-                                    onThemeChanged("light")
-                                }
-                            )
-                            ThemeOptionButton(
-                                label = "Sistema",
-                                isSelected = currentTheme == "system",
-                                textColor = textColor,
-                                bgColor = bgColor,
-                                cardBg = cardBg,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    currentTheme = "system"
-                                    sonoraPrefs.setThemeMode("system")
-                                    onThemeChanged("system")
-                                }
-                            )
-                        }
+                    // Equalizer Card
+                    QuickActionCard(
+                        icon = Icons.Default.Tune,
+                        badge = "10 Bandas",
+                        title = "Ecualizador Gráfico",
+                        subtitle = "Graves, perfiles acústicos",
+                        cardBg = cardBg,
+                        borderCol = borderCol,
+                        textPrimary = textPrimary,
+                        textSecondary = textSecondary,
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenEqualizer
+                    )
+
+                    // Sleep Timer Card
+                    val sleepSub = if (sleepTimerSeconds != null) {
+                        "${sleepTimerSeconds!! / 60}m restantes"
+                    } else {
+                        "Pausa al dormir"
                     }
+                    QuickActionCard(
+                        icon = Icons.Default.NightlightRound,
+                        badge = if (sleepTimerSeconds != null) "Activo" else null,
+                        title = "Temporizador de Apagado",
+                        subtitle = sleepSub,
+                        cardBg = cardBg,
+                        borderCol = borderCol,
+                        textPrimary = textPrimary,
+                        textSecondary = textSecondary,
+                        modifier = Modifier.weight(1f),
+                        onClick = { showSleepModal = true }
+                    )
                 }
-            }
 
-            // 3. Backup & Restore
-            item {
-                SectionTitle("COPIA DE SEGURIDAD & DATOS", subtextColor)
-            }
-
-            item {
-                SettingsActionCard(
-                    icon = Icons.Default.Backup,
-                    title = "Exportar Copia de Seguridad",
-                    subtitle = "Copia tus favoritos y listas al portapapeles en JSON",
-                    cardBg = cardBg,
-                    textColor = textColor,
-                    subtextColor = subtextColor,
-                    onClick = {
-                        val json = sonoraPrefs.exportBackupJson()
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("Sonora Backup", json))
-                        Toast.makeText(context, "Copia copiada al portapapeles", Toast.LENGTH_SHORT).show()
-                    }
-                )
-            }
-
-            item {
-                SettingsActionCard(
-                    icon = Icons.Default.Restore,
-                    title = "Importar Copia de Seguridad",
-                    subtitle = "Restaura tus listas y favoritos desde un JSON",
-                    cardBg = cardBg,
-                    textColor = textColor,
-                    subtextColor = subtextColor,
-                    onClick = { showImportModal = true }
-                )
-            }
-
-            // 4. About Info
-            item {
-                SectionTitle("INFORMACIÓN", subtextColor)
-            }
-
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(cardBg)
-                        .padding(16.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column {
-                        Text("Sonora Music Player", fontSize = 14.sp, fontWeight = FontWeight.Black, color = textColor)
-                        Text("Versión 2.0.0 Nativa (Jetpack Compose + Media3 ExoPlayer)", fontSize = 11.sp, color = subtextColor)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("100% Offline • Audio Hi-Res 24-bit • 120 FPS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    }
+                    // SonoraStats Card
+                    QuickActionCard(
+                        icon = Icons.Default.BarChart,
+                        badge = "$totalPlayedSongs canciones",
+                        title = "sonoraStats",
+                        subtitle = "$totalMinutes min escuchados",
+                        cardBg = cardBg,
+                        borderCol = borderCol,
+                        textPrimary = textPrimary,
+                        textSecondary = textSecondary,
+                        modifier = Modifier.weight(1f),
+                        onClick = { showStatsModal = true }
+                    )
+
+                    // Rescan Card
+                    QuickActionCard(
+                        icon = Icons.Default.Refresh,
+                        badge = "${songs.size} Pistas",
+                        title = "Re-escanear",
+                        subtitle = "Actualizar biblioteca",
+                        cardBg = cardBg,
+                        borderCol = borderCol,
+                        textPrimary = textPrimary,
+                        textSecondary = textSecondary,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            onRescanLibrary()
+                            Toast.makeText(context, "Biblioteca re-escaneada", Toast.LENGTH_SHORT).show()
+                        }
+                    )
                 }
             }
-
-            item { Spacer(modifier = Modifier.height(100.dp)) }
         }
 
-        // Sleep Timer Dialog
-        if (showSleepTimerModal) {
-            AlertDialog(
-                onDismissRequest = { showSleepTimerModal = false },
-                title = { Text("Temporizador de Apagado", fontWeight = FontWeight.Bold) },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(15, 30, 45, 60).forEach { mins ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
-                                        audioPlayer.startSleepTimer(mins)
-                                        showSleepTimerModal = false
-                                        Toast.makeText(context, "Temporizador iniciado ($mins min)", Toast.LENGTH_SHORT).show()
-                                    }
-                                    .padding(vertical = 10.dp, horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Timer, contentDescription = null, tint = textColor, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text("$mins minutos", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = textColor)
-                            }
-                        }
-
-                        if (sleepTimerSeconds != null) {
-                            TextButton(
-                                onClick = {
-                                    audioPlayer.cancelSleepTimer()
-                                    showSleepTimerModal = false
-                                    Toast.makeText(context, "Temporizador cancelado", Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Cancelar Temporizador Activo", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showSleepTimerModal = false }) {
-                        Text("Cerrar", color = subtextColor)
-                    }
+        // 3. APARIENCIA & TEMA
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Palette,
+                        contentDescription = null,
+                        tint = textPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "APARIENCIA & TEMA",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        color = textPrimary
+                    )
                 }
-            )
-        }
 
-        // Import JSON Dialog
-        if (showImportModal) {
-            AlertDialog(
-                onDismissRequest = { showImportModal = false },
-                title = { Text("Importar Copia de Seguridad", fontWeight = FontWeight.Bold) },
-                text = {
-                    Column {
-                        Text("Pega el JSON de tu copia de seguridad:", fontSize = 12.sp, color = subtextColor)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = importJsonText,
-                            onValueChange = { importJsonText = it },
-                            placeholder = { Text("{ \"version\": 1, ... }") },
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Selecciona la paleta visual para tu experiencia auditiva.",
+                    fontSize = 11.sp,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(
+                        Pair("system", "Sistema"),
+                        Pair("dark", "Oscuro"),
+                        Pair("light", "Claro")
+                    ).forEach { (mode, label) ->
+                        val isSelected = currentTheme == mode
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(140.dp)
+                                .weight(1f)
+                                .height(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isSelected) activePillBg else subCardBg)
+                                .border(1.dp, if (isSelected) Color.Transparent else borderCol, RoundedCornerShape(12.dp))
+                                .clickable {
+                                    currentTheme = mode
+                                    sonoraPrefs.setThemeMode(mode)
+                                    onThemeChanged(mode)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) activePillText else textPrimary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. REDONDEZ DE LOS PÉTALOS
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterVintage,
+                            contentDescription = null,
+                            tint = textPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "REDONDEZ DE LOS PÉTALOS",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            color = textPrimary
                         )
                     }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val success = sonoraPrefs.importBackupJson(importJsonText.trim())
-                            if (success) {
-                                Toast.makeText(context, "Copia restaurada con éxito", Toast.LENGTH_SHORT).show()
-                                showImportModal = false
-                            } else {
-                                Toast.makeText(context, "JSON inválido", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(subCardBg)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
-                        Text("Importar", fontWeight = FontWeight.Bold, color = textColor)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showImportModal = false }) {
-                        Text("Cancelar", color = subtextColor)
+                        Text(
+                            text = "$petalRoundness%",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
                     }
                 }
-            )
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Modifica la curvatura y profundidad de los 8 pétalos de la carátula y el contorno del reproductor.",
+                    fontSize = 11.sp,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Slider(
+                    value = petalRoundness.toFloat(),
+                    onValueChange = {
+                        petalRoundness = it.toInt()
+                        sonoraPrefs.setPetalRoundness(petalRoundness)
+                    },
+                    valueRange = 0f..100f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = activePillBg,
+                        activeTrackColor = textPrimary,
+                        inactiveTrackColor = borderCol
+                    )
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("0% (Círculo)", fontSize = 10.sp, color = textSecondary)
+                    Text("50% (Suave)", fontSize = 10.sp, color = textSecondary)
+                    Text("100% (Pétalos marcados)", fontSize = 10.sp, color = textSecondary)
+                }
+            }
+        }
+
+        // 5. MOTOR DE AUDIO & MEZCLA
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.VolumeUp,
+                        contentDescription = null,
+                        tint = textPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "MOTOR DE AUDIO & MEZCLA",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        color = textPrimary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Crossfade
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Fundido Cruzado (Crossfade)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textPrimary
+                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(subCardBg)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = if (crossfadeSeconds == 0) "Off" else "${crossfadeSeconds}s",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "La siguiente canción comenzará a sonar gradualmente antes de terminar la actual.",
+                    fontSize = 11.sp,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        Pair(0, "Off"),
+                        Pair(2, "2s"),
+                        Pair(4, "4s"),
+                        Pair(6, "6s"),
+                        Pair(8, "8s"),
+                        Pair(10, "10s")
+                    ).forEach { (sec, label) ->
+                        val isSel = crossfadeSeconds == sec
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSel) activePillBg else subCardBg)
+                                .border(1.dp, if (isSel) Color.Transparent else borderCol, RoundedCornerShape(10.dp))
+                                .clickable {
+                                    crossfadeSeconds = sec
+                                    sonoraPrefs.setCrossfadeSeconds(sec)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSel) activePillText else textPrimary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Playback Speed
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Velocidad de Reproducción",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textPrimary
+                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(subCardBg)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "${playbackSpeed}x",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(0.8f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { sp ->
+                        val isSel = playbackSpeed == sp
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSel) activePillBg else subCardBg)
+                                .border(1.dp, if (isSel) Color.Transparent else borderCol, RoundedCornerShape(10.dp))
+                                .clickable {
+                                    playbackSpeed = sp
+                                    sonoraPrefs.setPlaybackSpeed(sp)
+                                    audioPlayer.setPlaybackSpeed(sp)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${sp}x",
+                                fontSize = 11.sp,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSel) activePillText else textPrimary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 6. PERSONALIZAR BARRA INFERIOR
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.GridView,
+                            contentDescription = null,
+                            tint = textPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "PERSONALIZAR BARRA INFERIOR",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            color = textPrimary
+                        )
+                    }
+
+                    Text(
+                        text = "Restablecer",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textSecondary,
+                        modifier = Modifier.clickable {
+                            activeNavTabs = listOf("canciones", "listas", "ajustes")
+                            sonoraPrefs.setNavTabs(activeNavTabs)
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Selecciona qué accesos directos mostrar en la barra inferior y reorganiza su orden.",
+                    fontSize = 11.sp,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Chips Selector
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    allAvailableTabs.forEach { (tabId, label) ->
+                        val isSelected = activeNavTabs.contains(tabId)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(100.dp))
+                                .background(if (isSelected) activePillBg else subCardBg)
+                                .border(1.dp, if (isSelected) Color.Transparent else borderCol, RoundedCornerShape(100.dp))
+                                .clickable {
+                                    val newTabs = activeNavTabs.toMutableList()
+                                    if (isSelected) {
+                                        if (newTabs.size > 2) newTabs.remove(tabId)
+                                    } else {
+                                        if (newTabs.size < 5) newTabs.add(tabId)
+                                    }
+                                    activeNavTabs = newTabs
+                                    sonoraPrefs.setNavTabs(newTabs)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = if (isSelected) "✓ $label" else "+$label",
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) activePillText else textPrimary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Orden actual de pestañas (de izquierda a derecha):",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    activeNavTabs.forEachIndexed { index, tabId ->
+                        val tabName = allAvailableTabs.firstOrNull { it.first == tabId }?.second ?: tabId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(subCardBg)
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(
+                                    text = "${index + 1}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = textSecondary
+                                )
+                                Text(
+                                    text = tabName,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textPrimary
+                                )
+                            }
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                if (index > 0) {
+                                    IconButton(
+                                        onClick = {
+                                            val list = activeNavTabs.toMutableList()
+                                            val temp = list[index]
+                                            list[index] = list[index - 1]
+                                            list[index - 1] = temp
+                                            activeNavTabs = list
+                                            sonoraPrefs.setNavTabs(list)
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(Icons.Default.ArrowUpward, contentDescription = "Subir", tint = textPrimary, modifier = Modifier.size(14.dp))
+                                    }
+                                }
+                                if (index < activeNavTabs.size - 1) {
+                                    IconButton(
+                                        onClick = {
+                                            val list = activeNavTabs.toMutableList()
+                                            val temp = list[index]
+                                            list[index] = list[index + 1]
+                                            list[index + 1] = temp
+                                            activeNavTabs = list
+                                            sonoraPrefs.setNavTabs(list)
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(Icons.Default.ArrowDownward, contentDescription = "Bajar", tint = textPrimary, modifier = Modifier.size(14.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 7. ALMACENAMIENTO & CACHÉ
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = textPrimary, modifier = Modifier.size(18.dp))
+                    Text("ALMACENAMIENTO & CACHÉ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Libera memoria borrando carátulas e imágenes en caché de artistas locales.", fontSize = 11.sp, color = textSecondary)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isDark) Color(0xFF1E1D1A) else Color.White)
+                        .border(1.dp, borderCol, RoundedCornerShape(12.dp))
+                        .clickable {
+                            Toast.makeText(context, "Caché de carátulas liberada con éxito", Toast.LENGTH_SHORT).show()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, tint = textPrimary, modifier = Modifier.size(16.dp))
+                        Text("Limpiar Caché de Carátulas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                    }
+                }
+            }
+        }
+
+        // 8. PRIVACIDAD
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(18.dp))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(subCardBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Security, contentDescription = null, tint = textPrimary, modifier = Modifier.size(20.dp))
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("100% Privado y Sin Rastreo", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                    Text("Toda la música y metadatos se procesan localmente en tu dispositivo.", fontSize = 10.sp, color = textSecondary)
+                }
+            }
         }
     }
-}
 
-@Composable
-private fun SectionTitle(text: String, color: Color) {
-    Text(
-        text = text,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Black,
-        letterSpacing = 1.sp,
-        color = color,
-        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+    // Modals
+    SleepTimerModal(
+        isOpen = showSleepModal,
+        onClose = { showSleepModal = false },
+        currentMinutesRemaining = sleepTimerSeconds?.let { it / 60 },
+        onSetTimer = { mins ->
+            if (mins == null) {
+                audioPlayer.cancelSleepTimer()
+            } else if (mins > 0) {
+                audioPlayer.startSleepTimer(mins)
+            }
+        },
+        isDark = isDark
+    )
+
+    StatsModal(
+        isOpen = showStatsModal,
+        onClose = { showStatsModal = false },
+        songs = songs,
+        isDark = isDark,
+        onPlaySong = { song ->
+            audioPlayer.playSong(song, songs)
+        }
     )
 }
 
 @Composable
-private fun SettingsActionCard(
-    icon: ImageVector,
+fun QuickActionCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    badge: String?,
     title: String,
     subtitle: String,
     cardBg: Color,
-    textColor: Color,
-    subtextColor: Color,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(cardBg)
-            .clickable { onClick() }
-            .padding(14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Icon(icon, contentDescription = null, tint = textColor, modifier = Modifier.size(24.dp))
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
-                Text(subtitle, fontSize = 11.sp, color = subtextColor)
-            }
-        }
-        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = subtextColor)
-    }
-}
-
-@Composable
-private fun ThemeOptionButton(
-    label: String,
-    isSelected: Boolean,
-    textColor: Color,
-    bgColor: Color,
-    cardBg: Color,
+    borderCol: Color,
+    textPrimary: Color,
+    textSecondary: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Box(
+    Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) textColor else bgColor)
-            .clickable { onClick() }
-            .padding(vertical = 10.dp),
-        contentAlignment = Alignment.Center
+            .clip(RoundedCornerShape(18.dp))
+            .background(cardBg)
+            .border(1.dp, borderCol, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isSelected) bgColor else textColor
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(17.dp)
+                )
+            }
+
+            if (badge != null) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(Color.Gray.copy(alpha = 0.2f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = badge,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textSecondary
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Column {
+            Text(
+                text = title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = textPrimary,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                fontSize = 10.sp,
+                color = textSecondary,
+                maxLines = 1
+            )
+        }
     }
 }

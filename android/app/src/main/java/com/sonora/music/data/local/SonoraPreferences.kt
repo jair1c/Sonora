@@ -24,6 +24,38 @@ class SonoraPreferences(context: Context) {
         private const val KEY_EQ_PRESET = "sonora_eq_preset"
         private const val KEY_BASS_BOOST = "sonora_bass_boost_level"
         private const val KEY_HAS_SEEN_WELCOME = "sonora_has_seen_welcome"
+        private const val KEY_PETAL_ROUNDNESS = "sonora_petal_roundness"
+        private const val KEY_CROSSFADE_SECONDS = "sonora_crossfade_seconds"
+        private const val KEY_PLAYBACK_SPEED = "sonora_playback_speed"
+        private const val KEY_NAV_TABS = "sonora_nav_tabs_json"
+    }
+
+    // --- TOOLS & PREFERENCES ---
+    fun getPetalRoundness(): Int = prefs.getInt(KEY_PETAL_ROUNDNESS, 30)
+    fun setPetalRoundness(value: Int) = prefs.edit().putInt(KEY_PETAL_ROUNDNESS, value).apply()
+
+    fun getCrossfadeSeconds(): Int = prefs.getInt(KEY_CROSSFADE_SECONDS, 0)
+    fun setCrossfadeSeconds(sec: Int) = prefs.edit().putInt(KEY_CROSSFADE_SECONDS, sec).apply()
+
+    fun getPlaybackSpeed(): Float = prefs.getFloat(KEY_PLAYBACK_SPEED, 1.0f)
+    fun setPlaybackSpeed(speed: Float) = prefs.edit().putFloat(KEY_PLAYBACK_SPEED, speed).apply()
+
+    fun getNavTabs(): List<String> {
+        val json = prefs.getString(KEY_NAV_TABS, "[\"canciones\",\"listas\",\"ajustes\"]") ?: "[\"canciones\",\"listas\",\"ajustes\"]"
+        val list = mutableListOf<String>()
+        try {
+            val arr = JSONArray(json)
+            for (i in 0 until arr.length()) {
+                list.add(arr.getString(i))
+            }
+        } catch (_: Exception) {}
+        return if (list.isEmpty()) listOf("canciones", "listas", "ajustes") else list
+    }
+
+    fun setNavTabs(tabs: List<String>) {
+        val arr = JSONArray()
+        tabs.forEach { arr.put(it) }
+        prefs.edit().putString(KEY_NAV_TABS, arr.toString()).apply()
     }
 
     // --- FAVORITES ---
@@ -117,7 +149,26 @@ class SonoraPreferences(context: Context) {
         return isBlocked
     }
 
+    fun blacklistFolder(folderName: String) {
+        val current = getBlacklistedFolders().toMutableSet()
+        current.add(folderName)
+        prefs.edit().putStringSet(KEY_BLACKLISTED_FOLDERS, current).apply()
+    }
+
+    fun unblacklistFolder(folderName: String) {
+        val current = getBlacklistedFolders().toMutableSet()
+        current.remove(folderName)
+        prefs.edit().putStringSet(KEY_BLACKLISTED_FOLDERS, current).apply()
+    }
+
     // --- CUSTOM PLAYLISTS ---
+    fun createCustomPlaylist(name: String): Playlist = createPlaylist(name)
+
+    fun deleteCustomPlaylist(playlistId: String) {
+        val list = getCustomPlaylists().filter { it.id != playlistId }
+        saveCustomPlaylists(list)
+    }
+
     fun getCustomPlaylists(): List<Playlist> {
         val jsonStr = prefs.getString(KEY_CUSTOM_PLAYLISTS, "[]") ?: "[]"
         val list = mutableListOf<Playlist>()

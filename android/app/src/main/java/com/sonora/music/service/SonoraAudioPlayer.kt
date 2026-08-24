@@ -135,6 +135,18 @@ class SonoraAudioPlayer(private val context: Context) {
         player.play()
     }
 
+    fun play() {
+        player.play()
+    }
+
+    fun pause() {
+        player.pause()
+    }
+
+    fun resume() {
+        player.play()
+    }
+
     fun togglePlay() {
         if (player.isPlaying) {
             player.pause()
@@ -219,6 +231,10 @@ class SonoraAudioPlayer(private val context: Context) {
         sleepTimerJob?.cancel()
         sleepTimerJob = null
         _sleepTimerSecondsLeft.value = null
+    }
+
+    fun setPlaybackSpeed(speed: Float) {
+        player.setPlaybackSpeed(speed)
     }
 
     fun release() {

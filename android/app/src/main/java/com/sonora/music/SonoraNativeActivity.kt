@@ -120,6 +120,7 @@ class SonoraNativeActivity : ComponentActivity() {
                 ) {
                     if (!hasSeenWelcome) {
                         WelcomeScreen(
+                            isDark = isDark,
                             onStart = {
                                 sonoraPrefs.setHasSeenWelcome(true)
                                 hasSeenWelcome = true
@@ -131,11 +132,14 @@ class SonoraNativeActivity : ComponentActivity() {
                             allSongs = songList,
                             audioPlayer = audioPlayer,
                             sonoraPrefs = sonoraPrefs,
+                            isDark = isDark,
                             onOpenPlayer = { isPlayerOpen = true },
                             onOpenSettings = { isSettingsOpen = true },
+                            onOpenEqualizer = { isEqualizerOpen = true },
                             onOpenArtistDetail = { artist -> selectedArtistName = artist },
                             onOpenAlbumDetail = { album -> selectedAlbumTitle = album },
-                            onSongOptions = { song -> selectedSongForOptions = song }
+                            onSongOptions = { song -> selectedSongForOptions = song },
+                            onRescanLibrary = { loadSongs() }
                         )
 
                         // 2. Artist Detail Screen
@@ -181,8 +185,11 @@ class SonoraNativeActivity : ComponentActivity() {
                             SettingsScreen(
                                 sonoraPrefs = sonoraPrefs,
                                 audioPlayer = audioPlayer,
+                                songs = songList,
+                                isDark = isDark,
                                 onBack = { isSettingsOpen = false },
                                 onOpenEqualizer = { isEqualizerOpen = true },
+                                onRescanLibrary = { loadSongs() },
                                 onThemeChanged = { mode -> currentThemeMode = mode }
                             )
                         }

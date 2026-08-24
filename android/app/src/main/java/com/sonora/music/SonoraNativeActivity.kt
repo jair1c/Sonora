@@ -14,6 +14,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,11 +39,14 @@ class SonoraNativeActivity : ComponentActivity() {
 
     private lateinit var audioPlayer: SonoraAudioPlayer
     private lateinit var mediaRepo: MediaStoreRepository
+    private var onPermissionGranted: (() -> Unit)? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { _ ->
-        // Scan music after permission response
+    ) { granted ->
+        if (granted) {
+            onPermissionGranted?.invoke()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,33 +56,38 @@ class SonoraNativeActivity : ComponentActivity() {
         audioPlayer = SonoraAudioPlayer(this)
         mediaRepo = MediaStoreRepository(this)
 
-        checkAndRequestPermissions()
-
         setContent {
             SonoraTheme {
                 val scope = rememberCoroutineScope()
-                val songs = remember { mutableStateListOf<Song>() }
+                var songList by remember { mutableStateOf<List<Song>>(emptyList()) }
                 var isPlayerOpen by remember { mutableStateOf(false) }
 
                 fun loadSongs() {
                     scope.launch {
                         val localSongs = mediaRepo.queryLocalSongs()
-                        songs.clear()
-                        songs.addAll(localSongs)
+                        songList = localSongs
                     }
                 }
 
                 LaunchedEffect(Unit) {
+                    onPermissionGranted = { loadSongs() }
+                    checkAndRequestPermissions()
                     loadSongs()
                 }
 
-                Surface(modifier = Modifier.fillMaxSize()) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                ) {
                     NativeHomeScreen(
-                        allSongs = songs,
+                        allSongs = songList,
                         audioPlayer = audioPlayer,
                         onOpenPlayer = { isPlayerOpen = true },
                         onRefresh = { loadSongs() }
                     )
+
 
                     AnimatedVisibility(
                         visible = isPlayerOpen,
@@ -110,3 +121,4 @@ class SonoraNativeActivity : ComponentActivity() {
         audioPlayer.release()
     }
 }
+

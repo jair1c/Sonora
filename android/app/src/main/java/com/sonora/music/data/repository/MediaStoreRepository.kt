@@ -41,14 +41,11 @@ class MediaStoreRepository(private val context: Context) {
             MediaStore.Audio.Media.DATE_MODIFIED
         )
 
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 20000"
+        val selection = "${MediaStore.Audio.Media.DURATION} >= 10000"
         val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
 
-        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
-        } else {
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-        }
+        val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+
 
         try {
             context.contentResolver.query(
@@ -85,11 +82,13 @@ class MediaStoreRepository(private val context: Context) {
 
                     val contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
                     
-                    // Album Cover URI via MediaStore / Embedded picture
-                    val coverUri = getOrExtractCoverUri(albumId, filePath)
+                    // Album Cover URI via standard MediaStore albumart Content URI
+                    val coverUri = if (albumId > 0) {
+                        ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), albumId)
+                    } else null
                     
-                    // Synchronized .lrc or embedded lyrics
-                    val lyrics = loadLyrics(filePath, durationMs)
+                    // Lazy synchronized .lrc or embedded lyrics
+                    val lyrics = emptyList<LyricLine>()
 
                     songsList.add(
                         Song(
@@ -110,42 +109,14 @@ class MediaStoreRepository(private val context: Context) {
                     )
                 }
             }
+            android.util.Log.d("SonoraMedia", "Queried ${songsList.size} songs successfully from MediaStore")
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("SonoraMedia", "Error querying MediaStore", e)
         }
 
         songsList
     }
 
-    private fun getOrExtractCoverUri(albumId: Long, filePath: String): Uri? {
-        val cachedCoverFile = File(coversDir, "alb_$albumId.jpg")
-        if (cachedCoverFile.exists() && cachedCoverFile.length() > 0) {
-            return Uri.fromFile(cachedCoverFile)
-        }
-
-        if (filePath.isNotEmpty() && File(filePath).exists()) {
-            try {
-                val mmr = MediaMetadataRetriever()
-                mmr.setDataSource(filePath)
-                val art = mmr.embeddedPicture
-                if (art != null && art.isNotEmpty()) {
-                    FileOutputStream(cachedCoverFile).use { fos ->
-                        fos.write(art)
-                        fos.flush()
-                    }
-                    mmr.release()
-                    return Uri.fromFile(cachedCoverFile)
-                }
-                mmr.release()
-            } catch (ignored: Exception) {}
-        }
-
-        // Android MediaStore Artwork Uri fallback
-        return ContentUris.withAppendedId(
-            Uri.parse("content://media/external/audio/albumart"),
-            albumId
-        )
-    }
 
     private fun loadLyrics(filePath: String, durationMs: Long): List<LyricLine> {
         if (filePath.isEmpty()) return emptyList()

@@ -742,65 +742,85 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     activeNavTabs.forEachIndexed { index, tabId ->
                         val tabName = allAvailableTabs.firstOrNull { it.first == tabId }?.second ?: tabId
+                        val rowBg = if (isDark) Color(0xFF262420) else Color(0xFFE3DDD1)
+                        val badgeBg = if (isDark) Color(0xFF38352F) else Color(0xFFD2CBC0)
+                        
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(subCardBg)
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(rowBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(14.dp))
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Text(
-                                    text = "${index + 1}",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = textSecondary
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(26.dp)
+                                        .clip(CircleShape)
+                                        .background(badgeBg),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${index + 1}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = textPrimary
+                                    )
+                                }
                                 Text(
                                     text = tabName,
-                                    fontSize = 12.sp,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = textPrimary
                                 )
                             }
 
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 if (index > 0) {
-                                    IconButton(
-                                        onClick = {
-                                            val list = activeNavTabs.toMutableList()
-                                            val temp = list[index]
-                                            list[index] = list[index - 1]
-                                            list[index - 1] = temp
-                                            activeNavTabs = list
-                                            sonoraPrefs.setNavTabs(list)
-                                        },
-                                        modifier = Modifier.size(28.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(30.dp)
+                                            .clip(CircleShape)
+                                            .background(badgeBg)
+                                            .clickable {
+                                                val list = activeNavTabs.toMutableList()
+                                                val temp = list[index]
+                                                list[index] = list[index - 1]
+                                                list[index - 1] = temp
+                                                activeNavTabs = list
+                                                sonoraPrefs.setNavTabs(list)
+                                            },
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(Icons.Default.ArrowUpward, contentDescription = "Subir", tint = textPrimary, modifier = Modifier.size(14.dp))
+                                        Icon(Icons.Default.ArrowUpward, contentDescription = "Subir", tint = textPrimary, modifier = Modifier.size(15.dp))
                                     }
                                 }
                                 if (index < activeNavTabs.size - 1) {
-                                    IconButton(
-                                        onClick = {
-                                            val list = activeNavTabs.toMutableList()
-                                            val temp = list[index]
-                                            list[index] = list[index + 1]
-                                            list[index + 1] = temp
-                                            activeNavTabs = list
-                                            sonoraPrefs.setNavTabs(list)
-                                        },
-                                        modifier = Modifier.size(28.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(30.dp)
+                                            .clip(CircleShape)
+                                            .background(badgeBg)
+                                            .clickable {
+                                                val list = activeNavTabs.toMutableList()
+                                                val temp = list[index]
+                                                list[index] = list[index + 1]
+                                                list[index + 1] = temp
+                                                activeNavTabs = list
+                                                sonoraPrefs.setNavTabs(list)
+                                            },
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(Icons.Default.ArrowDownward, contentDescription = "Bajar", tint = textPrimary, modifier = Modifier.size(14.dp))
+                                        Icon(Icons.Default.ArrowDownward, contentDescription = "Bajar", tint = textPrimary, modifier = Modifier.size(15.dp))
                                     }
                                 }
                             }

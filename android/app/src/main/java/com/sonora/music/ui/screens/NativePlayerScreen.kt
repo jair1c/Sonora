@@ -169,37 +169,39 @@ fun NativePlayerScreen(
                 IconButton(
                     onClick = onDismiss,
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                 ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = "Cerrar",
-                        tint = textColor
+                        tint = textColor,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
                 Text(
                     text = "REPRODUCIENDO",
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
                     color = textColor
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     IconButton(
                         onClick = { showQueueSheet = true },
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(48.dp)
                             .clip(CircleShape)
                             .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                     ) {
                         Icon(
                             imageVector = Icons.Default.QueueMusic,
                             contentDescription = "Cola",
-                            tint = textColor
+                            tint = textColor,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
 
@@ -211,14 +213,15 @@ fun NativePlayerScreen(
                             }
                         },
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(48.dp)
                             .clip(CircleShape)
                             .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                     ) {
                         Icon(
                             imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorito",
-                            tint = if (isLiked) Color(0xFFEF4444) else textColor
+                            tint = if (isLiked) Color(0xFFEF4444) else textColor,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -235,7 +238,7 @@ fun NativePlayerScreen(
                 )
                 Text(
                     text = formattedTime,
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = subtextColor,
                     letterSpacing = 1.sp
@@ -245,11 +248,11 @@ fun NativePlayerScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                        .padding(horizontal = 10.dp, vertical = 2.dp)
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = currentSong?.audioQualityBadge ?: "Hi-Fi Audio",
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
                         color = textColor
@@ -257,9 +260,9 @@ fun NativePlayerScreen(
                 }
             }
 
-            // 3. Central Artwork & Wavy Scrubber
+            // 3. Central Artwork & Wavy Scrubber (20% Larger)
             Box(
-                modifier = Modifier.size(310.dp),
+                modifier = Modifier.size(368.dp),
                 contentAlignment = Alignment.Center
             ) {
                 WavyScrubberRing(
@@ -273,7 +276,7 @@ fun NativePlayerScreen(
                 // 8-Petal Vinyl Image (Smooth organic scale for the entire flower and artwork)
                 Box(
                     modifier = Modifier
-                        .size(240.dp)
+                        .size(288.dp)
                         .scale(flowerScale)
                         .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.08f))
                         .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
@@ -292,7 +295,7 @@ fun NativePlayerScreen(
                     // Vinyl center pinhole
                     Box(
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(24.dp)
                             .clip(CircleShape)
                             .background(bgColor)
                     )
@@ -306,16 +309,16 @@ fun NativePlayerScreen(
             ) {
                 Text(
                     text = currentSong?.title ?: "Sonora Music",
-                    fontSize = 20.sp,
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Black,
                     color = textColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${currentSong?.artist ?: "Offline"} • ${currentSong?.album ?: "Local"}",
-                    fontSize = 13.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     color = subtextColor,
                     maxLines = 1,
@@ -386,18 +389,18 @@ fun NativePlayerScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                     .clickable { showExpandedLyrics = true }
-                    .padding(horizontal = 18.dp, vertical = 12.dp)
+                    .padding(horizontal = 20.dp, vertical = 14.dp)
             ) {
                 if (lyrics.isNotEmpty() && currentLyricIdx in lyrics.indices) {
                     val activeLine = lyrics[currentLyricIdx].text
                     val nextLine = lyrics.getOrNull(currentLyricIdx + 1)?.text
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(
                             text = "♪ $activeLine",
-                            fontSize = 13.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = textColor,
                             maxLines = 1,
@@ -406,7 +409,7 @@ fun NativePlayerScreen(
                         if (nextLine != null) {
                             Text(
                                 text = nextLine,
-                                fontSize = 11.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Normal,
                                 color = subtextColor,
                                 maxLines = 1,
@@ -417,7 +420,7 @@ fun NativePlayerScreen(
                 } else {
                     Text(
                         text = "Toca para ver letras o sincronizar archivos .lrc",
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = subtextColor,
                         textAlign = TextAlign.Center,
@@ -525,7 +528,7 @@ fun NativePlayerScreen(
 // 5 LUXURY PLAYBACK CONTROLS STYLES
 // -------------------------------------------------------------
 
-// 1. Cápsula Flotante Studio (Glassmorphic Floating Dock)
+// 1. Dock Flotante Clásico
 @Composable
 private fun PlaybackControlsDock(
     isPlaying: Boolean,
@@ -540,9 +543,9 @@ private fun PlaybackControlsDock(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(36.dp))
+            .clip(RoundedCornerShape(40.dp))
             .background(if (isDark) Color(0xFF161513) else Color(0xFFEAE5DA))
-            .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(36.dp))
+            .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(40.dp))
             .padding(horizontal = 14.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -553,58 +556,58 @@ private fun PlaybackControlsDock(
         ) {
             IconButton(
                 onClick = { audioPlayer.toggleRepeat() },
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(46.dp)
             ) {
                 Icon(
                     imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
                     contentDescription = "Repetir",
                     tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else subtextColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
             IconButton(
                 onClick = { audioPlayer.prevTrack() },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(50.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.SkipPrevious,
                     contentDescription = "Anterior",
                     tint = textColor,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(30.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(64.dp))
+            Spacer(modifier = Modifier.width(76.dp))
 
             IconButton(
                 onClick = { audioPlayer.nextTrack() },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(50.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.SkipNext,
                     contentDescription = "Siguiente",
                     tint = textColor,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(30.dp)
                 )
             }
 
             IconButton(
                 onClick = { audioPlayer.toggleShuffle() },
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(46.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Shuffle,
                     contentDescription = "Aleatorio",
                     tint = if (isShuffle) SonoraGold else subtextColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
 
         Box(
             modifier = Modifier
-                .size(68.dp)
+                .size(78.dp)
                 .clip(CircleShape)
                 .background(textColor)
                 .clickable { audioPlayer.togglePlay() },
@@ -614,7 +617,7 @@ private fun PlaybackControlsDock(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
                 tint = bgColor,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(42.dp)
             )
         }
     }
@@ -641,7 +644,7 @@ private fun PlaybackControlsCircles(
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(50.dp)
                 .clip(CircleShape)
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                 .border(
@@ -656,13 +659,13 @@ private fun PlaybackControlsCircles(
                 imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
                 contentDescription = "Repetir",
                 tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else subtextColor,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(54.dp)
+                .size(62.dp)
                 .clip(CircleShape)
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                 .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
@@ -673,13 +676,13 @@ private fun PlaybackControlsCircles(
                 imageVector = Icons.Default.SkipPrevious,
                 contentDescription = "Anterior",
                 tint = textColor,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(76.dp)
+                .size(86.dp)
                 .clip(CircleShape)
                 .background(textColor)
                 .clickable { audioPlayer.togglePlay() },
@@ -689,13 +692,13 @@ private fun PlaybackControlsCircles(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
                 tint = bgColor,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(46.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(54.dp)
+                .size(62.dp)
                 .clip(CircleShape)
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                 .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
@@ -706,13 +709,13 @@ private fun PlaybackControlsCircles(
                 imageVector = Icons.Default.SkipNext,
                 contentDescription = "Siguiente",
                 tint = textColor,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(50.dp)
                 .clip(CircleShape)
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                 .border(
@@ -727,7 +730,7 @@ private fun PlaybackControlsCircles(
                 imageVector = Icons.Default.Shuffle,
                 contentDescription = "Aleatorio",
                 tint = if (isShuffle) SonoraGold else subtextColor,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -748,14 +751,14 @@ private fun PlaybackControlsOrganic(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 6.dp),
+            .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
             onClick = { audioPlayer.toggleRepeat() },
             modifier = Modifier
-                .size(44.dp)
+                .size(50.dp)
                 .clip(CircleShape)
                 .background(if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)) else Color.Transparent)
         ) {
@@ -763,16 +766,16 @@ private fun PlaybackControlsOrganic(
                 imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
                 contentDescription = "Repetir",
                 tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else subtextColor,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(width = 58.dp, height = 48.dp)
-                .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = 8.dp, bottomEnd = 8.dp))
+                .size(width = 66.dp, height = 54.dp)
+                .clip(RoundedCornerShape(topStart = 26.dp, bottomStart = 26.dp, topEnd = 10.dp, bottomEnd = 10.dp))
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = 8.dp, bottomEnd = 8.dp))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(topStart = 26.dp, bottomStart = 26.dp, topEnd = 10.dp, bottomEnd = 10.dp))
                 .clickable { audioPlayer.prevTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -780,13 +783,13 @@ private fun PlaybackControlsOrganic(
                 imageVector = Icons.Default.SkipPrevious,
                 contentDescription = "Anterior",
                 tint = textColor,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(74.dp)
+                .size(86.dp)
                 .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.12f))
                 .background(textColor)
                 .clickable { audioPlayer.togglePlay() },
@@ -796,16 +799,16 @@ private fun PlaybackControlsOrganic(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
                 tint = bgColor,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(44.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(width = 58.dp, height = 48.dp)
-                .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 24.dp, bottomEnd = 24.dp))
+                .size(width = 66.dp, height = 54.dp)
+                .clip(RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp, topEnd = 26.dp, bottomEnd = 26.dp))
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 24.dp, bottomEnd = 24.dp))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp, topEnd = 26.dp, bottomEnd = 26.dp))
                 .clickable { audioPlayer.nextTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -813,14 +816,14 @@ private fun PlaybackControlsOrganic(
                 imageVector = Icons.Default.SkipNext,
                 contentDescription = "Siguiente",
                 tint = textColor,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
 
         IconButton(
             onClick = { audioPlayer.toggleShuffle() },
             modifier = Modifier
-                .size(44.dp)
+                .size(50.dp)
                 .clip(CircleShape)
                 .background(if (isShuffle) (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)) else Color.Transparent)
         ) {
@@ -828,7 +831,7 @@ private fun PlaybackControlsOrganic(
                 imageVector = Icons.Default.Shuffle,
                 contentDescription = "Aleatorio",
                 tint = if (isShuffle) SonoraGold else subtextColor,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -849,16 +852,16 @@ private fun PlaybackControlsSquircle(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 6.dp),
+            .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(48.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else (if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA)))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(12.dp))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(14.dp))
                 .clickable { audioPlayer.toggleRepeat() },
             contentAlignment = Alignment.Center
         ) {
@@ -866,16 +869,16 @@ private fun PlaybackControlsSquircle(
                 imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
                 contentDescription = "Repetir",
                 tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) Color.Black else subtextColor,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .size(60.dp)
+                .clip(RoundedCornerShape(18.dp))
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(16.dp))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(18.dp))
                 .clickable { audioPlayer.prevTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -883,14 +886,14 @@ private fun PlaybackControlsSquircle(
                 imageVector = Icons.Default.SkipPrevious,
                 contentDescription = "Anterior",
                 tint = textColor,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(68.dp)
-                .clip(RoundedCornerShape(22.dp))
+                .size(78.dp)
+                .clip(RoundedCornerShape(24.dp))
                 .background(textColor)
                 .clickable { audioPlayer.togglePlay() },
             contentAlignment = Alignment.Center
@@ -899,16 +902,16 @@ private fun PlaybackControlsSquircle(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
                 tint = bgColor,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(42.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .size(60.dp)
+                .clip(RoundedCornerShape(18.dp))
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(16.dp))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(18.dp))
                 .clickable { audioPlayer.nextTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -916,16 +919,16 @@ private fun PlaybackControlsSquircle(
                 imageVector = Icons.Default.SkipNext,
                 contentDescription = "Siguiente",
                 tint = textColor,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(48.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(if (isShuffle) SonoraGold else (if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA)))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(12.dp))
+                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(14.dp))
                 .clickable { audioPlayer.toggleShuffle() },
             contentAlignment = Alignment.Center
         ) {
@@ -933,7 +936,7 @@ private fun PlaybackControlsSquircle(
                 imageVector = Icons.Default.Shuffle,
                 contentDescription = "Aleatorio",
                 tint = if (isShuffle) Color.Black else subtextColor,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -960,19 +963,19 @@ private fun PlaybackControlsWaveform(
     ) {
         IconButton(
             onClick = { audioPlayer.toggleRepeat() },
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(46.dp)
         ) {
             Icon(
                 imageVector = if (repeatMode == androidx.media3.common.Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
                 contentDescription = "Repetir",
                 tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else subtextColor,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(56.dp)
                 .clip(CircleShape)
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                 .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
@@ -983,41 +986,41 @@ private fun PlaybackControlsWaveform(
                 imageVector = Icons.Default.SkipPrevious,
                 contentDescription = "Anterior",
                 tint = textColor,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .height(58.dp)
-                .width(126.dp)
-                .clip(RoundedCornerShape(29.dp))
+                .height(66.dp)
+                .width(146.dp)
+                .clip(RoundedCornerShape(33.dp))
                 .background(textColor)
                 .clickable { audioPlayer.togglePlay() }
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 18.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                     contentDescription = if (isPlaying) "Pausar" else "Reproducir",
                     tint = bgColor,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(36.dp)
                 )
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.height(24.dp)
+                    modifier = Modifier.height(28.dp)
                 ) {
-                    val barHeights = if (isPlaying) listOf(16.dp, 22.dp, 12.dp, 19.dp) else listOf(4.dp, 4.dp, 4.dp, 4.dp)
+                    val barHeights = if (isPlaying) listOf(18.dp, 26.dp, 14.dp, 22.dp) else listOf(5.dp, 5.dp, 5.dp, 5.dp)
                     barHeights.forEach { h ->
                         Box(
                             modifier = Modifier
-                                .width(3.5.dp)
+                                .width(4.dp)
                                 .height(h)
                                 .clip(RoundedCornerShape(2.dp))
                                 .background(bgColor)
@@ -1029,7 +1032,7 @@ private fun PlaybackControlsWaveform(
 
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(56.dp)
                 .clip(CircleShape)
                 .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
                 .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
@@ -1040,21 +1043,20 @@ private fun PlaybackControlsWaveform(
                 imageVector = Icons.Default.SkipNext,
                 contentDescription = "Siguiente",
                 tint = textColor,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
 
         IconButton(
             onClick = { audioPlayer.toggleShuffle() },
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(46.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Shuffle,
                 contentDescription = "Aleatorio",
                 tint = if (isShuffle) SonoraGold else subtextColor,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }
 }
-

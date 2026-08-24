@@ -129,12 +129,22 @@ class SonoraAudioPlayer(private val context: Context) {
         }
     }
 
+    private var originalPlaylist: List<Song> = emptyList()
+
     fun setCrossfadeSeconds(seconds: Int) {
         crossfadeSeconds = seconds.coerceIn(0, 12)
     }
 
     fun playSong(song: Song, newPlaylist: List<Song> = emptyList()) {
-        val listToUse = if (newPlaylist.isNotEmpty()) newPlaylist else listOf(song)
+        val baseList = if (newPlaylist.isNotEmpty()) newPlaylist else listOf(song)
+        originalPlaylist = baseList
+
+        val listToUse = if (_isShuffle.value && baseList.size > 1) {
+            val remaining = baseList.filter { it.id != song.id }.shuffled(java.util.Random(System.nanoTime()))
+            listOf(song) + remaining
+        } else {
+            baseList
+        }
         _playlist.value = listToUse
 
         val mediaItems = listToUse.map { s ->
@@ -237,9 +247,52 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun toggleShuffle() {
-        val newShuffle = !player.shuffleModeEnabled
-        player.shuffleModeEnabled = newShuffle
-        _isShuffle.value = newShuffle
+        val willBeShuffle = !_isShuffle.value
+        _isShuffle.value = willBeShuffle
+
+        val curr = _currentSong.value
+        val currentPos = player.currentPosition
+        val isCurrentlyPlaying = player.isPlaying
+
+        val newQueue = if (willBeShuffle) {
+            if (curr != null && originalPlaylist.isNotEmpty()) {
+                val remaining = originalPlaylist.filter { it.id != curr.id }.shuffled(java.util.Random(System.nanoTime()))
+                listOf(curr) + remaining
+            } else if (originalPlaylist.isNotEmpty()) {
+                originalPlaylist.shuffled(java.util.Random(System.nanoTime()))
+            } else {
+                _playlist.value.shuffled(java.util.Random(System.nanoTime()))
+            }
+        } else {
+            if (originalPlaylist.isNotEmpty()) originalPlaylist else _playlist.value
+        }
+
+        _playlist.value = newQueue
+
+        val mediaItems = newQueue.map { s ->
+            MediaItem.Builder()
+                .setUri(s.contentUri)
+                .setMediaId(s.id.toString())
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(s.title)
+                        .setArtist(s.artist)
+                        .setAlbumTitle(s.album)
+                        .setArtworkUri(s.coverUri)
+                        .build()
+                )
+                .build()
+        }
+
+        val targetIndex = if (curr != null) {
+            newQueue.indexOfFirst { it.id == curr.id }.coerceAtLeast(0)
+        } else 0
+
+        player.setMediaItems(mediaItems, targetIndex, currentPos)
+        if (isCurrentlyPlaying) {
+            player.playWhenReady = true
+            player.play()
+        }
     }
 
     fun toggleRepeat() {

@@ -70,6 +70,8 @@ class SonoraAudioPlayer(private val context: Context) {
     private val _sleepTimerSecondsLeft = MutableStateFlow<Int?>(null)
     val sleepTimerSecondsLeft = _sleepTimerSecondsLeft.asStateFlow()
 
+    private val mediaRepo = com.sonora.music.data.repository.MediaStoreRepository(context)
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
             _isPlaying.value = playing
@@ -108,7 +110,14 @@ class SonoraAudioPlayer(private val context: Context) {
             val currentIdx = player.currentMediaItemIndex
             val list = _playlist.value
             if (currentIdx in list.indices) {
-                _currentSong.value = list[currentIdx]
+                val nextSong = list[currentIdx]
+                _currentSong.value = nextSong
+                scope.launch(Dispatchers.IO) {
+                    val lyrics = mediaRepo.getLyricsForSong(nextSong)
+                    if (lyrics.isNotEmpty() && _currentSong.value?.id == nextSong.id) {
+                        _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
+                    }
+                }
                 if (crossfadeSeconds > 0) {
                     fadeInVolume(crossfadeSeconds)
                 } else {
@@ -147,6 +156,12 @@ class SonoraAudioPlayer(private val context: Context) {
         player.clearMediaItems()
         player.setMediaItems(mediaItems, targetIndex, 0L)
         _currentSong.value = song
+        scope.launch(Dispatchers.IO) {
+            val lyrics = mediaRepo.getLyricsForSong(song)
+            if (lyrics.isNotEmpty() && _currentSong.value?.id == song.id) {
+                _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
+            }
+        }
         player.prepare()
         player.playWhenReady = true
         player.play()

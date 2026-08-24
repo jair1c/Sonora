@@ -55,9 +55,9 @@ import com.sonora.music.ui.theme.SonoraPaperCard
 @Composable
 fun QueueBottomSheet(
     audioPlayer: SonoraAudioPlayer,
+    isDark: Boolean,
     onDismiss: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
     val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
     val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
     val textColor = if (isDark) Color.White else Color(0xFF121212)

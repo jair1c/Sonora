@@ -2,29 +2,20 @@ package com.sonora.music.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import com.luxtune.app.R
 
-val fontProvider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs
-)
-
-val plusJakartaSansFont = GoogleFont("Plus Jakarta Sans")
-
 val PlusJakartaSansFamily = FontFamily(
-    Font(googleFont = plusJakartaSansFont, fontProvider = fontProvider, weight = FontWeight.Light),
-    Font(googleFont = plusJakartaSansFont, fontProvider = fontProvider, weight = FontWeight.Normal),
-    Font(googleFont = plusJakartaSansFont, fontProvider = fontProvider, weight = FontWeight.Medium),
-    Font(googleFont = plusJakartaSansFont, fontProvider = fontProvider, weight = FontWeight.SemiBold),
-    Font(googleFont = plusJakartaSansFont, fontProvider = fontProvider, weight = FontWeight.Bold),
-    Font(googleFont = plusJakartaSansFont, fontProvider = fontProvider, weight = FontWeight.ExtraBold),
-    Font(googleFont = plusJakartaSansFont, fontProvider = fontProvider, weight = FontWeight.Black)
+    Font(R.font.plus_jakarta_sans, weight = FontWeight.Light),
+    Font(R.font.plus_jakarta_sans, weight = FontWeight.Normal),
+    Font(R.font.plus_jakarta_sans, weight = FontWeight.Medium),
+    Font(R.font.plus_jakarta_sans, weight = FontWeight.SemiBold),
+    Font(R.font.plus_jakarta_sans, weight = FontWeight.Bold),
+    Font(R.font.plus_jakarta_sans, weight = FontWeight.ExtraBold),
+    Font(R.font.plus_jakarta_sans, weight = FontWeight.Black)
 )
 
 val SonoraTypography = Typography(

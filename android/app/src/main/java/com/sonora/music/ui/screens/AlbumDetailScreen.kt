@@ -54,10 +54,10 @@ fun AlbumDetailScreen(
     albumTitle: String,
     allSongs: List<Song>,
     audioPlayer: SonoraAudioPlayer,
+    isDark: Boolean,
     onBack: () -> Unit,
     onSongOptions: (Song) -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
     val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
     val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
     val textColor = if (isDark) Color.White else Color(0xFF121212)

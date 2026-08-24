@@ -156,6 +156,7 @@ class SonoraNativeActivity : ComponentActivity() {
                                     artistName = artist,
                                     allSongs = songList,
                                     audioPlayer = audioPlayer,
+                                    isDark = isDark,
                                     onBack = { selectedArtistName = null },
                                     onSongOptions = { song -> selectedSongForOptions = song }
                                 )
@@ -173,6 +174,7 @@ class SonoraNativeActivity : ComponentActivity() {
                                     albumTitle = album,
                                     allSongs = songList,
                                     audioPlayer = audioPlayer,
+                                    isDark = isDark,
                                     onBack = { selectedAlbumTitle = null },
                                     onSongOptions = { song -> selectedSongForOptions = song }
                                 )
@@ -206,6 +208,7 @@ class SonoraNativeActivity : ComponentActivity() {
                             EqualizerScreen(
                                 audioPlayer = audioPlayer,
                                 sonoraPrefs = sonoraPrefs,
+                                isDark = isDark,
                                 onBack = { isEqualizerOpen = false }
                             )
                         }
@@ -229,6 +232,7 @@ class SonoraNativeActivity : ComponentActivity() {
                             SongOptionsModal(
                                 song = selectedSongForOptions!!,
                                 playlists = sonoraPrefs.getCustomPlaylists(),
+                                isDark = isDark,
                                 onDismiss = { selectedSongForOptions = null },
                                 onPlayNext = {
                                     audioPlayer.playSong(selectedSongForOptions!!, listOf(selectedSongForOptions!!) + audioPlayer.playlist.value)

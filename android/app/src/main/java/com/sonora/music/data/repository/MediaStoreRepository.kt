@@ -77,9 +77,6 @@ class MediaStoreRepository(private val context: Context) {
                         ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), albumId)
                     } else null
 
-                    // Read synchronized .lrc or embedded FLAC / ID3 lyrics
-                    val lyrics = loadLyrics(filePath, durationMs)
-
                     songsList.add(
                         Song(
                             id = id,
@@ -94,12 +91,12 @@ class MediaStoreRepository(private val context: Context) {
                             dateModified = dateModified,
                             sizeBytes = sizeBytes,
                             year = year,
-                            lyrics = lyrics
+                            lyrics = emptyList() // Lazy-loaded on demand for instantaneous startup
                         )
                     )
                 }
             }
-            android.util.Log.d("SonoraMedia", "Queried ${songsList.size} songs successfully from MediaStore")
+            android.util.Log.d("SonoraMedia", "Queried ${songsList.size} songs in record time from MediaStore")
         } catch (e: Exception) {
             android.util.Log.e("SonoraMedia", "Error querying MediaStore", e)
         }
@@ -107,7 +104,16 @@ class MediaStoreRepository(private val context: Context) {
         songsList
     }
 
-    private fun loadLyrics(filePath: String, durationMs: Long): List<LyricLine> {
+    private val lyricsCache = java.util.concurrent.ConcurrentHashMap<Long, List<LyricLine>>()
+
+    suspend fun getLyricsForSong(song: Song): List<LyricLine> = withContext(Dispatchers.IO) {
+        lyricsCache[song.id]?.let { return@withContext it }
+        val lyrics = loadLyrics(song.filePath, song.durationMs)
+        lyricsCache[song.id] = lyrics
+        lyrics
+    }
+
+    fun loadLyrics(filePath: String, durationMs: Long): List<LyricLine> {
         if (filePath.isEmpty()) return emptyList()
 
         val file = File(filePath)

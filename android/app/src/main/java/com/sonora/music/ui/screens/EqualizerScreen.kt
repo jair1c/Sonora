@@ -51,9 +51,9 @@ import com.sonora.music.ui.theme.SonoraPaperCard
 fun EqualizerScreen(
     audioPlayer: SonoraAudioPlayer,
     sonoraPrefs: SonoraPreferences,
+    isDark: Boolean,
     onBack: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
     val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
     val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
     val textColor = if (isDark) Color.White else Color(0xFF121212)

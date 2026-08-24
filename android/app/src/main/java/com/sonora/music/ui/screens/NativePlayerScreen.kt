@@ -563,6 +563,7 @@ fun NativePlayerScreen(
         if (showQueueSheet) {
             com.sonora.music.ui.components.QueueBottomSheet(
                 audioPlayer = audioPlayer,
+                isDark = isDark,
                 onDismiss = { showQueueSheet = false }
             )
         }

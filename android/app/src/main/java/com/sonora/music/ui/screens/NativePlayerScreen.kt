@@ -184,7 +184,7 @@ fun NativePlayerScreen(
                 Text(
                     text = "REPRODUCIENDO",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
+                    fontWeight = FontWeight.SemiBold,
                     letterSpacing = 2.sp,
                     color = textColor
                 )
@@ -260,9 +260,9 @@ fun NativePlayerScreen(
                 }
             }
 
-            // 3. Central Artwork & Wavy Scrubber (20% Larger)
+            // 3. Central Artwork & Wavy Scrubber (20% proportioned clearance)
             Box(
-                modifier = Modifier.size(368.dp),
+                modifier = Modifier.size(350.dp),
                 contentAlignment = Alignment.Center
             ) {
                 WavyScrubberRing(
@@ -273,10 +273,10 @@ fun NativePlayerScreen(
                     }
                 )
 
-                // 8-Petal Vinyl Image (Smooth organic scale for the entire flower and artwork)
+                // 8-Petal Vinyl Image (Expanded flower is 20% smaller than scrubber ring contour)
                 Box(
                     modifier = Modifier
-                        .size(288.dp)
+                        .size(242.dp)
                         .scale(flowerScale)
                         .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.08f))
                         .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
@@ -295,7 +295,7 @@ fun NativePlayerScreen(
                     // Vinyl center pinhole
                     Box(
                         modifier = Modifier
-                            .size(24.dp)
+                            .size(22.dp)
                             .clip(CircleShape)
                             .background(bgColor)
                     )

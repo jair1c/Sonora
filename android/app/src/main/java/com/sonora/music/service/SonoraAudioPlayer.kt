@@ -18,10 +18,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.extractor.DefaultExtractorsFactory
+import java.io.File
+
 class SonoraAudioPlayer(private val context: Context) {
 
     private val player: ExoPlayer by lazy {
-        ExoPlayer.Builder(context)
+        val extractorsFactory = DefaultExtractorsFactory()
+            .setConstantBitrateSeekingEnabled(true)
+            .setFlacExtractorFlags(0)
+        val dataSourceFactory = DefaultDataSource.Factory(context)
+        val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory)
+        val renderersFactory = DefaultRenderersFactory(context)
+            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
+
+        ExoPlayer.Builder(context, renderersFactory)
+            .setMediaSourceFactory(mediaSourceFactory)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
@@ -73,6 +88,26 @@ class SonoraAudioPlayer(private val context: Context) {
     private val mediaRepo = com.sonora.music.data.repository.MediaStoreRepository(context)
     private val sonoraPrefs = com.sonora.music.data.local.SonoraPreferences(context)
 
+    private fun buildMediaItem(s: Song, useFileFallback: Boolean = false): MediaItem {
+        val uri = if (useFileFallback && s.filePath.isNotEmpty() && File(s.filePath).exists()) {
+            android.net.Uri.fromFile(File(s.filePath))
+        } else {
+            s.contentUri
+        }
+        return MediaItem.Builder()
+            .setUri(uri)
+            .setMediaId(s.id.toString())
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(s.title)
+                    .setArtist(s.artist)
+                    .setAlbumTitle(s.album)
+                    .setArtworkUri(s.coverUri)
+                    .build()
+            )
+            .build()
+    }
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
             _isPlaying.value = playing
@@ -103,8 +138,20 @@ class SonoraAudioPlayer(private val context: Context) {
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            _isPlaying.value = false
-            stopPositionTracking()
+            android.util.Log.e("SonoraAudioPlayer", "Playback error on ${_currentSong.value?.title}: ${error.errorCodeName} (${error.errorCode})", error)
+            val current = _currentSong.value
+            if (current != null && current.filePath.isNotEmpty() && File(current.filePath).exists()) {
+                android.util.Log.d("SonoraAudioPlayer", "Retrying with direct File URI: ${current.filePath}")
+                val fileItem = buildMediaItem(current, useFileFallback = true)
+                player.setMediaItem(fileItem)
+                player.prepare()
+                player.playWhenReady = true
+                player.play()
+                _isPlaying.value = true
+            } else {
+                _isPlaying.value = false
+                stopPositionTracking()
+            }
         }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -147,20 +194,7 @@ class SonoraAudioPlayer(private val context: Context) {
         }
         _playlist.value = listToUse
 
-        val mediaItems = listToUse.map { s ->
-            MediaItem.Builder()
-                .setUri(s.contentUri)
-                .setMediaId(s.id.toString())
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(s.title)
-                        .setArtist(s.artist)
-                        .setAlbumTitle(s.album)
-                        .setArtworkUri(s.coverUri)
-                        .build()
-                )
-                .build()
-        }
+        val mediaItems = listToUse.map { s -> buildMediaItem(s) }
 
         val targetIndex = listToUse.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
 
@@ -269,20 +303,7 @@ class SonoraAudioPlayer(private val context: Context) {
 
         _playlist.value = newQueue
 
-        val mediaItems = newQueue.map { s ->
-            MediaItem.Builder()
-                .setUri(s.contentUri)
-                .setMediaId(s.id.toString())
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(s.title)
-                        .setArtist(s.artist)
-                        .setAlbumTitle(s.album)
-                        .setArtworkUri(s.coverUri)
-                        .build()
-                )
-                .build()
-        }
+        val mediaItems = newQueue.map { s -> buildMediaItem(s) }
 
         val targetIndex = if (curr != null) {
             newQueue.indexOfFirst { it.id == curr.id }.coerceAtLeast(0)

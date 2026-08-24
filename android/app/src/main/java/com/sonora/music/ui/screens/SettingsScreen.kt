@@ -61,8 +61,15 @@ fun SettingsScreen(
     var navLabelMode by remember { mutableStateOf(sonoraPrefs.getNavLabelMode()) }
     var playerControlsStyle by remember { mutableStateOf(sonoraPrefs.getPlayerControlsStyle()) }
 
-    val totalPlayedSongs = songs.count { it.playCount > 0 }
-    val totalMinutes = songs.sumOf { (it.playCount * (it.durationMs / 1000L / 60L)).toInt() }
+    val playCounts = remember(showStatsModal, songs) { sonoraPrefs.getPlayCounts() }
+    val totalPlayedSongs = remember(songs, playCounts) {
+        songs.count { (playCounts[it.id] ?: it.playCount) > 0 }
+    }
+    val totalMinutes = remember(songs, playCounts) {
+        val recordedMins = sonoraPrefs.getTotalListeningMinutes()
+        if (recordedMins > 0) recordedMins
+        else songs.sumOf { s -> ((playCounts[s.id] ?: s.playCount) * (s.durationMs / 1000L / 60L)).toInt() }
+    }
 
     val allAvailableTabs = listOf(
         Pair("biblioteca", "Biblioteca"),

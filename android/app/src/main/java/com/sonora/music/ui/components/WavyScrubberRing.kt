@@ -38,7 +38,7 @@ fun WavyScrubberRing(
 
     Box(
         modifier = modifier
-            .size(320.dp)
+            .fillMaxSize()
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     val cx = size.width / 2f

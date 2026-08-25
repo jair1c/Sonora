@@ -92,11 +92,7 @@ class SonoraAudioPlayer(private val context: Context) {
     private fun ensureMediaServiceStarted() {
         try {
             val serviceIntent = Intent(context, SonoraMediaService::class.java)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
-            }
+            context.startService(serviceIntent)
         } catch (e: Exception) {
             android.util.Log.e("SonoraAudioPlayer", "Could not start SonoraMediaService", e)
         }

@@ -569,7 +569,6 @@ fun NativeHomeScreen(
                                             )
                                             .clickable {
                                                 if (isCurrent) {
-                                                    if (!isPlaying) audioPlayer.resume()
                                                     onOpenPlayer()
                                                 } else {
                                                     audioPlayer.playSong(song, availableSongs)

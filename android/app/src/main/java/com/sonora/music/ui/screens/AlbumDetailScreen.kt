@@ -56,7 +56,8 @@ fun AlbumDetailScreen(
     audioPlayer: SonoraAudioPlayer,
     isDark: Boolean,
     onBack: () -> Unit,
-    onSongOptions: (Song) -> Unit
+    onSongOptions: (Song) -> Unit,
+    onOpenPlayer: () -> Unit = {}
 ) {
     val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
     val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
@@ -199,7 +200,11 @@ fun AlbumDetailScreen(
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (isCurrent) textColor else cardBg)
                         .clickable {
-                            audioPlayer.playSong(song, albumSongs)
+                            if (isCurrent) {
+                                onOpenPlayer()
+                            } else {
+                                audioPlayer.playSong(song, albumSongs)
+                            }
                         }
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,

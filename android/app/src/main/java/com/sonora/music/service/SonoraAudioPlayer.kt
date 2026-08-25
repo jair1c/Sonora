@@ -261,6 +261,53 @@ class SonoraAudioPlayer(private val context: Context) {
         }
     }
 
+    fun savePlaybackState() {
+        val current = _currentSong.value ?: return
+        val pos = player.currentPosition.coerceAtLeast(0L)
+        val qIds = _playlist.value.map { it.id }
+        sonoraPrefs.saveLastPlayback(current.id, pos, qIds)
+    }
+
+    fun restorePlaybackState(allSongs: List<Song>) {
+        if (_currentSong.value != null || allSongs.isEmpty()) return
+
+        val lastSongId = sonoraPrefs.getLastSongId()
+        val lastPos = sonoraPrefs.getLastPositionMs()
+        val lastQueueIds = sonoraPrefs.getLastQueueIds()
+
+        val songMap = allSongs.associateBy { it.id }
+        val restoredSong = (if (lastSongId > 0) songMap[lastSongId] else null) ?: allSongs.firstOrNull() ?: return
+        val restoredQueue = if (lastQueueIds.isNotEmpty()) {
+            val q = lastQueueIds.mapNotNull { songMap[it] }
+            if (q.isNotEmpty()) q else allSongs
+        } else {
+            allSongs
+        }
+
+        _playlist.value = restoredQueue
+        originalPlaylist = restoredQueue
+        _currentSong.value = restoredSong
+        _currentPositionMs.value = lastPos
+        _durationMs.value = restoredSong.durationMs
+
+        val mediaItems = restoredQueue.map { s -> buildMediaItem(s) }
+        val targetIndex = restoredQueue.indexOfFirst { it.id == restoredSong.id }.coerceAtLeast(0)
+
+        player.stop()
+        player.clearMediaItems()
+        player.setMediaItems(mediaItems, targetIndex, lastPos)
+        player.prepare()
+        player.playWhenReady = false
+        _isPlaying.value = false
+
+        scope.launch(Dispatchers.IO) {
+            val lyrics = mediaRepo.getLyricsForSong(restoredSong)
+            if (lyrics.isNotEmpty() && _currentSong.value?.id == restoredSong.id) {
+                _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
+            }
+        }
+    }
+
     fun play() {
         resume()
     }
@@ -275,11 +322,13 @@ class SonoraAudioPlayer(private val context: Context) {
         player.playWhenReady = true
         player.play()
         _isPlaying.value = true
+        startPositionTracking()
     }
 
     fun pause() {
         player.pause()
         _isPlaying.value = false
+        savePlaybackState()
     }
 
     fun togglePlay() {
@@ -396,6 +445,7 @@ class SonoraAudioPlayer(private val context: Context) {
                     val elapsedSec = (now - lastTickTime) / 1000L
                     if (elapsedSec >= 1L) {
                         sonoraPrefs.addListeningSeconds(elapsedSec)
+                        sonoraPrefs.setLastPositionMs(pos)
                         lastTickTime = now
                     }
                 } else {
@@ -420,6 +470,10 @@ class SonoraAudioPlayer(private val context: Context) {
     private fun stopPositionTracking() {
         progressJob?.cancel()
         progressJob = null
+        try {
+            val pos = player.currentPosition.coerceAtLeast(0L)
+            sonoraPrefs.setLastPositionMs(pos)
+        } catch (_: Exception) {}
     }
 
     fun startSleepTimer(minutes: Int) {

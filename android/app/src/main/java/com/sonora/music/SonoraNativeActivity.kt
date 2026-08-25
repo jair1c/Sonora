@@ -99,11 +99,15 @@ class SonoraNativeActivity : ComponentActivity() {
                         if (localSongs.isNotEmpty()) {
                             songList = localSongs
                             sonoraPrefs.setCachedSongs(localSongs)
+                            audioPlayer.restorePlaybackState(localSongs)
                         }
                     }
                 }
 
                 LaunchedEffect(Unit) {
+                    if (cachedInitial.isNotEmpty()) {
+                        audioPlayer.restorePlaybackState(cachedInitial)
+                    }
                     onPermissionGranted = { loadSongs() }
                     checkAndRequestPermissions()
                     loadSongs()
@@ -163,7 +167,8 @@ class SonoraNativeActivity : ComponentActivity() {
                                     audioPlayer = audioPlayer,
                                     isDark = isDark,
                                     onBack = { selectedArtistName = null },
-                                    onSongOptions = { song -> selectedSongForOptions = song }
+                                    onSongOptions = { song -> selectedSongForOptions = song },
+                                    onOpenPlayer = { isPlayerOpen = true }
                                 )
                             }
                         }
@@ -181,7 +186,8 @@ class SonoraNativeActivity : ComponentActivity() {
                                     audioPlayer = audioPlayer,
                                     isDark = isDark,
                                     onBack = { selectedAlbumTitle = null },
-                                    onSongOptions = { song -> selectedSongForOptions = song }
+                                    onSongOptions = { song -> selectedSongForOptions = song },
+                                    onOpenPlayer = { isPlayerOpen = true }
                                 )
                             }
                         }
@@ -279,8 +285,19 @@ class SonoraNativeActivity : ComponentActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        audioPlayer.savePlaybackState()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        audioPlayer.savePlaybackState()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        audioPlayer.savePlaybackState()
         if (isFinishing && !audioPlayer.isPlaying.value) {
             audioPlayer.release()
         }

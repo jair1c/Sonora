@@ -25,6 +25,7 @@ class SonoraPreferences(private val context: Context) {
         private const val KEY_CUSTOM_PLAYLISTS = "sonora_custom_playlists_json"
         private const val KEY_LAST_SONG_ID = "sonora_last_song_id"
         private const val KEY_LAST_POSITION_MS = "sonora_last_position_ms"
+        private const val KEY_LAST_QUEUE_IDS = "sonora_last_queue_ids"
         private const val KEY_THEME_MODE = "sonora_theme_mode" // "system", "dark", "light"
         private const val KEY_SORT_MODE = "sonora_sort_mode"
         private const val KEY_EQ_PRESET = "sonora_eq_preset"
@@ -278,15 +279,39 @@ class SonoraPreferences(private val context: Context) {
     }
 
     // --- LAST PLAYBACK STATE ---
-    fun saveLastPlayback(songId: Long, positionMs: Long) {
-        prefs.edit()
+    fun saveLastPlayback(songId: Long, positionMs: Long, queueIds: List<Long> = emptyList()) {
+        val editor = prefs.edit()
             .putLong(KEY_LAST_SONG_ID, songId)
             .putLong(KEY_LAST_POSITION_MS, positionMs)
-            .apply()
+        if (queueIds.isNotEmpty()) {
+            val arr = JSONArray()
+            queueIds.forEach { arr.put(it) }
+            editor.putString(KEY_LAST_QUEUE_IDS, arr.toString())
+        }
+        editor.apply()
+    }
+
+    fun setLastSongId(songId: Long) = prefs.edit().putLong(KEY_LAST_SONG_ID, songId).apply()
+    fun setLastPositionMs(pos: Long) = prefs.edit().putLong(KEY_LAST_POSITION_MS, pos).apply()
+    fun setLastQueueIds(queueIds: List<Long>) {
+        val arr = JSONArray()
+        queueIds.forEach { arr.put(it) }
+        prefs.edit().putString(KEY_LAST_QUEUE_IDS, arr.toString()).apply()
     }
 
     fun getLastSongId(): Long = prefs.getLong(KEY_LAST_SONG_ID, -1L)
     fun getLastPositionMs(): Long = prefs.getLong(KEY_LAST_POSITION_MS, 0L)
+    fun getLastQueueIds(): List<Long> {
+        val jsonStr = prefs.getString(KEY_LAST_QUEUE_IDS, "[]") ?: "[]"
+        val list = mutableListOf<Long>()
+        try {
+            val arr = JSONArray(jsonStr)
+            for (i in 0 until arr.length()) {
+                list.add(arr.getLong(i))
+            }
+        } catch (_: Exception) {}
+        return list
+    }
 
     // --- SETTINGS (Theme, Equalizer, Welcome) ---
     fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "system") ?: "system"

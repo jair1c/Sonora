@@ -1,5 +1,6 @@
 package com.sonora.music.service
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -46,6 +47,20 @@ class SonoraMediaService : MediaSessionService() {
                 .setNotificationId(NOTIFICATION_ID)
                 .build()
         )
+
+        player.addListener(object : androidx.media3.common.Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                mediaSession?.let { session ->
+                    onUpdateNotification(session, startInForegroundRequired = isPlaying)
+                }
+            }
+
+            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                mediaSession?.let { session ->
+                    onUpdateNotification(session, startInForegroundRequired = player.isPlaying)
+                }
+            }
+        })
     }
 
     private fun createNotificationChannel() {
@@ -57,10 +72,26 @@ class SonoraMediaService : MediaSessionService() {
             ).apply {
                 description = "Controles de reproducción multimedia de Sonora"
                 setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager?.createNotificationChannel(channel)
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
+        val player = mediaSession?.player
+        if (player != null && player.isPlaying) {
+            mediaSession?.let { session ->
+                onUpdateNotification(session, startInForegroundRequired = true)
+            }
+        }
+        return START_STICKY
+    }
+
+    override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
+        super.onUpdateNotification(session, startInForegroundRequired)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {

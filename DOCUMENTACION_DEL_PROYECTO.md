@@ -1,26 +1,28 @@
-# 🌸 Sonora Music Player (v3.1.0)
-### *Reproductor de Música Nativo Audiófilo con Diseño Orgánico y Arquitectura Jetpack Compose para Android*
+# 🌸 Sonora Music Player (v3.3.0)
+### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
 
 ## 📖 1. Visión y Concepto del Proyecto
 
-**Sonora** es un reproductor de música local de alta fidelidad diseñado para brindar una experiencia auditiva pura, libre de distracciones, con una estética visual basada en **formas orgánicas, vinilo en flor de 8 pétalos simétricos, tipografía elegante y una paleta tonal dual (Warm Linen Beige en Modo Claro / Deep Velvet OLED en Modo Oscuro)**.
+**Sonora** es un reproductor de música local de alta fidelidad diseñado para brindar una experiencia auditiva pura, libre de distracciones, con una estética visual basada en **formas orgánicas, flor de loto acústica y disco de vinilo en tonos Negro Obsidiana profundo y Oro Champaña metálico brillante**.
 
-El reproductor opera **100% de manera local y privada**, construido sobre una arquitectura **100% Nativa en Kotlin y Jetpack Compose** con el motor **AndroidX Media3 (ExoPlayer)**, integrando un procesador DSP de ecualización nativa de 10 bandas, fundido cruzado (*crossfade*), lectura instantánea de metadatos y carátulas embebidas en archivos `.flac`, `.mp3`, `.m4a`, `.wav`, `.ogg`, sincronización de letras `.lrc`, y un sistema de personalización visual sin precedentes.
+El reproductor opera **100% de manera local y privada**, construido sobre una arquitectura **100% Nativa en Kotlin y Jetpack Compose** con el motor **AndroidX Media3 (ExoPlayer)**, integrando un procesador DSP de ecualización nativa de 10 bandas, fundido cruzado (*crossfade*), visualizador de espectro FFT en vivo, notificación multimedia en primer plano persistente, lectura instantánea de metadatos y carátulas embebidas en archivos `.flac`, `.mp3`, `.m4a`, `.wav`, `.ogg`, sincronización de letras `.lrc`, y un sistema de personalización visual sin precedentes.
 
 ---
 
 ## 🛠️ 2. Stack Tecnológico Nativo
 
-- **Lenguaje Principal**: Kotlin 2.0+ (JVM 17 / Android SDK 34 & 35)
+- **Lenguaje Principal**: Kotlin 2.0+ (JVM 21 / Android SDK 34 & 35)
 - **Framework de UI**: Jetpack Compose (BOM 2024.10.01) + Material3 + Material Icons Extended
 - **Motor de Audio & Sesión**:
   - `androidx.media3:media3-exoplayer:1.5.0`
   - `androidx.media3:media3-session:1.5.0`
   - `androidx.media3:media3-common:1.5.0`
   - `androidx.media3:media3-ui:1.5.0`
-- **Procesamiento de Señal DSP**: `android.media.audiofx.Equalizer` y `BassBoost` nativo de 10 bandas
+- **Procesamiento de Señal DSP & Visualización**:
+  - `android.media.audiofx.Equalizer` y `BassBoost` nativo de 10 bandas
+  - `SonoraVisualizerManager` con motor dual FFT por hardware + respaldo de onda armónica procedural
 - **Gestión Asíncrona & Reactividad**: Kotlin Coroutines + `StateFlow` / `SharedFlow`
 - **Carga de Imágenes & Carátulas**: `io.coil-kt:coil-compose:2.7.0` con soporte para Content URIs de MediaStore
 - **Tipografía**: Plus Jakarta Sans / Outfit vía `androidx.compose.ui:ui-text-google-fonts:1.7.5`
@@ -29,14 +31,54 @@ El reproductor opera **100% de manera local y privada**, construido sobre una ar
 
 ---
 
-## 📜 3. Historial Cronológico Completo de Cambios (Changelog de v0.1 a v3.1.0)
+## 📜 3. Historial Cronológico Completo de Cambios
 
 ### 🔹 Fase 1: Arquitectura Inicial y Motor de Reproducción Local (v0.1 - v0.5)
-- **Problema Inicial**: Prototipo híbrido en WebView sin persistencia ni notificación multimedia en la barra de Android; al salir de la app o bloquear el teléfono, la música se pausaba y el sistema cerraba el proceso.
-- **Solución**:
-  - Se implementó un servicio nativo en Android con `MediaSessionCompat` y `NotificationManagerCompat` en primer plano (*Foreground Service*).
-  - Se añadieron controles multimedia directos en la notificación (Reproducir, Pausar, Siguiente, Anterior).
-  - Se integró el escaneo del almacenamiento del dispositivo (`MediaStore.Audio.Media.EXTERNAL_CONTENT_URI`).
+- Se implementó un servicio nativo en Android con `MediaSession` y `NotificationManagerCompat` en primer plano (*Foreground Service*).
+- Se añadieron controles multimedia directos en la notificación (Reproducir, Pausar, Siguiente, Anterior).
+- Se integró el escaneo del almacenamiento del dispositivo (`MediaStore.Audio.Media.EXTERNAL_CONTENT_URI`).
+
+### 🔹 Fase 8: Respaldo Dinámico de Reproducción, Visualizador FFT y Estabilidad 30s (v3.2.0)
+- **Sincronización Continua**: Se sincronizó la pista activa y la posición en milisegundos en tiempo real durante cada segundo de reproducción, garantizando que el estado restaurado coincida exactamente con la canción que sonaba.
+- **Visualizador Reactivo**: Creación del motor dual `SonoraVisualizerManager.kt` que combina lectura FFT en tiempo real con animación armónica procedural fluida cuando el hardware lo requiera.
+- **WakeLock Local**: Activación de `C.WAKE_MODE_LOCAL` para evitar suspensiones de audio en reposo.
+
+### 🔹 Fase 9: Nueva Identidad Visual Lujosa & Notificación Multimedia Persistente (v3.3.0)
+- **Nuevo Imagotipo & Asset Branding**: Rediseño completo de la iconografía de la aplicación con estética Negro Obsidiana y Oro Champaña (*Lotus Acoustic Flower & Vinyl Wave*), exportada en todas las densidades mipmap (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`) y assets vectoriales adaptativos.
+- **Corrección de Watchdog de 30 Segundos**: Eliminación de llamadas directas a `startForegroundService` no gestionadas que causaban la muerte del proceso a los 30s exactos por el temporizador estricto de Android.
+- **Notificación en Primer Plano Media3**: Vinculación directa entre `SonoraMediaService` y `DefaultMediaNotificationProvider` con canal `sonora_music_playback`, control de visibilidad pública en pantalla de bloqueo y escucha reactiva de eventos `onIsPlayingChanged` y `onMediaItemTransition`.
+
+---
+
+## 📂 4. Estructura de Directorios del Código Fuente
+
+```
+android/app/src/main/java/com/sonora/music/
+├── SonoraNativeActivity.kt              # Actividad principal con Jetpack Compose y gestión de permisos
+├── data/
+│   ├── local/
+│   │   └── SonoraPreferences.kt         # Almacenamiento local SharedPreferences tipado
+│   ├── model/
+│   │   ├── Album.kt, Artist.kt, Song.kt # Modelos inmutables de datos de audio
+│   │   └── SonoraStats.kt               # Métricas y estadísticas de reproducción
+│   └── repository/
+│       └── MediaStoreRepository.kt      # Repositorio de lectura MediaStore y parser .LRC
+├── service/
+│   ├── SonoraAudioPlayer.kt             # Motor ExoPlayer, cola, shuffle y crossfade
+│   ├── SonoraMediaService.kt            # Servicio MediaSessionService y notificación en primer plano
+│   ├── SonoraVisualizerManager.kt       # Gestor dual de espectro de audio FFT y armónicos
+│   └── SonoraEqualizerManager.kt        # Gestor DSP de 10 bandas y BassBoost
+├── ui/
+│   ├── components/
+│   ├── screens/
+│   │   ├── NativeLibraryScreen.kt       # Biblioteca completa (Canciones, Álbumes, Artistas, Carpetas)
+│   │   ├── NativePlayerScreen.kt        # Reproductor floral con 5 estilos de controles y visualizador en vivo
+│   │   ├── SettingsScreen.kt            # Ajustes, personalización y temas
+│   │   └── WelcomeScreen.kt             # Pantalla de bienvenida orgánica
+│   └── theme/
+└── widget/
+    └── SonoraWidgetProvider.kt          # Widget interactivo tipo cápsula para la pantalla de inicio
+```
 
 ---
 

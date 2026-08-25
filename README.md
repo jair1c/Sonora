@@ -1,8 +1,8 @@
-# 🌸 Sonora (v3.1.0)
-> **Reproductor de Música Nativo Audiófilo con Diseño Orgánico y Arquitectura Jetpack Compose para Android**
+# 🌸 Sonora Music (v3.3.0)
+> **Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-3.1.0-emerald.svg)
+![Version](https://img.shields.io/badge/version-3.3.0-emerald.svg)
 ![Platform](https://img.shields.io/badge/platform-Android_10+-brightgreen.svg)
 ![Stack](https://img.shields.io/badge/stack-Kotlin_+_Jetpack_Compose_+_Media3-blueviolet.svg)
 
@@ -10,6 +10,9 @@
 
 ## ✨ Características Principales
 
+- 🌸 **Identidad Visual Premium & Nuevo Imagotipo**: Fusión minimalista de flor de loto acústica, ondas sonoras armónicas y disco de vinilo en tonos Negro Obsidiana y Oro Champaña brillante.
+- 🔔 **Notificación Multimedia en Primer Plano Persistente**: Integración nativa con `MediaSessionService` y Android Media Style Notification con controles completos (play/pause/prev/next, barra de progreso y carátula) visible en cajón de notificaciones y pantalla de bloqueo.
+- 📊 **Visualizador de Espectro en Vivo (Dual FFT + Motor Armónico)**: Renderizado dinámico de frecuencias de audio con resortes elásticos suaves y respaldo procedural garantizado.
 - 🌸 **Reproductor Floral de 8 Pétalos Simétricos**: Carátula de vinilo con recorte Bezier orgánico que gira fluidamente, escala de forma dinámica y mantiene un margen áureo del 20% respecto al anillo de onda interactivo (*Wavy Scrubber*).
 - 🎛️ **5 Estilos de Controles de Reproducción de Lujo**:
   - *Cápsula Flotante (Luxury Dock)*
@@ -31,7 +34,7 @@
 ## 🛠️ Compilación e Instalación
 
 ```powershell
-# 1. Compilar APK Release Optimizada (ProGuard / R8)
+# 1. Compilar APK Release Optimizada
 cd android
 .\gradlew.bat assembleRelease
 

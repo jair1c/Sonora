@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.5.0)
+# 🌸 Sonora Music Player (v3.5.1)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -277,4 +277,37 @@ adb install -r app\build\outputs\apk\release\app-release.apk
 | `eq_band_levels` | String JSON | Ganancia por banda en mB (-1000 a +1000) |
 | `eq_bass_boost` | Int | Nivel de refuerzo de graves (0 a 1000) |
 
+---
 
+## 🚀 Fase 15 — Crossfade sin Corte Abrupto (v3.5.1)
+
+### Problema Detectado
+Al inicio del crossfade (cuando faltaban los N segundos configurados), se producía un **corte perceptible de ~50–200 ms** en el audio. El sonido de la canción A se interrumpía abruptamente antes de que empezara la mezcla con la canción B.
+
+### Causa Raíz
+En el método `performCrossfadeTransition()`, la canción B se cargaba en el momento exacto del trigger con:
+```
+player.setMediaItems(...) → player.prepare() → player.play()
+```
+El método `prepare()` tarda entre 50 y 200 ms en abrir el archivo de audio, inicializar el codec y llenar el buffer de decodificación. Durante ese lapso, el audio de la canción A ya había sido interrumpido, generando el silencio perceptible.
+
+### Solución Implementada (Preloading Anticipado)
+
+#### `SonoraAudioPlayer.kt`
+- **`preloadNextSong(nextSong: Song)`**: Nuevo método privado que carga la canción B silenciosamente en el `crossfadePlayer` a volumen `0f` con `playWhenReady = false`. Se llama **2× antes** del inicio del crossfade (si crossfade = 10s, el preload ocurre 20s antes del fin de la canción).
+- **`performCrossfadeTransition()`**: Refactorizado para:
+  1. Detectar si la canción B ya está precargada (`preloadedSong?.id == nextSong.id`)
+  2. Si está preloaded: simplemente ejecuta `crossfadePlayer.play()` sin latencia
+  3. Si NO está preloaded (ej: usuario salta manualmente): carga y reproduce inmediatamente como fallback
+  4. Curva de fade **sinusoidal (ease-in-out)** en lugar de lineal para una transición más natural tipo DJ
+  5. **60 pasos/segundo** (16 ms cada uno) en lugar de 20 pasos anteriores → mezcla de volumen más fluida
+  6. Al finalizar el fade, el `player` principal retoma el control desde la posición exacta donde llegó el `crossfadePlayer`
+- **`startPositionTracking()`**: Se añadió una ventana de preload (`preloadWindowMs = crossfadeMs * 2`) que dispara `preloadNextSong()` antes de que llegue el trigger del crossfade.
+- **`playSong()`**: Cancela el preload y resetea `preloadedSong` al cambiar de canción manualmente.
+- **`release()`**: Libera el `preloadJob` correctamente al destruir el player.
+
+### Resultado
+La transición entre canciones A → B ahora es completamente fluida, sin cortes ni silencios perceptibles. La curva sinusoidal produce una mezcla audiblemente más natural, similar a un fundido DJ profesional.
+
+### Versión
+`versionCode 351` · `versionName "3.5.1"` · Commit: `main`

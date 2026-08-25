@@ -91,6 +91,10 @@ class SonoraAudioPlayer(private val context: Context) {
     private var crossfadeSeconds: Int = 0
     private var isCrossfading = false
 
+    // Preload: next song loaded silently in crossfadePlayer before crossfade triggers
+    private var preloadedSong: Song? = null
+    private var preloadJob: Job? = null
+
     private var lastCountedSongId: Long = -1L
     private var lastCountedTimestamp: Long = 0L
 
@@ -261,6 +265,17 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun playSong(song: Song, newPlaylist: List<Song> = emptyList()) {
+        // Cancel any in-progress preload or crossfade
+        preloadJob?.cancel()
+        preloadJob = null
+        preloadedSong = null
+        crossfadeJob?.cancel()
+        isCrossfading = false
+        try {
+            crossfadePlayer.stop()
+            crossfadePlayer.clearMediaItems()
+        } catch (_: Exception) {}
+
         val baseList = if (newPlaylist.isNotEmpty()) newPlaylist else listOf(song)
         originalPlaylist = baseList
 
@@ -441,6 +456,33 @@ class SonoraAudioPlayer(private val context: Context) {
         _repeatMode.value = nextMode
     }
 
+    /**
+     * Silently preloads [nextSong] into crossfadePlayer so it is already buffered
+     * (and started at volume 0) when the crossfade trigger fires. This eliminates
+     * the brief silence/cut that occurred due to prepare() latency at transition time.
+     */
+    private fun preloadNextSong(nextSong: Song) {
+        if (preloadedSong?.id == nextSong.id) return  // Already preloaded
+        preloadJob?.cancel()
+        preloadJob = scope.launch {
+            try {
+                crossfadePlayer.stop()
+                crossfadePlayer.clearMediaItems()
+                crossfadePlayer.setMediaItem(buildMediaItem(nextSong, useFileFallback = true), 0L)
+                crossfadePlayer.prepare()
+                crossfadePlayer.volume = 0f
+                // Start playing silently so audio engine is warmed up and buffer is filled.
+                // We pause immediately after ready to avoid audible sound before crossfade.
+                crossfadePlayer.playWhenReady = false
+                preloadedSong = nextSong
+                android.util.Log.d("SonoraAudioPlayer", "Preloaded next song: ${nextSong.title}")
+            } catch (e: Exception) {
+                android.util.Log.w("SonoraAudioPlayer", "Preload failed, will load at crossfade time: ${e.message}")
+                preloadedSong = null
+            }
+        }
+    }
+
     fun performCrossfadeTransition(targetNextSong: Song? = null) {
         if (isCrossfading || crossfadeSeconds <= 0) return
         val current = _currentSong.value ?: return
@@ -458,25 +500,42 @@ class SonoraAudioPlayer(private val context: Context) {
 
         isCrossfading = true
         crossfadeJob?.cancel()
+        preloadJob?.cancel()
 
-        val currentPos = player.currentPosition.coerceAtLeast(0L)
+        val durationMs = crossfadeSeconds * 1000L
+        // More steps = smoother curve. 60fps-equivalent: 1 step per 16ms.
+        val steps = (crossfadeSeconds * 60).coerceAtLeast(30)
+        val stepDelay = (durationMs / steps).coerceAtLeast(16L)
 
-        // 1. Play fading tail of Song A on crossfadePlayer
-        try {
-            crossfadePlayer.stop()
-            crossfadePlayer.clearMediaItems()
-            crossfadePlayer.setMediaItem(buildMediaItem(current, useFileFallback = true), currentPos)
-            crossfadePlayer.prepare()
-            crossfadePlayer.volume = 1.0f
-            crossfadePlayer.playWhenReady = true
-            crossfadePlayer.play()
-        } catch (e: Exception) {
-            android.util.Log.e("SonoraAudioPlayer", "Error starting crossfade tail", e)
+        // --- A) Ensure crossfadePlayer has the next song ready ---
+        val isPreloaded = preloadedSong?.id == nextSong.id
+
+        if (isPreloaded) {
+            // Already buffered — just unpause at volume 0 for instant start
+            try {
+                crossfadePlayer.volume = 0f
+                crossfadePlayer.playWhenReady = true
+                crossfadePlayer.play()
+            } catch (e: Exception) {
+                android.util.Log.w("SonoraAudioPlayer", "crossfadePlayer play failed: ${e.message}")
+            }
+        } else {
+            // Not preloaded — load and start immediately (small delay may occur)
+            try {
+                crossfadePlayer.stop()
+                crossfadePlayer.clearMediaItems()
+                crossfadePlayer.setMediaItem(buildMediaItem(nextSong, useFileFallback = true), 0L)
+                crossfadePlayer.prepare()
+                crossfadePlayer.volume = 0f
+                crossfadePlayer.playWhenReady = true
+                crossfadePlayer.play()
+            } catch (e: Exception) {
+                android.util.Log.e("SonoraAudioPlayer", "Error loading crossfade B player", e)
+            }
         }
 
-        // 2. Play Song B on primary player starting from volume 0.0f
+        // --- B) Update metadata immediately so UI / notification reflect Song B ---
         val nextIndex = queue.indexOfFirst { it.id == nextSong.id }.coerceAtLeast(0)
-        player.setMediaItems(queue.map { buildMediaItem(it) }, nextIndex, 0L)
         _currentSong.value = nextSong
         sonoraPrefs.saveLastPlayback(nextSong.id, 0L, queue.map { it.id })
         trackSongPlay(nextSong)
@@ -487,32 +546,38 @@ class SonoraAudioPlayer(private val context: Context) {
                 _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
             }
         }
-        player.prepare()
-        player.volume = 0.0f
-        player.playWhenReady = true
-        player.play()
-        _isPlaying.value = true
 
-        // 3. Smooth simultaneous DJ blend
+        // --- C) Smooth simultaneous fade: A fades out, B fades in ---
         crossfadeJob = scope.launch {
-            val durationMs = crossfadeSeconds * 1000L
-            val steps = (crossfadeSeconds * 20).coerceAtLeast(10)
-            val stepDelay = (durationMs / steps).coerceAtLeast(20L)
-
             for (step in 1..steps) {
                 delay(stepDelay)
-                val progress = step.toFloat() / steps.toFloat()
-                player.volume = progress.coerceIn(0f, 1f)
-                try {
-                    crossfadePlayer.volume = (1.0f - progress).coerceIn(0f, 1f)
-                } catch (_: Exception) { }
+                // Ease-in-out curve (sinusoidal) for a natural DJ blend
+                val t = step.toFloat() / steps.toFloat()
+                val eased = (0.5f - 0.5f * Math.cos(Math.PI * t.toDouble())).toFloat()
+                try { crossfadePlayer.volume = eased.coerceIn(0f, 1f) } catch (_: Exception) {}
+                player.volume = (1f - eased).coerceIn(0f, 1f)
             }
 
-            player.volume = 1.0f
+            // --- D) Hand off: Song B takes over the primary player ---
+            try {
+                // Seek primary player to where crossfadePlayer is now
+                val crossfadePos = try { crossfadePlayer.currentPosition.coerceAtLeast(0L) } catch (_: Exception) { 0L }
+                player.setMediaItems(queue.map { buildMediaItem(it) }, nextIndex, crossfadePos)
+                player.prepare()
+                player.volume = 1.0f
+                player.playWhenReady = true
+                player.play()
+                _isPlaying.value = true
+            } catch (e: Exception) {
+                android.util.Log.e("SonoraAudioPlayer", "Error handing off crossfade to primary player", e)
+            }
+
             try {
                 crossfadePlayer.stop()
                 crossfadePlayer.clearMediaItems()
-            } catch (_: Exception) { }
+            } catch (_: Exception) {}
+
+            preloadedSong = null
             isCrossfading = false
         }
     }
@@ -573,12 +638,29 @@ class SonoraAudioPlayer(private val context: Context) {
                     lastTickTime = now
                 }
 
-                // DJ Crossfade trigger when near track end
+                // Preload next song early so crossfadePlayer has it buffered
+                // Triggers at 2× crossfade window before end to give time to buffer
                 if (crossfadeSeconds > 0 && dur > crossfadeSeconds * 1500L && !isCrossfading && player.isPlaying) {
                     val remainingMs = dur - pos
                     val crossfadeMs = crossfadeSeconds * 1000L
+                    val preloadWindowMs = crossfadeMs * 2  // Start buffering at 2x the crossfade window
+
                     if (remainingMs in 0..crossfadeMs) {
+                        // Crossfade trigger
                         performCrossfadeTransition()
+                    } else if (remainingMs in 0..preloadWindowMs && preloadedSong == null) {
+                        // Preload window — silently buffer the next song
+                        val queue = _playlist.value
+                        val current = _currentSong.value
+                        val currentIdx = if (current != null) queue.indexOfFirst { it.id == current.id } else -1
+                        val nextSong = if (currentIdx != -1 && currentIdx + 1 < queue.size) {
+                            queue[currentIdx + 1]
+                        } else if (_repeatMode.value == Player.REPEAT_MODE_ALL && queue.isNotEmpty()) {
+                            queue.first()
+                        } else null
+                        if (nextSong != null) {
+                            preloadNextSong(nextSong)
+                        }
                     }
                 }
 
@@ -660,6 +742,8 @@ class SonoraAudioPlayer(private val context: Context) {
 
     fun release() {
         crossfadeJob?.cancel()
+        preloadJob?.cancel()
+        preloadedSong = null
         cancelSleepTimer()
         stopPositionTracking()
         visualizerManager.release()

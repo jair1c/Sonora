@@ -1,6 +1,7 @@
 package com.sonora.music.service
 
 import android.content.Context
+import android.os.Build
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -105,7 +106,11 @@ class SonoraAudioPlayer(private val context: Context) {
     private fun ensureMediaServiceStarted() {
         try {
             val serviceIntent = Intent(context, SonoraMediaService::class.java)
-            context.startService(serviceIntent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
         } catch (e: Exception) {
             android.util.Log.e("SonoraAudioPlayer", "Could not start SonoraMediaService", e)
         }

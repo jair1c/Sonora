@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.4.1)
+# 🌸 Sonora Music Player (v3.4.2)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -58,6 +58,10 @@ El reproductor opera **100% de manera local y privada**, construido sobre una ar
 ### 🔹 Fase 11: Corrección de Bordes de Ícono Adaptativo & Vector de Notificación Multimedia (v3.4.1)
 - **Eliminación de Insets y Bordes Blancos en Launchers**: Corrección en `mipmap-anydpi-v26/ic_launcher.xml` e `ic_launcher_round.xml` eliminando el `android:inset="16.7%"` del fondo y configurando fondo 100% sólido obsidiana `#161513` con el imagotipo dorado centrado en la zona segura (62% de canvas), eliminando cualquier artefacto blanco en launchers circulares, squircles, Smart Launcher o Pixel Material You.
 - **Ícono Vectorial de Notificación de Estado (`ic_notification_sonora.xml`)**: Incorporación de icono vectorial monochrome en `res/drawable/` y configuración explícita en `DefaultMediaNotificationProvider.setSmallIcon(...)` para evitar que Android intente renderizar el XML adaptativo en la barra de notificaciones y desbloquear la visualización instantánea en pantalla de bloqueo y panel multimedia.
+
+### 🔹 Fase 12: Arquitectura Reactiva de Notificación MediaStyle & Compatibilidad Android 16 Baklava (v3.4.2)
+- **Notificación Reactiva NotificationCompat.MediaStyle**: Implementación de notificación explícita en `SonoraMediaService` acoplada reactivamente a los flujos `currentSong` e `isPlaying` de `SonoraAudioPlayer`. Incorpora portadas en alta resolución, acciones directas (*Anterior, Play/Pause, Siguiente, Cerrar*) y control `FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK` en Android 14/15/16.
+- **Gestor de Permiso de Notificación en Ajustes**: Tarjeta de estado en tiempo real en la pantalla de Ajustes que detecta `areNotificationsEnabled()` y permite al usuario abrir la pantalla de configuración del sistema de Android 16 con un solo toque.
 
 ---
 

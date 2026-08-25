@@ -670,6 +670,102 @@ fun SettingsScreen(
             }
         }
 
+        // NOTIFICACIONES & SEGUNDO PLANO (ANDROID 16+)
+        item {
+            val areNotificationsEnabled = remember(context) {
+                androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = textPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "NOTIFICACIÓN MULTIMEDIA",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            color = textPrimary
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(if (areNotificationsEnabled) Color(0xFF1B5E20) else Color(0xFFB71C1C))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = if (areNotificationsEnabled) "Activas" else "Permiso requerido",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Controla la reproducción desde el panel de notificaciones y la pantalla de bloqueo en Android 16.",
+                    fontSize = 11.sp,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(activePillBg)
+                        .clickable {
+                            try {
+                                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                        putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                    }
+                                } else {
+                                    android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                        data = android.net.Uri.fromParts("package", context.packageName, null)
+                                    }
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Abre Ajustes > Aplicaciones > Sonora > Notificaciones", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (areNotificationsEnabled) "Configurar Notificaciones del Sistema" else "🔔 Habilitar Permiso en Android 16",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = activePillText
+                    )
+                }
+            }
+        }
+
         // 6. PERSONALIZAR BARRA INFERIOR
         item {
             Column(

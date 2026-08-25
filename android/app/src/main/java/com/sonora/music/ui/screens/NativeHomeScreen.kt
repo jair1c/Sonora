@@ -85,7 +85,10 @@ fun NativeHomeScreen(
 
     var currentTab by remember { mutableStateOf(LibraryTab.CANCIONES) }
     var searchQuery by remember { mutableStateOf("") }
-    var sortMode by remember { mutableStateOf(SortMode.TITLE_AZ) }
+    var sortMode by remember {
+        val saved = sonoraPrefs.getSortMode()
+        mutableStateOf(try { SortMode.valueOf(saved) } catch (e: Exception) { SortMode.TITLE_AZ })
+    }
     var showSortDropdown by remember { mutableStateOf(false) }
 
     var showSleepModal by remember { mutableStateOf(false) }
@@ -509,6 +512,7 @@ fun NativeHomeScreen(
                                                 text = { Text(label, color = textPrimary, fontSize = 12.sp) },
                                                 onClick = {
                                                     sortMode = mode
+                                                    sonoraPrefs.setSortMode(mode.name)
                                                     showSortDropdown = false
                                                 }
                                             )
@@ -527,7 +531,7 @@ fun NativeHomeScreen(
                                 state = songsListState,
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(top = 4.dp, bottom = 120.dp)
+                                contentPadding = PaddingValues(top = 4.dp, bottom = 160.dp)
                             ) {
                                 items(availableSongs, key = { it.id }) { song ->
                                     val isCurrent = currentSong?.id == song.id
@@ -687,7 +691,7 @@ fun NativeHomeScreen(
                                 columns = GridCells.Fixed(3),
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalArrangement = Arrangement.spacedBy(14.dp),
-                                contentPadding = PaddingValues(top = 8.dp, bottom = 140.dp)
+                                contentPadding = PaddingValues(top = 8.dp, bottom = 180.dp)
                             ) {
                                 items(artistsList) { artist ->
                                     val isSelected = selectedArtistMix.contains(artist.name)
@@ -770,7 +774,7 @@ fun NativeHomeScreen(
                                     },
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
-                                        .padding(bottom = 80.dp)
+                                        .padding(bottom = 110.dp)
                                         .height(48.dp),
                                     shape = RoundedCornerShape(100.dp),
                                     colors = ButtonDefaults.buttonColors(
@@ -801,7 +805,7 @@ fun NativeHomeScreen(
                             columns = GridCells.Fixed(2),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp)
+                            contentPadding = PaddingValues(top = 8.dp, bottom = 180.dp)
                         ) {
                             items(albumsList) { album ->
                                 Column(
@@ -871,7 +875,7 @@ fun NativeHomeScreen(
 
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp)
+                            contentPadding = PaddingValues(top = 8.dp, bottom = 180.dp)
                         ) {
                             items(folders) { folder ->
                                 Row(
@@ -1150,7 +1154,7 @@ fun BottomNavItem(
     onClick: () -> Unit
 ) {
     val selectedColor = if (isDark) Color.White else Color(0xFF121212)
-    val unselectedColor = if (isDark) Color(0xFF75726B) else Color(0xFF8A857B)
+    val unselectedColor = if (isDark) Color(0xFF9E998F) else Color(0xFF5A5852)
     val showLabel = when (navLabelMode) {
         "active_only" -> isSelected
         "always" -> true
@@ -1179,8 +1183,8 @@ fun BottomNavItem(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = label,
-                    fontSize = 10.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 11.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                     color = if (isSelected) selectedColor else unselectedColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis

@@ -25,7 +25,8 @@ class SonoraPreferences(private val context: Context) {
         private const val KEY_CUSTOM_PLAYLISTS = "sonora_custom_playlists_json"
         private const val KEY_LAST_SONG_ID = "sonora_last_song_id"
         private const val KEY_LAST_POSITION_MS = "sonora_last_position_ms"
-        private const val KEY_THEME_MODE = "sonora_theme_mode" // "dark", "light", "system"
+        private const val KEY_THEME_MODE = "sonora_theme_mode" // "system", "dark", "light"
+        private const val KEY_SORT_MODE = "sonora_sort_mode"
         private const val KEY_EQ_PRESET = "sonora_eq_preset"
         private const val KEY_BASS_BOOST = "sonora_bass_boost_level"
         private const val KEY_HAS_SEEN_WELCOME = "sonora_has_seen_welcome"
@@ -36,6 +37,10 @@ class SonoraPreferences(private val context: Context) {
         private const val KEY_NAV_LABEL_MODE = "sonora_nav_label_mode" // "active_only", "always", "never"
         private const val KEY_PLAYER_CONTROLS_STYLE = "sonora_player_controls_style" // "dock", "circles", "organic", "squircle", "waveform"
     }
+
+    // --- SORT MODE ---
+    fun getSortMode(): String = prefs.getString(KEY_SORT_MODE, "TITLE_AZ") ?: "TITLE_AZ"
+    fun setSortMode(mode: String) = prefs.edit().putString(KEY_SORT_MODE, mode).apply()
 
     // --- TOOLS & PREFERENCES ---
     fun getPlayerControlsStyle(): String = prefs.getString(KEY_PLAYER_CONTROLS_STYLE, "dock") ?: "dock"
@@ -281,7 +286,7 @@ class SonoraPreferences(private val context: Context) {
     fun getLastPositionMs(): Long = prefs.getLong(KEY_LAST_POSITION_MS, 0L)
 
     // --- SETTINGS (Theme, Equalizer, Welcome) ---
-    fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "dark") ?: "dark"
+    fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "system") ?: "system"
     fun setThemeMode(mode: String) = prefs.edit().putString(KEY_THEME_MODE, mode).apply()
 
     fun getEqualizerPreset(): Int = prefs.getInt(KEY_EQ_PRESET, 0)

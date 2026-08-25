@@ -19,9 +19,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.sonora.music.data.local.SonoraPreferences
 import com.sonora.music.data.model.Playlist
 import com.sonora.music.data.model.Song
@@ -71,7 +73,7 @@ fun PlaylistsScreen(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 140.dp)
+        contentPadding = PaddingValues(top = 8.dp, bottom = 180.dp)
     ) {
         // Section Header: TUS LISTAS DE REPRODUCCIÓN + [ + Nueva Lista ]
         item {
@@ -426,39 +428,131 @@ fun PlaylistsScreen(
         }
     }
 
-    // Create Playlist Dialog
+    // Custom Organic Luxury Create Playlist Dialog
     if (showCreateDialog) {
-        AlertDialog(
-            onDismissRequest = { showCreateDialog = false },
-            title = { Text("Nueva Lista de Reproducción", fontWeight = FontWeight.Bold) },
-            text = {
-                OutlinedTextField(
-                    value = newPlaylistName,
-                    onValueChange = { newPlaylistName = it },
-                    label = { Text("Nombre de la lista") },
-                    singleLine = true
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (newPlaylistName.isNotBlank()) {
-                            sonoraPrefs.createCustomPlaylist(newPlaylistName.trim())
-                            customPlaylists = sonoraPrefs.getCustomPlaylists()
-                            newPlaylistName = ""
-                            showCreateDialog = false
-                            Toast.makeText(context, "Lista creada", Toast.LENGTH_SHORT).show()
+        Dialog(
+            onDismissRequest = { showCreateDialog = false }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA))
+                    .border(1.dp, borderCol, RoundedCornerShape(28.dp))
+                    .padding(24.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Circular Icon Badge
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(if (isDark) Color(0xFF22201C) else Color(0xFFE6E1D5))
+                            .border(1.dp, borderCol, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlaylistAdd,
+                            contentDescription = null,
+                            tint = textPrimary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "NUEVA LISTA",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 2.sp,
+                            color = textPrimary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Crea una lista personalizada para tus canciones",
+                            fontSize = 11.sp,
+                            color = textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    // Luxury Styled Capsule TextField
+                    OutlinedTextField(
+                        value = newPlaylistName,
+                        onValueChange = { newPlaylistName = it },
+                        placeholder = { Text("Nombre de la lista...", color = textSecondary, fontSize = 13.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (isDark) Color(0xFF1E1C19) else Color(0xFFEBE6DC),
+                            unfocusedContainerColor = if (isDark) Color(0xFF1E1C19) else Color(0xFFEBE6DC),
+                            focusedBorderColor = textPrimary,
+                            unfocusedBorderColor = borderCol,
+                            focusedTextColor = textPrimary,
+                            unfocusedTextColor = textPrimary,
+                            cursorColor = textPrimary
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Action Buttons Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Cancel Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                                .clip(RoundedCornerShape(100.dp))
+                                .background(if (isDark) Color(0xFF1E1C19) else Color(0xFFE6E1D5))
+                                .border(1.dp, borderCol, RoundedCornerShape(100.dp))
+                                .clickable {
+                                    newPlaylistName = ""
+                                    showCreateDialog = false
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Cancelar",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textPrimary
+                            )
+                        }
+
+                        // Create Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                                .clip(RoundedCornerShape(100.dp))
+                                .background(if (isDark) Color.White else Color(0xFF121212))
+                                .clickable {
+                                    if (newPlaylistName.isNotBlank()) {
+                                        sonoraPrefs.createCustomPlaylist(newPlaylistName.trim())
+                                        customPlaylists = sonoraPrefs.getCustomPlaylists()
+                                        newPlaylistName = ""
+                                        showCreateDialog = false
+                                        Toast.makeText(context, "Lista creada con éxito", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Crear Lista",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color.Black else Color.White
+                            )
                         }
                     }
-                ) {
-                    Text("Crear")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCreateDialog = false }) {
-                    Text("Cancelar")
                 }
             }
-        )
+        }
     }
 }

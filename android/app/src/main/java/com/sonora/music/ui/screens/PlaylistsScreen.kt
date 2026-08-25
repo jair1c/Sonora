@@ -70,6 +70,22 @@ fun PlaylistsScreen(
         recentIds.mapNotNull { id -> allSongs.firstOrNull { it.id == id } }
     }
 
+    val hiResSongs = remember(allSongs) {
+        allSongs.filter { song ->
+            val path = song.filePath.lowercase()
+            path.endsWith(".flac") || path.endsWith(".wav") || path.endsWith(".alac") ||
+            path.endsWith(".aiff") || path.endsWith(".dsd") || path.endsWith(".opus")
+        }
+    }
+
+    val newlyAddedSongs = remember(allSongs) {
+        allSongs.sortedByDescending { it.dateAdded }.take(30)
+    }
+
+    val forgottenSongs = remember(allSongs, playCounts) {
+        allSongs.filter { (playCounts[it.id] ?: 0) == 0 }.shuffled().take(25)
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -299,6 +315,219 @@ fun PlaylistsScreen(
                         )
                         Text(
                             text = "${recentSongs.size} canciones en historial",
+                            fontSize = 11.sp,
+                            color = textSecondary
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Reproducir",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+
+        // 4. SMART PLAYLIST: Joyas Hi-Res / FLAC
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clickable {
+                        if (hiResSongs.isNotEmpty()) {
+                            audioPlayer.playSong(hiResSongs[0], hiResSongs)
+                            onOpenPlayer()
+                        } else {
+                            Toast.makeText(context, "No se encontraron archivos FLAC/Hi-Res en tu dispositivo", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF0D9488)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Diamond,
+                            contentDescription = "Joyas Hi-Res",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = "Joyas Hi-Res & FLAC",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
+                        Text(
+                            text = "${hiResSongs.size} pistas sin pérdida de alta fidelidad",
+                            fontSize = 11.sp,
+                            color = textSecondary
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Reproducir",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+
+        // 5. SMART PLAYLIST: Añadidas Recientemente
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clickable {
+                        if (newlyAddedSongs.isNotEmpty()) {
+                            audioPlayer.playSong(newlyAddedSongs[0], newlyAddedSongs)
+                            onOpenPlayer()
+                        } else {
+                            Toast.makeText(context, "Biblioteca vacía", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF6366F1)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ElectricBolt,
+                            contentDescription = "Añadidas Recientemente",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = "Añadidas Recientemente",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
+                        Text(
+                            text = "${newlyAddedSongs.size} temas nuevos",
+                            fontSize = 11.sp,
+                            color = textSecondary
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Reproducir",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+
+        // 6. SMART PLAYLIST: Olvidadas / Redescubrir
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clickable {
+                        if (forgottenSongs.isNotEmpty()) {
+                            audioPlayer.playSong(forgottenSongs[0], forgottenSongs)
+                            onOpenPlayer()
+                        } else {
+                            Toast.makeText(context, "¡Ya has escuchado todas las canciones de tu biblioteca!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF8B5CF6)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.HourglassEmpty,
+                            contentDescription = "Redescubrir",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = "Redescubrir / Olvidadas",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
+                        Text(
+                            text = "${forgottenSongs.size} canciones nunca escuchadas",
                             fontSize = 11.sp,
                             color = textSecondary
                         )

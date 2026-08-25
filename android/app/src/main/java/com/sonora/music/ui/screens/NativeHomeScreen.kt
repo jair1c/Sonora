@@ -98,13 +98,14 @@ fun NativeHomeScreen(
     val blacklistedFolders = remember { mutableStateListOf<String>().apply { addAll(sonoraPrefs.getBlacklistedFolders()) } }
     val likedSongIds = remember { mutableStateListOf<Long>().apply { addAll(sonoraPrefs.getLikedSongIds()) } }
     val selectedArtistMix = remember { mutableStateListOf<String>() }
+    var activeFilterChip by remember { mutableStateOf("ALL") }
 
     val currentSong by audioPlayer.currentSong.collectAsState()
     val isPlaying by audioPlayer.isPlaying.collectAsState()
     val sleepTimerSeconds by audioPlayer.sleepTimerSecondsLeft.collectAsState()
 
-    // Filter by blacklist & search
-    val availableSongs = remember(allSongs, blacklistedFolders.toList(), searchQuery, sortMode) {
+    // Filter by blacklist, search & chip
+    val availableSongs = remember(allSongs, blacklistedFolders.toList(), likedSongIds.toList(), searchQuery, sortMode, activeFilterChip) {
         val nonBlacklisted = allSongs.filter { s ->
             val folder = s.filePath.split("/").let { if (it.size > 1) it[it.size - 2] else s.album }
             !blacklistedFolders.contains(folder)
@@ -120,12 +121,23 @@ fun NativeHomeScreen(
             }
         }
 
+        val chipFiltered = when (activeFilterChip) {
+            "HI_RES" -> searched.filter {
+                val p = it.filePath.lowercase()
+                p.endsWith(".flac") || p.endsWith(".wav") || p.endsWith(".alac") || p.endsWith(".aiff") || p.endsWith(".dsd") || p.endsWith(".opus")
+            }
+            "FAVORITES" -> searched.filter { likedSongIds.contains(it.id) }
+            "LONG" -> searched.filter { it.durationMs >= 300000L }
+            "NEW" -> searched.sortedByDescending { if (it.dateAdded > 0) it.dateAdded else it.dateModified }.take(50)
+            else -> searched
+        }
+
         when (sortMode) {
-            SortMode.TITLE_AZ -> searched.sortedBy { it.title.lowercase() }
-            SortMode.TITLE_ZA -> searched.sortedByDescending { it.title.lowercase() }
-            SortMode.ARTIST_AZ -> searched.sortedBy { it.artist.lowercase() }
-            SortMode.DATE_ADDED_DESC -> searched.sortedByDescending { if (it.dateAdded > 0) it.dateAdded else it.dateModified }
-            SortMode.DURATION_DESC -> searched.sortedByDescending { it.durationMs }
+            SortMode.TITLE_AZ -> chipFiltered.sortedBy { it.title.lowercase() }
+            SortMode.TITLE_ZA -> chipFiltered.sortedByDescending { it.title.lowercase() }
+            SortMode.ARTIST_AZ -> chipFiltered.sortedBy { it.artist.lowercase() }
+            SortMode.DATE_ADDED_DESC -> chipFiltered.sortedByDescending { if (it.dateAdded > 0) it.dateAdded else it.dateModified }
+            SortMode.DURATION_DESC -> chipFiltered.sortedByDescending { it.durationMs }
         }
     }
 
@@ -439,7 +451,42 @@ fun NativeHomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            // Quick Filter Chips (All, Hi-Res, Favorites, +5 Min, Recent)
+            if (currentTab == LibraryTab.CANCIONES || searchQuery.isNotEmpty()) {
+                val filterChips = listOf(
+                    Pair("ALL", "Todos"),
+                    Pair("HI_RES", "💎 Hi-Res / FLAC"),
+                    Pair("FAVORITES", "❤️ Favoritas"),
+                    Pair("LONG", "⏱️ +5 Min"),
+                    Pair("NEW", "⚡ Recientes")
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(filterChips) { (id, label) ->
+                        val isChipSelected = activeFilterChip == id
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(100.dp))
+                                .background(if (isChipSelected) activePillBg else subCardBg.copy(alpha = 0.7f))
+                                .border(1.dp, if (isChipSelected) Color.Transparent else borderCol, RoundedCornerShape(100.dp))
+                                .clickable { activeFilterChip = id }
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isChipSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isChipSelected) activePillText else textSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             // 5. TAB CONTENT
             Box(modifier = Modifier.weight(1f)) {

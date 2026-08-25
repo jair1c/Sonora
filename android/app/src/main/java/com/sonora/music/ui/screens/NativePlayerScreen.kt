@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import com.sonora.music.ui.theme.SonoraGold
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -106,6 +108,17 @@ fun NativePlayerScreen(
     var showQueueSheet by remember { mutableStateOf(false) }
     var offsetY by remember { mutableFloatStateOf(0f) }
     var isLiked by remember(currentSong) { mutableStateOf(currentSong?.let { sonoraPrefs.isSongLiked(it.id) } ?: false) }
+
+    var seekFeedbackText by remember { mutableStateOf<String?>(null) }
+    var dragHorizontalAccumulator by remember { mutableFloatStateOf(0f) }
+    var dragVerticalAccumulator by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(seekFeedbackText) {
+        if (seekFeedbackText != null) {
+            kotlinx.coroutines.delay(900)
+            seekFeedbackText = null
+        }
+    }
 
     val safeDuration = if (durationMs > 0) durationMs else (currentSong?.durationMs ?: 180000L)
     val progress = if (safeDuration > 0) (currentPositionMs.toFloat() / safeDuration.toFloat()).coerceIn(0f, 1f) else 0f
@@ -280,7 +293,48 @@ fun NativePlayerScreen(
                         .scale(flowerScale)
                         .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.08f))
                         .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                        .clickable { audioPlayer.togglePlay() },
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = { audioPlayer.togglePlay() },
+                                onDoubleTap = { offset ->
+                                    if (offset.x < size.width / 2f) {
+                                        val targetPos = (currentPositionMs - 10000L).coerceAtLeast(0L)
+                                        audioPlayer.seekTo(targetPos)
+                                        seekFeedbackText = "⏪ -10s"
+                                    } else {
+                                        val targetPos = (currentPositionMs + 10000L).coerceAtMost(safeDuration)
+                                        audioPlayer.seekTo(targetPos)
+                                        seekFeedbackText = "⏩ +10s"
+                                    }
+                                }
+                            )
+                        }
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDrag = { _, dragAmount ->
+                                    dragHorizontalAccumulator += dragAmount.x
+                                    dragVerticalAccumulator += dragAmount.y
+                                },
+                                onDragEnd = {
+                                    if (dragHorizontalAccumulator > 100f) {
+                                        // Swipe right -> Previous track
+                                        audioPlayer.prevTrack()
+                                    } else if (dragHorizontalAccumulator < -100f) {
+                                        // Swipe left -> Next track
+                                        audioPlayer.nextTrack()
+                                    } else if (dragVerticalAccumulator < -100f) {
+                                        // Swipe up -> Open Queue
+                                        showQueueSheet = true
+                                    }
+                                    dragHorizontalAccumulator = 0f
+                                    dragVerticalAccumulator = 0f
+                                },
+                                onDragCancel = {
+                                    dragHorizontalAccumulator = 0f
+                                    dragVerticalAccumulator = 0f
+                                }
+                            )
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
@@ -299,6 +353,24 @@ fun NativePlayerScreen(
                             .clip(CircleShape)
                             .background(bgColor)
                     )
+
+                    // Double Tap Transient Indicator Overlay
+                    if (seekFeedbackText != null) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(100.dp))
+                                .background(Color.Black.copy(alpha = 0.85f))
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = seekFeedbackText ?: "",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
                 }
             }
 

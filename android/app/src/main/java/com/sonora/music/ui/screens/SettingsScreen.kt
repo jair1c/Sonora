@@ -1,5 +1,7 @@
 package com.sonora.music.ui.screens
 
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,6 +41,27 @@ fun SettingsScreen(
     onThemeChanged: (String) -> Unit
 ) {
     val context = LocalContext.current
+
+    val (appVersionName, appVersionCode) = remember(context) {
+        try {
+            val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }
+            val vName = pInfo.versionName ?: com.luxtune.app.BuildConfig.VERSION_NAME
+            val vCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                pInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode.toLong()
+            }
+            Pair(vName, vCode)
+        } catch (e: Exception) {
+            Pair(com.luxtune.app.BuildConfig.VERSION_NAME, com.luxtune.app.BuildConfig.VERSION_CODE.toLong())
+        }
+    }
 
     val bgColor = if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA)
     val cardBg = if (isDark) Color(0xFF161513) else Color(0xFFEAE5DA)
@@ -119,7 +142,7 @@ fun SettingsScreen(
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "Sonora v3.0 • Offline",
+                        text = "Sonora v$appVersionName • Offline",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = textSecondary
@@ -972,7 +995,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Versión 3.1.0 (Compilación 310)",
+                    text = "Versión $appVersionName (Compilación $appVersionCode)",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = textSecondary

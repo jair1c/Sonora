@@ -709,33 +709,48 @@ fun NativeHomeScreen(
                                             .padding(4.dp)
                                     ) {
                                         Box(
-                                            modifier = Modifier
-                                                .size(88.dp)
-                                                .clip(Organic8PetalShape(8, 0.12f))
-                                                .background(cardBg),
+                                            modifier = Modifier.size(92.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            AsyncImage(
-                                                model = artist.avatarUri,
-                                                contentDescription = artist.name,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
+                                            // Floral Organic Avatar
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(88.dp)
+                                                    .clip(Organic8PetalShape(8, 0.12f))
+                                                    .background(cardBg),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                AsyncImage(
+                                                    model = artist.avatarUri,
+                                                    contentDescription = artist.name,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
 
+                                                if (isSelected) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxSize()
+                                                            .background(Color.Black.copy(alpha = 0.25f))
+                                                    )
+                                                }
+                                            }
+
+                                            // Unclipped Selected Check Badge Floating at Bottom End
                                             if (isSelected) {
                                                 Box(
                                                     modifier = Modifier
                                                         .size(26.dp)
                                                         .align(Alignment.BottomEnd)
                                                         .clip(CircleShape)
-                                                        .background(Color.White)
-                                                        .border(1.dp, Color.Black, CircleShape),
+                                                        .background(if (isDark) Color.White else Color(0xFF121212))
+                                                        .border(2.dp, if (isDark) Color.Black else Color.White, CircleShape),
                                                     contentAlignment = Alignment.Center
                                                 ) {
                                                     Icon(
                                                         imageVector = Icons.Default.Check,
                                                         contentDescription = null,
-                                                        tint = Color.Black,
+                                                        tint = if (isDark) Color.Black else Color.White,
                                                         modifier = Modifier.size(14.dp)
                                                     )
                                                 }
@@ -764,30 +779,39 @@ fun NativeHomeScreen(
 
                             // Floating Mix Button
                             if (selectedArtistMix.isNotEmpty()) {
-                                Button(
-                                    onClick = {
-                                        val mixSongs = availableSongs.filter { selectedArtistMix.contains(it.artist) }.shuffled()
-                                        if (mixSongs.isNotEmpty()) {
-                                            audioPlayer.playSong(mixSongs.first(), mixSongs)
-                                            onOpenPlayer()
-                                        }
-                                    },
+                                Box(
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
                                         .padding(bottom = 110.dp)
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(100.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = activePillBg,
-                                        contentColor = activePillText
-                                    )
+                                        .clip(RoundedCornerShape(100.dp))
+                                        .background(if (isDark) Color.White else Color(0xFF121212))
+                                        .border(1.dp, if (isDark) Color.Transparent else Color(0xFF333333), RoundedCornerShape(100.dp))
+                                        .clickable {
+                                            val mixSongs = availableSongs.filter { selectedArtistMix.contains(it.artist) }.shuffled()
+                                            if (mixSongs.isNotEmpty()) {
+                                                audioPlayer.playSong(mixSongs.first(), mixSongs)
+                                                onOpenPlayer()
+                                            }
+                                        }
+                                        .padding(horizontal = 22.dp, vertical = 13.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                                        Text("Reproducir Mix (${selectedArtistMix.size} ${if (selectedArtistMix.size == 1) "artista" else "artistas"})", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Icon(
+                                            imageVector = Icons.Default.PlayArrow,
+                                            contentDescription = null,
+                                            tint = if (isDark) Color.Black else Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = "Reproducir Mix (${selectedArtistMix.size} ${if (selectedArtistMix.size == 1) "artista" else "artistas"})",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = if (isDark) Color.Black else Color.White
+                                        )
                                     }
                                 }
                             }

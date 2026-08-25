@@ -61,6 +61,7 @@ fun EqualizerModal(
     }
 
     var bassBoostLevel by remember { mutableFloatStateOf(sonoraPrefs.getBassBoost().toFloat()) }
+    var preAmpLevel by remember { mutableFloatStateOf(sonoraPrefs.getPreAmpGain()) }
 
     Dialog(
         onDismissRequest = onClose,
@@ -253,6 +254,50 @@ fun EqualizerModal(
                                 eq.setBassBoost(newVal.toInt().toShort())
                             },
                             valueRange = 0f..1000f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = textPrimary,
+                                activeTrackColor = textPrimary,
+                                inactiveTrackColor = borderCol
+                            )
+                        )
+                    }
+
+                    // Pre-Amp Gain Card
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(subCardBg)
+                            .border(1.dp, borderCol, RoundedCornerShape(18.dp))
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.GraphicEq, contentDescription = null, tint = textPrimary, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("PRE-AMPLIFICADOR DIGITAL", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                            }
+                            Text(
+                                text = "${if (preAmpLevel > 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", preAmpLevel)} dB",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (preAmpLevel != 0f) textPrimary else textSecondary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Slider(
+                            value = preAmpLevel,
+                            onValueChange = { newVal ->
+                                preAmpLevel = newVal
+                                sonoraPrefs.setPreAmpGain(newVal)
+                                eq.setPreAmp(newVal)
+                            },
+                            valueRange = -12f..12f,
+                            steps = 23,
                             colors = SliderDefaults.colors(
                                 thumbColor = textPrimary,
                                 activeTrackColor = textPrimary,

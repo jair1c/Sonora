@@ -23,15 +23,24 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
 @Composable
 fun SleepTimerModal(
     isOpen: Boolean,
     onClose: () -> Unit,
     currentMinutesRemaining: Int?,
-    onSetTimer: (Int?) -> Unit,
+    currentFinishSong: Boolean = false,
+    onSetTimer: (Int?, Boolean) -> Unit,
     isDark: Boolean
 ) {
     if (!isOpen) return
+
+    var finishSongChecked by remember(isOpen, currentFinishSong) { mutableStateOf(currentFinishSong) }
 
     val bgCard = if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA)
     val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
@@ -47,7 +56,7 @@ fun SleepTimerModal(
         Pair("30 minutos", 30),
         Pair("45 minutos", 45),
         Pair("60 minutos", 60),
-        Pair("Al terminar canción", -1)
+        Pair("Al terminar canción actual", -1)
     )
 
     Dialog(
@@ -145,7 +154,7 @@ fun SleepTimerModal(
                                 .background(if (isSelected) activePillBg else subCardBg)
                                 .border(1.dp, if (isSelected) Color.Transparent else borderCol, RoundedCornerShape(14.dp))
                                 .clickable {
-                                    onSetTimer(minutes)
+                                    onSetTimer(minutes, finishSongChecked)
                                     onClose()
                                 }
                                 .padding(horizontal = 16.dp, vertical = 13.dp),
@@ -165,6 +174,55 @@ fun SleepTimerModal(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Black,
                                     color = if (isDark) Color(0xFF121212) else Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Toggle: Finish song before pause
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(subCardBg)
+                            .border(1.dp, borderCol, RoundedCornerShape(14.dp))
+                            .clickable { finishSongChecked = !finishSongChecked }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Terminar canción antes de pausar",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textPrimary
+                            )
+                            Text(
+                                text = "Espera a que finalice la pista actual antes de apagar",
+                                fontSize = 10.sp,
+                                color = textSecondary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (finishSongChecked) (if (isDark) Color.White else Color(0xFF121212)) else Color.Transparent)
+                                .border(1.5.dp, if (finishSongChecked) Color.Transparent else borderCol, RoundedCornerShape(6.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (finishSongChecked) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = if (isDark) Color.Black else Color.White,
+                                    modifier = Modifier.size(14.dp)
                                 )
                             }
                         }

@@ -124,6 +124,11 @@ class SonoraAudioPlayer(private val context: Context) {
     private val _sleepTimerSecondsLeft = MutableStateFlow<Int?>(null)
     val sleepTimerSecondsLeft = _sleepTimerSecondsLeft.asStateFlow()
 
+    private val _sleepTimerFinishSong = MutableStateFlow(false)
+    val sleepTimerFinishSong = _sleepTimerFinishSong.asStateFlow()
+
+    private var waitForSongEndJob: Job? = null
+
     private val mediaRepo = com.sonora.music.data.repository.MediaStoreRepository(context)
     private val sonoraPrefs = com.sonora.music.data.local.SonoraPreferences(context)
 
@@ -155,6 +160,8 @@ class SonoraAudioPlayer(private val context: Context) {
 
         override fun onAudioSessionIdChanged(audioSessionId: Int) {
             equalizerManager.attachAudioSession(audioSessionId)
+            equalizerManager.setPreAmp(sonoraPrefs.getPreAmpGain())
+            equalizerManager.setBassBoost(sonoraPrefs.getBassBoost().toShort())
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -476,8 +483,14 @@ class SonoraAudioPlayer(private val context: Context) {
         } catch (_: Exception) {}
     }
 
-    fun startSleepTimer(minutes: Int) {
+    fun startSleepTimer(minutes: Int, finishCurrentSong: Boolean = false) {
         cancelSleepTimer()
+        _sleepTimerFinishSong.value = finishCurrentSong
+        if (minutes == -1) {
+            _sleepTimerSecondsLeft.value = -1
+            waitForSongToEndAndPause()
+            return
+        }
         var seconds = minutes * 60
         _sleepTimerSecondsLeft.value = seconds
         sleepTimerJob = scope.launch {
@@ -487,8 +500,34 @@ class SonoraAudioPlayer(private val context: Context) {
                 _sleepTimerSecondsLeft.value = seconds
             }
             if (seconds <= 0) {
-                pause()
-                _sleepTimerSecondsLeft.value = null
+                if (finishCurrentSong) {
+                    _sleepTimerSecondsLeft.value = -1
+                    waitForSongToEndAndPause()
+                } else {
+                    pause()
+                    cancelSleepTimer()
+                }
+            }
+        }
+    }
+
+    private fun waitForSongToEndAndPause() {
+        val currentSongId = _currentSong.value?.id ?: run {
+            pause()
+            cancelSleepTimer()
+            return
+        }
+        waitForSongEndJob?.cancel()
+        waitForSongEndJob = scope.launch {
+            while (isActive) {
+                delay(500)
+                val nowSong = _currentSong.value
+                val isPlayingNow = _isPlaying.value
+                if (!isPlayingNow || nowSong == null || nowSong.id != currentSongId || player.playbackState == Player.STATE_ENDED) {
+                    pause()
+                    cancelSleepTimer()
+                    break
+                }
             }
         }
     }
@@ -496,7 +535,10 @@ class SonoraAudioPlayer(private val context: Context) {
     fun cancelSleepTimer() {
         sleepTimerJob?.cancel()
         sleepTimerJob = null
+        waitForSongEndJob?.cancel()
+        waitForSongEndJob = null
         _sleepTimerSecondsLeft.value = null
+        _sleepTimerFinishSong.value = false
     }
 
     fun setPlaybackSpeed(speed: Float) {

@@ -51,6 +51,7 @@ class SonoraNativeActivity : ComponentActivity() {
     private lateinit var mediaRepo: MediaStoreRepository
     private lateinit var sonoraPrefs: SonoraPreferences
     private var onPermissionGranted: (() -> Unit)? = null
+    private var pendingShortcutAction: String? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -58,6 +59,53 @@ class SonoraNativeActivity : ComponentActivity() {
         if (results.values.any { it }) {
             onPermissionGranted?.invoke()
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleShortcutIntent(intent.action)
+    }
+
+    private fun handleShortcutIntent(action: String?, songs: List<Song> = emptyList()) {
+        if (action == null) return
+        val targetList = if (songs.isNotEmpty()) songs else sonoraPrefs.getCachedSongs()
+        if (targetList.isEmpty()) {
+            pendingShortcutAction = action
+            return
+        }
+        when (action) {
+            "com.sonora.music.ACTION_PLAY_MIX" -> {
+                val shuffled = targetList.shuffled()
+                shuffled.firstOrNull()?.let { first ->
+                    audioPlayer.playSong(first, shuffled)
+                }
+            }
+            "com.sonora.music.ACTION_FAVORITES" -> {
+                val likedIds = sonoraPrefs.getLikedSongIds()
+                val likedSongs = targetList.filter { likedIds.contains(it.id) }
+                if (likedSongs.isNotEmpty()) {
+                    val shuffled = likedSongs.shuffled()
+                    shuffled.firstOrNull()?.let { first ->
+                        audioPlayer.playSong(first, shuffled)
+                    }
+                } else {
+                    targetList.firstOrNull()?.let { first ->
+                        audioPlayer.playSong(first, targetList)
+                    }
+                }
+            }
+            "com.sonora.music.ACTION_RESUME" -> {
+                if (audioPlayer.currentSong.value == null) {
+                    targetList.firstOrNull()?.let { first ->
+                        audioPlayer.playSong(first, targetList)
+                    }
+                } else {
+                    audioPlayer.resume()
+                }
+            }
+        }
+        pendingShortcutAction = null
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,6 +118,7 @@ class SonoraNativeActivity : ComponentActivity() {
 
         audioPlayer.setCrossfadeSeconds(sonoraPrefs.getCrossfadeSeconds())
         audioPlayer.setPlaybackSpeed(sonoraPrefs.getPlaybackSpeed())
+        pendingShortcutAction = intent?.action
 
         setContent {
             var currentThemeMode by remember { mutableStateOf(sonoraPrefs.getThemeMode()) }
@@ -100,6 +149,9 @@ class SonoraNativeActivity : ComponentActivity() {
                             songList = localSongs
                             sonoraPrefs.setCachedSongs(localSongs)
                             audioPlayer.restorePlaybackState(localSongs)
+                            if (pendingShortcutAction != null) {
+                                handleShortcutIntent(pendingShortcutAction, localSongs)
+                            }
                         }
                     }
                 }
@@ -107,6 +159,9 @@ class SonoraNativeActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     if (cachedInitial.isNotEmpty()) {
                         audioPlayer.restorePlaybackState(cachedInitial)
+                        if (pendingShortcutAction != null) {
+                            handleShortcutIntent(pendingShortcutAction, cachedInitial)
+                        }
                     }
                     onPermissionGranted = { loadSongs() }
                     checkAndRequestPermissions()

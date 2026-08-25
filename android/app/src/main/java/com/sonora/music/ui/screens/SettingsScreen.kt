@@ -74,6 +74,7 @@ fun SettingsScreen(
 
     var showSleepModal by remember { mutableStateOf(false) }
     var showStatsModal by remember { mutableStateOf(false) }
+    var showRestoreDialog by remember { mutableStateOf(false) }
 
     val sleepTimerSeconds by audioPlayer.sleepTimerSecondsLeft.collectAsState()
     var currentTheme by remember { mutableStateOf(sonoraPrefs.getThemeMode()) }
@@ -947,7 +948,83 @@ fun SettingsScreen(
             }
         }
 
-        // 8. PRIVACIDAD
+        // 8. COPIA DE SEGURIDAD & RESTAURACIÓN
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Default.CloudSync, contentDescription = null, tint = textPrimary, modifier = Modifier.size(18.dp))
+                    Text("COPIA DE SEGURIDAD & RESTAURACIÓN", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Exporta o restaura tus listas de reproducción, favoritos, ecualización y temas.", fontSize = 11.sp, color = textSecondary)
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Export button
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(subCardBg)
+                            .border(1.dp, borderCol, RoundedCornerShape(12.dp))
+                            .clickable {
+                                val jsonBackup = sonoraPrefs.exportBackupJson()
+                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                                val clip = android.content.ClipData.newPlainText("Sonora Backup", jsonBackup)
+                                clipboard?.setPrimaryClip(clip)
+                                Toast.makeText(context, "Copia de seguridad copiada al portapapeles", Toast.LENGTH_LONG).show()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(Icons.Default.CloudUpload, contentDescription = null, tint = textPrimary, modifier = Modifier.size(16.dp))
+                            Text("Exportar", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                        }
+                    }
+
+                    // Import button
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(activePillBg)
+                            .clickable {
+                                showRestoreDialog = true
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(Icons.Default.CloudDownload, contentDescription = null, tint = activePillText, modifier = Modifier.size(16.dp))
+                            Text("Restaurar", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = activePillText)
+                        }
+                    }
+                }
+            }
+        }
+
+        // 9. PRIVACIDAD
         item {
             Row(
                 modifier = Modifier
@@ -976,7 +1053,7 @@ fun SettingsScreen(
             }
         }
 
-        // 9. ACERCA DE SONORA & INFORMACIÓN DE VERSIÓN
+        // 10. ACERCA DE SONORA & INFORMACIÓN DE VERSIÓN
         item {
             Column(
                 modifier = Modifier
@@ -1019,15 +1096,18 @@ fun SettingsScreen(
     }
 
     // Modals
+    val sleepTimerFinishSong by audioPlayer.sleepTimerFinishSong.collectAsState()
+
     SleepTimerModal(
         isOpen = showSleepModal,
         onClose = { showSleepModal = false },
-        currentMinutesRemaining = sleepTimerSeconds?.let { it / 60 },
-        onSetTimer = { mins ->
+        currentMinutesRemaining = if (sleepTimerSeconds == -1) -1 else sleepTimerSeconds?.let { it / 60 },
+        currentFinishSong = sleepTimerFinishSong,
+        onSetTimer = { mins, finishSong ->
             if (mins == null) {
                 audioPlayer.cancelSleepTimer()
-            } else if (mins > 0) {
-                audioPlayer.startSleepTimer(mins)
+            } else {
+                audioPlayer.startSleepTimer(mins, finishSong)
             }
         },
         isDark = isDark
@@ -1042,6 +1122,119 @@ fun SettingsScreen(
             audioPlayer.playSong(song, songs)
         }
     )
+
+    if (showRestoreDialog) {
+        var restoreText by remember { mutableStateOf("") }
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showRestoreDialog = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.65f))
+                    .clickable { showRestoreDialog = false },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(cardBg)
+                        .border(1.dp, borderCol, RoundedCornerShape(24.dp))
+                        .clickable(enabled = false) {}
+                        .padding(20.dp)
+                ) {
+                    Text(
+                        text = "Restaurar Copia de Seguridad",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Pega a continuación el código JSON de tu copia de seguridad:",
+                        fontSize = 11.sp,
+                        color = textSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = restoreText,
+                        onValueChange = { restoreText = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp),
+                        placeholder = { Text("Pega el JSON aquí...", fontSize = 11.sp, color = textSecondary) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = textPrimary,
+                            unfocusedBorderColor = borderCol,
+                            focusedTextColor = textPrimary,
+                            unfocusedTextColor = textPrimary
+                        ),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Paste button
+                        Button(
+                            onClick = {
+                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                                val clipText = clipboard?.primaryClip?.getItemAt(0)?.text?.toString() ?: ""
+                                if (clipText.isNotEmpty()) {
+                                    restoreText = clipText
+                                } else {
+                                    Toast.makeText(context, "El portapapeles está vacío", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = subCardBg, contentColor = textPrimary),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Pegar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        // Apply restore
+                        Button(
+                            onClick = {
+                                if (restoreText.isBlank()) {
+                                    Toast.makeText(context, "El texto no puede estar vacío", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+                                val success = sonoraPrefs.importBackupJson(restoreText)
+                                if (success) {
+                                    Toast.makeText(context, "¡Copia restaurada exitosamente!", Toast.LENGTH_LONG).show()
+                                    currentTheme = sonoraPrefs.getThemeMode()
+                                    petalRoundness = sonoraPrefs.getPetalRoundness()
+                                    crossfadeSeconds = sonoraPrefs.getCrossfadeSeconds()
+                                    playbackSpeed = sonoraPrefs.getPlaybackSpeed()
+                                    activeNavTabs = sonoraPrefs.getNavTabs()
+                                    navLabelMode = sonoraPrefs.getNavLabelMode()
+                                    playerControlsStyle = sonoraPrefs.getPlayerControlsStyle()
+                                    onThemeChanged(sonoraPrefs.getThemeMode())
+                                    onRescanLibrary()
+                                    showRestoreDialog = false
+                                } else {
+                                    Toast.makeText(context, "Error: JSON inválido o corrupto", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = activePillBg, contentColor = activePillText),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Aplicar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

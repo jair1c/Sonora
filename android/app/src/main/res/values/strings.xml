@@ -4,4 +4,10 @@
     <string name="title_activity_main">Sonora</string>
     <string name="package_name">com.luxtune.app</string>
     <string name="custom_url_scheme">com.luxtune.app</string>
+    <string name="shortcut_shuffle_mix">Reproducir Mix</string>
+    <string name="shortcut_shuffle_mix_long">Reproducir toda la música en aleatorio</string>
+    <string name="shortcut_favorites">Mis Favoritos</string>
+    <string name="shortcut_favorites_long">Reproducir canciones favoritas</string>
+    <string name="shortcut_resume">Continuar</string>
+    <string name="shortcut_resume_long">Reanudar última reproducción</string>
 </resources>

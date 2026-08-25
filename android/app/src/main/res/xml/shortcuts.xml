@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="shortcut_shuffle_mix"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_shuffle_mix"
+        android:shortcutLongLabel="@string/shortcut_shuffle_mix_long">
+        <intent
+            android:action="com.sonora.music.ACTION_PLAY_MIX"
+            android:targetPackage="com.luxtune.app"
+            android:targetClass="com.sonora.music.SonoraNativeActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_favorites"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_favorites"
+        android:shortcutLongLabel="@string/shortcut_favorites_long">
+        <intent
+            android:action="com.sonora.music.ACTION_FAVORITES"
+            android:targetPackage="com.luxtune.app"
+            android:targetClass="com.sonora.music.SonoraNativeActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_resume"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_resume"
+        android:shortcutLongLabel="@string/shortcut_resume_long">
+        <intent
+            android:action="com.sonora.music.ACTION_RESUME"
+            android:targetPackage="com.luxtune.app"
+            android:targetClass="com.sonora.music.SonoraNativeActivity" />
+    </shortcut>
+</shortcuts>

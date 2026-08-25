@@ -30,6 +30,7 @@ class SonoraPreferences(private val context: Context) {
         private const val KEY_SORT_MODE = "sonora_sort_mode"
         private const val KEY_EQ_PRESET = "sonora_eq_preset"
         private const val KEY_BASS_BOOST = "sonora_bass_boost_level"
+        private const val KEY_PRE_AMP_GAIN = "sonora_pre_amp_gain_db"
         private const val KEY_HAS_SEEN_WELCOME = "sonora_has_seen_welcome"
         private const val KEY_PETAL_ROUNDNESS = "sonora_petal_roundness"
         private const val KEY_CROSSFADE_SECONDS = "sonora_crossfade_seconds"
@@ -131,8 +132,10 @@ class SonoraPreferences(private val context: Context) {
         incrementPlayCount(songId)
     }
 
+    fun getTotalListeningSeconds(): Long = prefs.getLong(KEY_TOTAL_LISTENING_SECONDS, 0L)
+
     fun getTotalListeningMinutes(): Int {
-        val totalSec = prefs.getLong(KEY_TOTAL_LISTENING_SECONDS, 0L)
+        val totalSec = getTotalListeningSeconds()
         return (totalSec / 60L).toInt()
     }
 
@@ -331,7 +334,17 @@ class SonoraPreferences(private val context: Context) {
         val root = JSONObject()
         root.put("version", 1)
         root.put("exportedAt", System.currentTimeMillis())
-        
+        root.put("themeMode", getThemeMode())
+        root.put("petalRoundness", getPetalRoundness())
+        root.put("crossfadeSeconds", getCrossfadeSeconds())
+        root.put("playbackSpeed", getPlaybackSpeed())
+        root.put("navLabelMode", getNavLabelMode())
+        root.put("playerControlsStyle", getPlayerControlsStyle())
+        root.put("eqPreset", getEqualizerPreset())
+        root.put("bassBoost", getBassBoost())
+        root.put("preAmpGain", getPreAmpGain())
+        root.put("totalListeningSeconds", getTotalListeningSeconds())
+
         val likedArr = JSONArray()
         getLikedSongIds().forEach { likedArr.put(it) }
         root.put("likedSongIds", likedArr)
@@ -359,13 +372,29 @@ class SonoraPreferences(private val context: Context) {
         }
         root.put("customPlaylists", playlistsArr)
 
+        val navArr = JSONArray()
+        getNavTabs().forEach { navArr.put(it) }
+        root.put("navTabs", navArr)
+
         return root.toString(2)
     }
 
     fun importBackupJson(jsonString: String): Boolean {
         return try {
             val root = JSONObject(jsonString)
-            
+            val editor = prefs.edit()
+
+            if (root.has("themeMode")) editor.putString(KEY_THEME_MODE, root.getString("themeMode"))
+            if (root.has("petalRoundness")) editor.putInt(KEY_PETAL_ROUNDNESS, root.getInt("petalRoundness"))
+            if (root.has("crossfadeSeconds")) editor.putInt(KEY_CROSSFADE_SECONDS, root.getInt("crossfadeSeconds"))
+            if (root.has("playbackSpeed")) editor.putFloat(KEY_PLAYBACK_SPEED, root.getDouble("playbackSpeed").toFloat())
+            if (root.has("navLabelMode")) editor.putString(KEY_NAV_LABEL_MODE, root.getString("navLabelMode"))
+            if (root.has("playerControlsStyle")) editor.putString(KEY_PLAYER_CONTROLS_STYLE, root.getString("playerControlsStyle"))
+            if (root.has("eqPreset")) editor.putInt(KEY_EQ_PRESET, root.getInt("eqPreset"))
+            if (root.has("bassBoost")) editor.putInt(KEY_BASS_BOOST, root.getInt("bassBoost"))
+            if (root.has("preAmpGain")) editor.putFloat(KEY_PRE_AMP_GAIN, root.getDouble("preAmpGain").toFloat())
+            if (root.has("totalListeningSeconds")) editor.putLong(KEY_TOTAL_LISTENING_SECONDS, root.getLong("totalListeningSeconds"))
+
             // Liked
             if (root.has("likedSongIds")) {
                 val arr = root.getJSONArray("likedSongIds")
@@ -373,12 +402,12 @@ class SonoraPreferences(private val context: Context) {
                 for (i in 0 until arr.length()) {
                     set.add(arr.getLong(i).toString())
                 }
-                prefs.edit().putStringSet(KEY_LIKED_IDS, set).apply()
+                editor.putStringSet(KEY_LIKED_IDS, set)
             }
 
             // Play counts
             if (root.has("playCounts")) {
-                prefs.edit().putString(KEY_PLAY_COUNTS, root.getJSONObject("playCounts").toString()).apply()
+                editor.putString(KEY_PLAY_COUNTS, root.getJSONObject("playCounts").toString())
             }
 
             // Blacklist
@@ -388,7 +417,7 @@ class SonoraPreferences(private val context: Context) {
                 for (i in 0 until arr.length()) {
                     set.add(arr.getString(i))
                 }
-                prefs.edit().putStringSet(KEY_BLACKLISTED_FOLDERS, set).apply()
+                editor.putStringSet(KEY_BLACKLISTED_FOLDERS, set)
             }
 
             // Custom Playlists
@@ -409,6 +438,11 @@ class SonoraPreferences(private val context: Context) {
                 saveCustomPlaylists(list)
             }
 
+            if (root.has("navTabs")) {
+                editor.putString(KEY_NAV_TABS, root.getJSONArray("navTabs").toString())
+            }
+
+            editor.apply()
             true
         } catch (_: Exception) {
             false
@@ -479,4 +513,8 @@ class SonoraPreferences(private val context: Context) {
             cacheFile.writeText(arr.toString())
         } catch (_: Exception) {}
     }
+
+    // --- PRE-AMP GAIN (dB) ---
+    fun getPreAmpGain(): Float = prefs.getFloat(KEY_PRE_AMP_GAIN, 0f)
+    fun setPreAmpGain(gainDb: Float) = prefs.edit().putFloat(KEY_PRE_AMP_GAIN, gainDb).apply()
 }

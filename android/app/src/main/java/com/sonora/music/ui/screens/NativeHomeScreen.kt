@@ -1138,16 +1138,19 @@ fun NativeHomeScreen(
         }
     }
 
+    val sleepTimerFinishSong by audioPlayer.sleepTimerFinishSong.collectAsState()
+
     // Modals
     SleepTimerModal(
         isOpen = showSleepModal,
         onClose = { showSleepModal = false },
-        currentMinutesRemaining = sleepTimerSeconds?.let { it / 60 },
-        onSetTimer = { mins ->
+        currentMinutesRemaining = if (sleepTimerSeconds == -1) -1 else sleepTimerSeconds?.let { it / 60 },
+        currentFinishSong = sleepTimerFinishSong,
+        onSetTimer = { mins, finishSong ->
             if (mins == null) {
                 audioPlayer.cancelSleepTimer()
-            } else if (mins > 0) {
-                audioPlayer.startSleepTimer(mins)
+            } else {
+                audioPlayer.startSleepTimer(mins, finishSong)
             }
         },
         isDark = isDark

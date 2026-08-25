@@ -57,7 +57,7 @@ class SonoraWidgetProvider : AppWidgetProvider() {
                 if (artBitmap != null) {
                     views.setImageViewBitmap(R.id.widget_song_art, artBitmap)
                 } else {
-                    views.setImageViewResource(R.id.widget_song_art, R.drawable.ic_launcher_background)
+                    views.setImageViewResource(R.id.widget_song_art, R.mipmap.ic_launcher)
                 }
 
                 // Pending Intent: Open App

@@ -41,12 +41,14 @@ class SonoraMediaService : MediaSessionService() {
             .setId("SonoraMediaSession")
             .build()
 
-        setMediaNotificationProvider(
-            DefaultMediaNotificationProvider.Builder(this)
-                .setChannelId(NOTIFICATION_CHANNEL_ID)
-                .setNotificationId(NOTIFICATION_ID)
-                .build()
-        )
+        val notificationProvider = DefaultMediaNotificationProvider.Builder(this)
+            .setChannelId(NOTIFICATION_CHANNEL_ID)
+            .setNotificationId(NOTIFICATION_ID)
+            .build()
+            .apply {
+                setSmallIcon(com.sonora.app.R.drawable.ic_notification_sonora)
+            }
+        setMediaNotificationProvider(notificationProvider)
 
         player.addListener(object : androidx.media3.common.Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {

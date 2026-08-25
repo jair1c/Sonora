@@ -18,7 +18,7 @@
         android:layout_height="54dp"
         android:background="@drawable/widget_art_background"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_launcher_background"
+        android:src="@mipmap/ic_launcher"
         android:contentDescription="Portada de álbum" />
 
     <!-- Song Info -->

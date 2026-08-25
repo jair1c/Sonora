@@ -57,8 +57,7 @@ fun StatsModal(
 
     // Calculate stats accurately
     val totalPlayedSongs: Int = songsWithPlays.count { it.playCount > 0 }
-    val calculatedMinutes: Int = songsWithPlays.sumOf { (it.playCount * (it.durationMs / 1000L / 60L)).toInt() }
-    val totalMinutes: Int = calculatedMinutes.coerceAtLeast(prefs.getTotalListeningMinutes())
+    val totalMinutes: Int = prefs.getTotalListeningMinutes()
     val hours: Int = totalMinutes / 60
     val minutes: Int = totalMinutes % 60
     val topTracks: List<Song> = songsWithPlays.filter { it.playCount > 0 }.sortedByDescending { it.playCount }.take(5)

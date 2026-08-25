@@ -53,9 +53,9 @@ class SonoraNativeActivity : ComponentActivity() {
     private var onPermissionGranted: (() -> Unit)? = null
 
     private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        if (results.values.any { it }) {
             onPermissionGranted?.invoke()
         }
     }
@@ -64,7 +64,7 @@ class SonoraNativeActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        audioPlayer = SonoraAudioPlayer(this)
+        audioPlayer = SonoraAudioPlayer.getInstance(this)
         mediaRepo = MediaStoreRepository(this)
         sonoraPrefs = SonoraPreferences(this)
 
@@ -259,19 +259,30 @@ class SonoraNativeActivity : ComponentActivity() {
     }
 
     private fun checkAndRequestPermissions() {
-        val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_AUDIO
+        val permissionsToRequest = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_MEDIA_AUDIO)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
         } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
         }
 
-        if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
-            permissionLauncher.launch(perm)
+        if (permissionsToRequest.isNotEmpty()) {
+            permissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        audioPlayer.release()
+        if (isFinishing && !audioPlayer.isPlaying.value) {
+            audioPlayer.release()
+        }
     }
 }

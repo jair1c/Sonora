@@ -240,16 +240,15 @@ fun WelcomeScreen(
                 Spacer(modifier = Modifier.height(22.dp))
 
                 // Big Button: Explorar Mi Música
-                Button(
-                    onClick = onStart,
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = buttonBg,
-                        contentColor = buttonText
-                    )
+                        .height(54.dp)
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(if (isDark) Color.White else Color(0xFF121212))
+                        .border(1.dp, if (isDark) Color.Transparent else Color(0xFF333333), RoundedCornerShape(100.dp))
+                        .clickable { onStart() },
+                    contentAlignment = Alignment.Center
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -258,12 +257,14 @@ fun WelcomeScreen(
                         Icon(
                             imageVector = Icons.Default.MusicNote,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            tint = if (isDark) Color.Black else Color.White,
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = "Explorar Mi Música",
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = if (isDark) Color.Black else Color.White
                         )
                     }
                 }

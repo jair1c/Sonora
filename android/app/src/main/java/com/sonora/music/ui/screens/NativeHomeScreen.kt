@@ -573,7 +573,6 @@ fun NativeHomeScreen(
                                                     onOpenPlayer()
                                                 } else {
                                                     audioPlayer.playSong(song, availableSongs)
-                                                    sonoraPrefs.recordPlay(song.id)
                                                 }
                                             }
                                             .padding(horizontal = 12.dp, vertical = 10.dp),

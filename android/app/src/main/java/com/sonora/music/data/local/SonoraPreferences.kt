@@ -99,21 +99,14 @@ class SonoraPreferences(private val context: Context) {
         return getLikedSongIds().contains(songId)
     }
 
-    // --- PLAY COUNTS (Top 25) ---
-    fun recordPlay(songId: Long, durationMs: Long = 0L) {
+    // --- PLAY COUNTS & REAL-TIME LISTENING STATS ---
+    fun incrementPlayCount(songId: Long) {
         // Update Play Count
         val countsJson = prefs.getString(KEY_PLAY_COUNTS, "{}") ?: "{}"
         val jsonObj = try { JSONObject(countsJson) } catch (_: Exception) { JSONObject() }
         val currentCount = jsonObj.optInt(songId.toString(), 0)
         jsonObj.put(songId.toString(), currentCount + 1)
-
-        // Update Listening Duration
-        val addedSec = if (durationMs > 0) (durationMs / 1000L).coerceAtLeast(30L) else 180L
-        val currentTotalSec = prefs.getLong(KEY_TOTAL_LISTENING_SECONDS, 0L)
-        prefs.edit()
-            .putString(KEY_PLAY_COUNTS, jsonObj.toString())
-            .putLong(KEY_TOTAL_LISTENING_SECONDS, currentTotalSec + addedSec)
-            .apply()
+        prefs.edit().putString(KEY_PLAY_COUNTS, jsonObj.toString()).apply()
 
         // Update Recents
         val recentList = getRecentSongIds().toMutableList()
@@ -125,6 +118,16 @@ class SonoraPreferences(private val context: Context) {
         val arr = JSONArray()
         recentList.forEach { arr.put(it) }
         prefs.edit().putString(KEY_RECENT_IDS, arr.toString()).apply()
+    }
+
+    fun addListeningSeconds(seconds: Long) {
+        if (seconds <= 0L) return
+        val currentTotalSec = prefs.getLong(KEY_TOTAL_LISTENING_SECONDS, 0L)
+        prefs.edit().putLong(KEY_TOTAL_LISTENING_SECONDS, currentTotalSec + seconds).apply()
+    }
+
+    fun recordPlay(songId: Long, durationMs: Long = 0L) {
+        incrementPlayCount(songId)
     }
 
     fun getTotalListeningMinutes(): Int {

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+import android.content.Intent
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -25,6 +26,17 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import java.io.File
 
 class SonoraAudioPlayer(private val context: Context) {
+
+    companion object {
+        @Volatile
+        private var instance: SonoraAudioPlayer? = null
+
+        fun getInstance(context: Context): SonoraAudioPlayer {
+            return instance ?: synchronized(this) {
+                instance ?: SonoraAudioPlayer(context.applicationContext).also { instance = it }
+            }
+        }
+    }
 
     private val player: ExoPlayer by lazy {
         val extractorsFactory = DefaultExtractorsFactory()
@@ -52,6 +64,8 @@ class SonoraAudioPlayer(private val context: Context) {
             }
     }
 
+    val exoPlayer: ExoPlayer get() = player
+
     val equalizerManager = SonoraEqualizerManager()
 
     private val scope = CoroutineScope(Dispatchers.Main + Job())
@@ -60,6 +74,31 @@ class SonoraAudioPlayer(private val context: Context) {
     private var crossfadeJob: Job? = null
 
     private var crossfadeSeconds: Int = 0
+
+    private var lastCountedSongId: Long = -1L
+    private var lastCountedTimestamp: Long = 0L
+
+    private fun trackSongPlay(song: Song) {
+        val now = System.currentTimeMillis()
+        if (song.id != lastCountedSongId || (now - lastCountedTimestamp) > 10000L) {
+            lastCountedSongId = song.id
+            lastCountedTimestamp = now
+            sonoraPrefs.incrementPlayCount(song.id)
+        }
+    }
+
+    private fun ensureMediaServiceStarted() {
+        try {
+            val serviceIntent = Intent(context, SonoraMediaService::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SonoraAudioPlayer", "Could not start SonoraMediaService", e)
+        }
+    }
 
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong = _currentSong.asStateFlow()
@@ -160,7 +199,7 @@ class SonoraAudioPlayer(private val context: Context) {
             if (currentIdx in list.indices) {
                 val nextSong = list[currentIdx]
                 _currentSong.value = nextSong
-                sonoraPrefs.recordPlay(nextSong.id, nextSong.durationMs)
+                trackSongPlay(nextSong)
                 scope.launch(Dispatchers.IO) {
                     val lyrics = mediaRepo.getLyricsForSong(nextSong)
                     if (lyrics.isNotEmpty() && _currentSong.value?.id == nextSong.id) {
@@ -202,7 +241,8 @@ class SonoraAudioPlayer(private val context: Context) {
         player.clearMediaItems()
         player.setMediaItems(mediaItems, targetIndex, 0L)
         _currentSong.value = song
-        sonoraPrefs.recordPlay(song.id, song.durationMs)
+        trackSongPlay(song)
+        ensureMediaServiceStarted()
         scope.launch(Dispatchers.IO) {
             val lyrics = mediaRepo.getLyricsForSong(song)
             if (lyrics.isNotEmpty() && _currentSong.value?.id == song.id) {
@@ -231,6 +271,7 @@ class SonoraAudioPlayer(private val context: Context) {
         } else if (player.playbackState == Player.STATE_ENDED) {
             player.seekTo(0, 0L)
         }
+        ensureMediaServiceStarted()
         player.playWhenReady = true
         player.play()
         _isPlaying.value = true
@@ -343,11 +384,23 @@ class SonoraAudioPlayer(private val context: Context) {
     private fun startPositionTracking() {
         progressJob?.cancel()
         progressJob = scope.launch {
+            var lastTickTime = System.currentTimeMillis()
             while (isActive) {
                 val pos = player.currentPosition.coerceAtLeast(0L)
                 val dur = player.duration.coerceAtLeast(0L)
                 _currentPositionMs.value = pos
                 if (dur > 0L) _durationMs.value = dur
+
+                val now = System.currentTimeMillis()
+                if (player.isPlaying) {
+                    val elapsedSec = (now - lastTickTime) / 1000L
+                    if (elapsedSec >= 1L) {
+                        sonoraPrefs.addListeningSeconds(elapsedSec)
+                        lastTickTime = now
+                    }
+                } else {
+                    lastTickTime = now
+                }
 
                 // Crossfade fade-out when near track end
                 if (crossfadeSeconds > 0 && dur > crossfadeSeconds * 2000L) {
@@ -359,7 +412,7 @@ class SonoraAudioPlayer(private val context: Context) {
                     }
                 }
 
-                delay(200)
+                delay(250)
             }
         }
     }

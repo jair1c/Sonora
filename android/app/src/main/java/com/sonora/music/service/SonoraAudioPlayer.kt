@@ -57,6 +57,7 @@ class SonoraAudioPlayer(private val context: Context) {
                 true // Auto-handle AudioFocus
             )
             .setHandleAudioBecomingNoisy(true)
+            .setWakeMode(C.WAKE_MODE_LOCAL)
             .build().apply {
                 repeatMode = Player.REPEAT_MODE_OFF
                 shuffleModeEnabled = false

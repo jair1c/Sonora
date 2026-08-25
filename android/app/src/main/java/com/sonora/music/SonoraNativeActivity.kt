@@ -340,14 +340,27 @@ class SonoraNativeActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::audioPlayer.isInitialized) {
+            audioPlayer.visualizerManager.setUiActive(true)
+        }
+    }
+
     override fun onPause() {
         super.onPause()
-        audioPlayer.savePlaybackState()
+        if (::audioPlayer.isInitialized) {
+            audioPlayer.visualizerManager.setUiActive(false)
+            audioPlayer.savePlaybackState()
+        }
     }
 
     override fun onStop() {
         super.onStop()
-        audioPlayer.savePlaybackState()
+        if (::audioPlayer.isInitialized) {
+            audioPlayer.visualizerManager.setUiActive(false)
+            audioPlayer.savePlaybackState()
+        }
     }
 
     override fun onDestroy() {

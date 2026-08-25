@@ -76,7 +76,6 @@ fun EqualizerModal(
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
-                    .fillMaxHeight(0.85f)
                     .clip(RoundedCornerShape(28.dp))
                     .background(bgCard)
                     .border(1.dp, borderCol, RoundedCornerShape(28.dp))
@@ -143,7 +142,6 @@ fun EqualizerModal(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {

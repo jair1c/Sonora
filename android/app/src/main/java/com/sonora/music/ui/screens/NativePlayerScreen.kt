@@ -1150,32 +1150,36 @@ fun LiveAudioSpectrum(
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val barColor = if (isDark) SonoraGold else Color(0xFF121212)
+    val barColor = if (isDark) SonoraGold else Color(0xFF1E1B16)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(18.dp)
-            .padding(horizontal = 32.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally),
+            .height(24.dp)
+            .padding(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.5.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         fftData.forEachIndexed { idx, mag ->
-            val effectiveMag = if (isPlaying) mag else 0.05f
-            val targetHeight = (effectiveMag * 16f).coerceIn(3f, 16f)
+            val effectiveMag = if (isPlaying) mag else 0.04f
+            val targetHeight = if (isPlaying) (effectiveMag * 22f).coerceIn(3.5f, 22f) else 2.5f
             val animatedHeight by animateFloatAsState(
                 targetValue = targetHeight,
                 animationSpec = spring(
                     dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessHigh
+                    stiffness = Spring.StiffnessMedium
                 ),
                 label = "spec_bar_$idx"
             )
             Box(
                 modifier = Modifier
-                    .width(3.dp)
+                    .width(3.5.dp)
                     .height(animatedHeight.dp)
                     .clip(RoundedCornerShape(100.dp))
-                    .background(barColor.copy(alpha = if (isPlaying) (0.35f + effectiveMag * 0.65f).coerceIn(0.35f, 1f) else 0.2f))
+                    .background(
+                        barColor.copy(
+                            alpha = if (isPlaying) (0.4f + effectiveMag * 0.6f).coerceIn(0.4f, 1f) else 0.2f
+                        )
+                    )
             )
         }
     }

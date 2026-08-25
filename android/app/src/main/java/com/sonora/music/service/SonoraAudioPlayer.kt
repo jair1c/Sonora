@@ -167,6 +167,7 @@ class SonoraAudioPlayer(private val context: Context) {
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
             _isPlaying.value = playing
+            visualizerManager.setPlaying(playing)
             if (playing) startPositionTracking() else stopPositionTracking()
         }
 
@@ -224,6 +225,7 @@ class SonoraAudioPlayer(private val context: Context) {
             if (currentIdx in list.indices) {
                 val nextSong = list[currentIdx]
                 _currentSong.value = nextSong
+                sonoraPrefs.saveLastPlayback(nextSong.id, 0L, list.map { it.id })
                 trackSongPlay(nextSong)
                 scope.launch(Dispatchers.IO) {
                     val lyrics = mediaRepo.getLyricsForSong(nextSong)
@@ -266,8 +268,10 @@ class SonoraAudioPlayer(private val context: Context) {
         player.clearMediaItems()
         player.setMediaItems(mediaItems, targetIndex, 0L)
         _currentSong.value = song
+        sonoraPrefs.saveLastPlayback(song.id, 0L, listToUse.map { it.id })
         trackSongPlay(song)
         ensureMediaServiceStarted()
+        visualizerManager.setPlaying(true)
         scope.launch(Dispatchers.IO) {
             val lyrics = mediaRepo.getLyricsForSong(song)
             if (lyrics.isNotEmpty() && _currentSong.value?.id == song.id) {
@@ -470,7 +474,12 @@ class SonoraAudioPlayer(private val context: Context) {
                     val elapsedSec = (now - lastTickTime) / 1000L
                     if (elapsedSec >= 1L) {
                         sonoraPrefs.addListeningSeconds(elapsedSec)
-                        sonoraPrefs.setLastPositionMs(pos)
+                        val curr = _currentSong.value
+                        if (curr != null) {
+                            sonoraPrefs.saveLastPlayback(curr.id, pos, _playlist.value.map { it.id })
+                        } else {
+                            sonoraPrefs.setLastPositionMs(pos)
+                        }
                         lastTickTime = now
                     }
                 } else {

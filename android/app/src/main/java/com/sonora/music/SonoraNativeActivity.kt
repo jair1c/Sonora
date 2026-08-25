@@ -335,6 +335,10 @@ class SonoraNativeActivity : ComponentActivity() {
             }
         }
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
+        }
+
         if (permissionsToRequest.isNotEmpty()) {
             permissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
@@ -344,6 +348,7 @@ class SonoraNativeActivity : ComponentActivity() {
         super.onResume()
         if (::audioPlayer.isInitialized) {
             audioPlayer.visualizerManager.setUiActive(true)
+            audioPlayer.visualizerManager.setPlaying(audioPlayer.isPlaying.value)
         }
     }
 

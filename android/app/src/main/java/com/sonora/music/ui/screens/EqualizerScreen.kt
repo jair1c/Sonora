@@ -62,6 +62,10 @@ fun EqualizerModal(
 
     var bassBoostLevel by remember { mutableFloatStateOf(sonoraPrefs.getBassBoost().toFloat()) }
     var preAmpLevel by remember { mutableFloatStateOf(sonoraPrefs.getPreAmpGain()) }
+    var autoVolume by remember { mutableStateOf(sonoraPrefs.isAutoVolumeLeveling()) }
+
+    val activePillBg = if (isDark) Color.White else Color(0xFF121212)
+    val activePillText = if (isDark) Color.Black else Color.White
 
     Dialog(
         onDismissRequest = onClose,
@@ -305,6 +309,52 @@ fun EqualizerModal(
                             )
                         )
                     }
+                }
+
+                // 5. NORMALIZADOR AUTOMÁTICO DE VOLUMEN
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(subCardBg)
+                        .border(1.dp, borderCol, RoundedCornerShape(18.dp))
+                        .clickable {
+                            val nextState = !autoVolume
+                            autoVolume = nextState
+                            sonoraPrefs.setAutoVolumeLeveling(nextState)
+                            eq.setAutoVolumeLeveling(nextState)
+                        }
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Normalizador de Volumen",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
+                        Text(
+                            text = "Nivela el volumen de pistas bajas",
+                            fontSize = 10.sp,
+                            color = textSecondary
+                        )
+                    }
+                    Switch(
+                        checked = autoVolume,
+                        onCheckedChange = { checked ->
+                            autoVolume = checked
+                            sonoraPrefs.setAutoVolumeLeveling(checked)
+                            eq.setAutoVolumeLeveling(checked)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = activePillText,
+                            checkedTrackColor = activePillBg,
+                            uncheckedThumbColor = textSecondary,
+                            uncheckedTrackColor = borderCol
+                        )
+                    )
                 }
             }
         }

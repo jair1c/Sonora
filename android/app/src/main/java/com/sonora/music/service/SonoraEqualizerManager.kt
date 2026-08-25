@@ -79,6 +79,15 @@ class SonoraEqualizerManager {
         } catch (_: Exception) {}
     }
 
+    private var autoVolumeEnabled: Boolean = false
+
+    fun setAutoVolumeLeveling(enabled: Boolean) {
+        autoVolumeEnabled = enabled
+        applyPreAmp(preAmpDb)
+    }
+
+    fun isAutoVolumeLeveling(): Boolean = autoVolumeEnabled
+
     fun setPreAmp(gainDb: Float) {
         preAmpDb = gainDb.coerceIn(-12f, 12f)
         applyPreAmp(preAmpDb)
@@ -91,6 +100,10 @@ class SonoraEqualizerManager {
             if (gainDb > 0f) {
                 val targetMilliBels = (gainDb * 100).toInt()
                 loudnessEnhancer?.setTargetGain(targetMilliBels)
+                loudnessEnhancer?.enabled = true
+            } else if (autoVolumeEnabled) {
+                // Subtle automatic dynamic gain normalization for quiet tracks
+                loudnessEnhancer?.setTargetGain(350) // +3.5 dB
                 loudnessEnhancer?.enabled = true
             } else {
                 loudnessEnhancer?.setTargetGain(0)

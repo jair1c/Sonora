@@ -67,6 +67,7 @@ class SonoraAudioPlayer(private val context: Context) {
     val exoPlayer: ExoPlayer get() = player
 
     val equalizerManager = SonoraEqualizerManager()
+    val visualizerManager = SonoraVisualizerManager()
 
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var progressJob: Job? = null
@@ -132,6 +133,16 @@ class SonoraAudioPlayer(private val context: Context) {
     private val mediaRepo = com.sonora.music.data.repository.MediaStoreRepository(context)
     private val sonoraPrefs = com.sonora.music.data.local.SonoraPreferences(context)
 
+    init {
+        scope.launch {
+            kotlinx.coroutines.flow.combine(_currentSong, _isPlaying) { song, isPlaying ->
+                Pair(song, isPlaying)
+            }.collect { (song, isPlaying) ->
+                com.sonora.music.widget.SonoraWidgetProvider.updateAllWidgets(context, song, isPlaying)
+            }
+        }
+    }
+
     private fun buildMediaItem(s: Song, useFileFallback: Boolean = false): MediaItem {
         val uri = if (useFileFallback && s.filePath.isNotEmpty() && File(s.filePath).exists()) {
             android.net.Uri.fromFile(File(s.filePath))
@@ -162,6 +173,8 @@ class SonoraAudioPlayer(private val context: Context) {
             equalizerManager.attachAudioSession(audioSessionId)
             equalizerManager.setPreAmp(sonoraPrefs.getPreAmpGain())
             equalizerManager.setBassBoost(sonoraPrefs.getBassBoost().toShort())
+            equalizerManager.setAutoVolumeLeveling(sonoraPrefs.isAutoVolumeLeveling())
+            visualizerManager.attachAudioSession(audioSessionId)
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -170,6 +183,10 @@ class SonoraAudioPlayer(private val context: Context) {
                 Player.STATE_READY -> {
                     _durationMs.value = player.duration.coerceAtLeast(0L)
                     equalizerManager.attachAudioSession(player.audioSessionId)
+                    equalizerManager.setPreAmp(sonoraPrefs.getPreAmpGain())
+                    equalizerManager.setBassBoost(sonoraPrefs.getBassBoost().toShort())
+                    equalizerManager.setAutoVolumeLeveling(sonoraPrefs.isAutoVolumeLeveling())
+                    visualizerManager.attachAudioSession(player.audioSessionId)
                 }
                 Player.STATE_ENDED -> {
                     nextTrack()
@@ -549,6 +566,7 @@ class SonoraAudioPlayer(private val context: Context) {
         crossfadeJob?.cancel()
         cancelSleepTimer()
         stopPositionTracking()
+        visualizerManager.release()
         equalizerManager.release()
         player.removeListener(playerListener)
         player.release()

@@ -103,6 +103,7 @@ fun NativePlayerScreen(
     val durationMs by audioPlayer.durationMs.collectAsState()
     val isShuffle by audioPlayer.isShuffle.collectAsState()
     val repeatMode by audioPlayer.repeatMode.collectAsState()
+    val fftData by audioPlayer.visualizerManager.fftData.collectAsState()
 
     var showExpandedLyrics by remember { mutableStateOf(false) }
     var showQueueSheet by remember { mutableStateOf(false) }
@@ -271,6 +272,15 @@ fun NativePlayerScreen(
                         color = textColor
                     )
                 }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Live Audio Spectrum Visualizer
+                LiveAudioSpectrum(
+                    fftData = fftData,
+                    isPlaying = isPlaying,
+                    isDark = isDark
+                )
             }
 
             // 3. Central Artwork & Wavy Scrubber (20% proportioned clearance)
@@ -1128,6 +1138,44 @@ private fun PlaybackControlsWaveform(
                 contentDescription = "Aleatorio",
                 tint = if (isShuffle) SonoraGold else subtextColor,
                 modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun LiveAudioSpectrum(
+    fftData: FloatArray,
+    isPlaying: Boolean,
+    isDark: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val barColor = if (isDark) SonoraGold else Color(0xFF121212)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(18.dp)
+            .padding(horizontal = 32.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        fftData.forEachIndexed { idx, mag ->
+            val effectiveMag = if (isPlaying) mag else 0.05f
+            val targetHeight = (effectiveMag * 16f).coerceIn(3f, 16f)
+            val animatedHeight by animateFloatAsState(
+                targetValue = targetHeight,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessHigh
+                ),
+                label = "spec_bar_$idx"
+            )
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(animatedHeight.dp)
+                    .clip(RoundedCornerShape(100.dp))
+                    .background(barColor.copy(alpha = if (isPlaying) (0.35f + effectiveMag * 0.65f).coerceIn(0.35f, 1f) else 0.2f))
             )
         }
     }

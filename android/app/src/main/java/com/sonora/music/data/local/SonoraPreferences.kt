@@ -31,6 +31,7 @@ class SonoraPreferences(private val context: Context) {
         private const val KEY_EQ_PRESET = "sonora_eq_preset"
         private const val KEY_BASS_BOOST = "sonora_bass_boost_level"
         private const val KEY_PRE_AMP_GAIN = "sonora_pre_amp_gain_db"
+        private const val KEY_AUTO_VOLUME_LEVELING = "sonora_auto_volume_leveling"
         private const val KEY_HAS_SEEN_WELCOME = "sonora_has_seen_welcome"
         private const val KEY_PETAL_ROUNDNESS = "sonora_petal_roundness"
         private const val KEY_CROSSFADE_SECONDS = "sonora_crossfade_seconds"
@@ -517,4 +518,8 @@ class SonoraPreferences(private val context: Context) {
     // --- PRE-AMP GAIN (dB) ---
     fun getPreAmpGain(): Float = prefs.getFloat(KEY_PRE_AMP_GAIN, 0f)
     fun setPreAmpGain(gainDb: Float) = prefs.edit().putFloat(KEY_PRE_AMP_GAIN, gainDb).apply()
+
+    // --- AUTO VOLUME LEVELING ---
+    fun isAutoVolumeLeveling(): Boolean = prefs.getBoolean(KEY_AUTO_VOLUME_LEVELING, false)
+    fun setAutoVolumeLeveling(enabled: Boolean) = prefs.edit().putBoolean(KEY_AUTO_VOLUME_LEVELING, enabled).apply()
 }

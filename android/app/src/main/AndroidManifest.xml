@@ -51,10 +51,25 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <receiver
+            android:name="com.sonora.music.widget.SonoraWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.sonora.music.widget.ACTION_PLAY_PAUSE" />
+                <action android:name="com.sonora.music.widget.ACTION_NEXT" />
+                <action android:name="com.sonora.music.widget.ACTION_PREV" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sonora_widget_capsule_info" />
+        </receiver>
     </application>
 
-    <!-- Permissions for Local Music Storage & Background Playback -->
+    <!-- Permissions for Local Music Storage, Audio DSP & Background Playback -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />

@@ -121,7 +121,7 @@ fun SettingsScreen(
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "Sonora v2.1 • Offline",
+                        text = "Sonora v3.0 • Offline",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = textSecondary

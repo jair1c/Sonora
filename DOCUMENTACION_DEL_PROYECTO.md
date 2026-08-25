@@ -1,125 +1,144 @@
-# 🌸 Sonora Music Player (v2.1.0)
-### *Reproductor de Música Audiófilo Minimalista y Local para Android*
+# 🌸 Sonora Music Player (v3.0.0)
+### *Reproductor de Música Nativo Audiófilo con Diseño Orgánico y Arquitectura Jetpack Compose para Android*
 
 ---
 
 ## 📖 1. Visión y Concepto del Proyecto
 
-**Sonora** es un reproductor de música local de alta fidelidad diseñado para brindar una experiencia auditiva pura, libre de distracciones, con una estética visual basada en **formas orgánicas, vinilo en flor de 8 pétalos simétricos, tipografía elegante y una paleta tonal dual (Warm Beige en Modo Claro / Deep OLED Dark en Modo Oscuro)**.
+**Sonora** es un reproductor de música local de alta fidelidad diseñado para brindar una experiencia auditiva pura, libre de distracciones, con una estética visual basada en **formas orgánicas, vinilo en flor de 8 pétalos simétricos, tipografía elegante y una paleta tonal dual (Warm Linen Beige en Modo Claro / Deep Velvet OLED en Modo Oscuro)**.
 
-El reproductor opera 100% de manera local y privada en el dispositivo, integrando un motor DSP de audio profesional de 10 bandas, fundido cruzado (*crossfade*), lectura de etiquetas y carátulas embebidas en archivos `.flac`, `.mp3`, `.m4a`, sincronización de letras `.lrc`, y una barra de navegación y accesos totalmente personalizables por el usuario.
-
----
-
-## 🛠️ 2. Stack Tecnológico
-
-- **Frontend Core**: React 19 + TypeScript
-- **Estilos y Diseño**: Tailwind CSS v4 + Lucide Icons + Outfit / Plus Jakarta Sans Fonts
-- **Puente Móvil**: Capacitor 8 + Android Native Bridge
-- **Motor de Audio & Notificaciones**:
-  - `MediaSessionCompat` (Notificación multimedia nativa en la barra de estado y pantalla de bloqueo de Android)
-  - `AudioTrack` / `MediaPlayer` con soporte de cambio de velocidad (0.8x a 2.0x) y mezcla de fundido cruzado.
-  - Ecualizador paramétrico DSP de 10 bandas y refuerzo de graves.
-- **Herramientas de Build**: Vite 8 + Gradle 8 + Android SDK 34 / 35.
+El reproductor opera **100% de manera local y privada**, construido sobre una arquitectura **100% Nativa en Kotlin y Jetpack Compose** con el motor **AndroidX Media3 (ExoPlayer)**, integrando un procesador DSP de ecualización nativa de 10 bandas, fundido cruzado (*crossfade*), lectura instantánea de metadatos y carátulas embebidas en archivos `.flac`, `.mp3`, `.m4a`, `.wav`, `.ogg`, sincronización de letras `.lrc`, y un sistema de personalización visual sin precedentes.
 
 ---
 
-## 📜 3. Historial Cronológico Completo de Cambios (Changelog de v0.1 a v2.1.0)
+## 🛠️ 2. Stack Tecnológico Nativo
+
+- **Lenguaje Principal**: Kotlin 2.0+ (JVM 17 / Android SDK 34 & 35)
+- **Framework de UI**: Jetpack Compose (BOM 2024.10.01) + Material3 + Material Icons Extended
+- **Motor de Audio & Sesión**:
+  - `androidx.media3:media3-exoplayer:1.5.0`
+  - `androidx.media3:media3-session:1.5.0`
+  - `androidx.media3:media3-common:1.5.0`
+  - `androidx.media3:media3-ui:1.5.0`
+- **Procesamiento de Señal DSP**: `android.media.audiofx.Equalizer` y `BassBoost` nativo de 10 bandas
+- **Gestión Asíncrona & Reactividad**: Kotlin Coroutines + `StateFlow` / `SharedFlow`
+- **Carga de Imágenes & Carátulas**: `io.coil-kt:coil-compose:2.7.0` con soporte para Content URIs de MediaStore
+- **Tipografía**: Plus Jakarta Sans / Outfit vía `androidx.compose.ui:ui-text-google-fonts:1.7.5`
+- **Persistencia de Datos**: SharedPreferences seguro en `SonoraPreferences.kt` con serialización JSON
+- **Herramientas de Compilación**: Gradle 8.14 + Android Gradle Plugin 8.9 + R8 / ProGuard Minification
+
+---
+
+## 📜 3. Historial Cronológico Completo de Cambios (Changelog de v0.1 a v3.0.0)
 
 ### 🔹 Fase 1: Arquitectura Inicial y Motor de Reproducción Local (v0.1 - v0.5)
-- **Problema Inicial**: La aplicación dependía de un WebView genérico sin persistencia ni notificación multimedia en la barra de Android; al salir de la app o bloquear el teléfono, la música se pausaba y el sistema cerraba el proceso.
+- **Problema Inicial**: Prototipo híbrido en WebView sin persistencia ni notificación multimedia en la barra de Android; al salir de la app o bloquear el teléfono, la música se pausaba y el sistema cerraba el proceso.
 - **Solución**:
   - Se implementó un servicio nativo en Android con `MediaSessionCompat` y `NotificationManagerCompat` en primer plano (*Foreground Service*).
-  - Se añadieron controles multimedia directos en la notificación (Reproducir, Pausar, Siguiente, Anterior) accesibles desde la barra de notificaciones y la pantalla de bloqueo.
-  - Se integró el escaneo automático del almacenamiento del dispositivo (`MediaStore.Audio.Media.EXTERNAL_CONTENT_URI`) para leer canciones, artistas, álbumes y carpetas reales.
+  - Se añadieron controles multimedia directos en la notificación (Reproducir, Pausar, Siguiente, Anterior).
+  - Se integró el escaneo del almacenamiento del dispositivo (`MediaStore.Audio.Media.EXTERNAL_CONTENT_URI`).
 
 ---
 
 ### 🔹 Fase 2: Soporte Audiófilo & Corrección de Bugs de Audio (v0.6 - v1.0)
-- **Problema de Doble Reproducción / Desfase**: Algunas pistas se escuchaban duplicadas con un ligero eco al cambiar rápidamente de canción.
-  - *Causa*: Existían instancias concurrentes de audio no liberadas antes de inicializar la nueva fuente.
-  - *Solución*: Implementación de un ciclo de vida estricto con `nativeAudio.stop()` y liberación de buffers antes de montar la nueva pista.
-- **Problema de Pausa al Final de Pista**: Al terminar una canción, el reproductor no avanzaba automáticamente y se quedaba congelado en `00:00`.
-  - *Solución*: Enrutamiento del evento `onCompletion` nativo de Android hacia el contexto de React para disparar `nextTrack()` de forma fluida.
+- **Problema de Doble Reproducción / Desfase**: Instancias concurrentes generaban eco al cambiar rápido de canción.
+  - *Solución*: Implementación de un ciclo de vida estricto con parada y liberación de buffers antes de montar la nueva pista.
 - **Letras Sincronizadas (.LRC y Embebidas FLAC)**:
-  - Soporte de archivos de letras externos `.lrc` y extracción de metadatos incrustados en archivos FLAC sin depender de internet.
+  - Soporte de archivos `.lrc` externos y extracción de metadatos incrustados en archivos FLAC sin conexión a internet.
 - **Fundido Cruzado (Crossfade)**:
-  - Sistema de mezcla de audio programable (1s a 12s) que realiza un desvanecimiento (*fade-out / fade-in*) entre la canción actual y la siguiente.
+  - Sistema de mezcla de audio programable (1s a 12s) que realiza un desvanecimiento suave (*fade-out / fade-in*).
 
 ---
 
 ### 🔹 Fase 3: Rediseño Visual Orgánico - El Vinilo en Flor de 8 Pétalos (v1.1 - v1.5)
 - **Geometría Floral Simétrica**:
-  - Creación del componente `OrganicShapes.tsx` con fórmulas trigonométricas de pétalos simétricos exactos:
+  - Fórmulas trigonométricas de 8 pétalos simétricos exactos:
     $$r(\theta) = R_0 + A \cdot \cos(8\theta)$$
-  - Implementación del `clipPath` con flor de 8 pétalos tanto para la carátula giratoria como para el contorno ondulado exterior.
-- **Ajuste de Escala Dinámica (80% / 60%)**:
-  - Al estar reproduciendo, el vinilo floral se expande al **80%** del contorno con animación suave de giro; al pausar, se contrae con gracia al **60%**.
-- **Contorno Ondulado Interactivo con Scrubber Knob**:
-  - El avance de la canción se dibuja sobre el contorno ondulado y un punto deslizable (*knob*) viaja exactamente a lo largo de las curvas de los 8 pétalos, permitiendo arrastrar para adelantar o retroceder la canción (*seek* táctil).
+- **Contorno Ondulado Interactivo con Scrubber**:
+  - El avance de la canción se dibuja sobre el contorno ondulado con un punto deslizable (*knob*) para adelantar o retroceder la canción (*seek* táctil).
 
 ---
 
 ### 🔹 Fase 4: Personalización Total de Navegación y Herramientas (v1.6 - v1.9)
 - **Barra de Navegación Dinámica**:
-  - En la sección de **Ajustes**, el usuario puede activar, desactivar, reordenar (subir/bajar) y seleccionar qué pestañas mostrar en la barra inferior (Biblioteca, Canciones, Artistas, Álbumes, Listas, Carpetas, Reproductor, Ajustes).
-- **Detección Inteligente de Cabecera**:
-  - Si "Ajustes" o "Listas" están presentes en la barra inferior, sus botones correspondientes en la cabecera superior se ocultan de forma automática para evitar duplicidad visual; si se quitan de la barra inferior, reaparecen arriba al instante.
-- **Modales con UI Propia (Zero Native Alerts)**:
-  - Se eliminaron todos los `window.confirm` / `alert` nativos del sistema y se reemplazaron por diálogos diseñados bajo la estética orgánica de la app (diálogo de confirmación de eliminación con acentos rojos suaves).
-- **Auto-centrado de Letras**:
-  - En la vista de letras a pantalla completa, la línea activa se desplaza y se centra automáticamente de forma suave en la pantalla, con texto ajustable para evitar desbordamientos laterales.
+  - En **Ajustes**, el usuario puede activar, desactivar, reordenar y seleccionar qué pestañas mostrar.
+- **Modales Orgánicos**:
+  - Eliminación de alertas nativas del sistema, reemplazándolas por diálogos cohesivos con la estética de la app.
 
 ---
 
 ### 🔹 Fase 5: Modo Oscuro OLED, Persistencia y Gestos (v2.0 - v2.1.0)
-- **Pestaña Predeterminada en "Canciones"**:
-  - La aplicación abre directamente en la pestaña de canciones locales (`Todas las Canciones`).
-- **Sistema de Temas (Apariencia & Tema)**:
-  - 🖥️ **Sistema**: Sigue automáticamente la configuración de Android.
-  - ☀️ **Modo Claro**: Warm Paper / Luxury Beige (`#f5f2ea` / `#eae5da`).
-  - 🌙 **Modo Oscuro**: Deep OLED Dark (`#0f0e0d` / `#1a1917` / `#2a2824`).
-  - **Knob de Alta Visibilidad**: En modo oscuro, el punto deslizable pasa a blanco radiante con relieve para ser 100% visible y elegante contra el fondo negro.
+- **Sistema de Temas Dual**:
+  - ☀️ **Modo Claro**: Warm Paper / Luxury Linen (`#F5F2EA` / `#EAE5DA`).
+  - 🌙 **Modo Oscuro**: Deep OLED Velvet (`#0F0E0D` / `#1A1917` / `#2A2824`).
 - **Mini-Reproductor Flotante Persistente**:
-  - Permanece visible incluso cuando la música está en pausa.
-  - Al presionar una canción pausada en la lista, **se reanuda exactamente desde el segundo donde se pausó** en lugar de reiniciar desde cero.
-- **Optimización de Fluidez a 60 FPS**:
-  - La pantalla de biblioteca se mantiene en memoria sin destruirse/reconstruirse.
-  - El reproductor funciona como una capa flotante con aceleración por hardware (`translate3d(0, 0, 0)`).
-- **Gesto de Deslizar hacia Abajo (Swipe Down)**:
-  - Deslizar el dedo hacia abajo en el reproductor completo comprime la pantalla suavemente y regresa a la vista previa.
-- **Bloqueo de Scroll de Fondo en Modales**:
-  - Al abrir el Ecualizador, Temporizador, SonoraStats, Editor ID3 o Diálogos, el fondo queda estático y no rebota ni se desplaza al arrastrar los dedos.
+  - Permanece visible en pausa y reanuda la canción exactamente desde el segundo pausado.
 
 ---
 
-## 📁 4. Estructura del Código
+### 🔹 Fase 6: La Gran Transformación Nativa Jetpack Compose & Media3 (v3.0.0)
+- 🚀 **Reescritura Nativa 100% en Kotlin & Jetpack Compose**:
+  - Sustitución integral del WebView por arquitectura declarativa moderna Compose a 120 FPS sin retardos de renderizado.
+- ⚡ **Motor AndroidX Media3 ExoPlayer con Respaldo FLAC**:
+  - Implementación de `SonoraAudioPlayer.kt` con `DefaultExtractorsFactory` (búsqueda de tasa de bits constante) y **mecanismo de recuperación automática a lectura directa de archivo local (`Uri.fromFile`)**, garantizando reproducción perfecta de cualquier archivo FLAC o Hi-Fi (ej. `23 - Morat.flac`).
+- 🌸 **Carátula Floral con Margen Áureo del 20%**:
+  - Dimensionamiento del contorno de proceso (*Wavy Scrubber*) y la carátula en flor de 8 pétalos (`242.dp`), garantizando que al expandirse al 100% durante la reproducción mantenga **un 20% exacto de margen libre respecto al contorno de onda**.
+- 🎛️ **5 Estilos de Controles de Reproducción de Lujo**:
+  1. *Cápsula Flotante (Luxury Dock)*
+  2. *Círculos Suizos (Swiss Circles)*
+  3. *Flor Orgánica (Organic Flower)*
+  4. *Hi-Fi Squircle*
+  5. *Píldora Waveform*
+- 🔀 **Cola de Reproducción & Modo Aleatorio Irrepetible**:
+  - Al activar Aleatorio, la cola se baraja con entropía basada en nanosegundos (`Random(System.nanoTime())`) generando secuencias únicas e irrepetibles.
+  - Al desactivar Aleatorio, la cola retorna inmediatamente a su orden original de biblioteca, conservando la posición de reproducción sin cortes.
+- 📊 **sonoraStats 2.0**:
+  - Estadísticas precisas de tiempo de escucha acumulado (minutos y horas) y Top 5 de canciones más escuchadas, sincronizadas en tiempo real tanto en la tarjeta de Ajustes como en el modal dedicado.
+- 🎛️ **Personalización Avanzada de Barra Inferior**:
+  - 3 modos de etiquetas: *Siempre*, *Solo Iconos*, y *Dinámica (etiqueta solo en la pestaña activa)*.
+  - Reordenamiento de pestañas con tarjetas de alto contraste e insignias circulares numeradas.
+- 🌓 **Consistencia Universal de Temas**:
+  - Todas las pantallas (Biblioteca, Reproductor, Cola, Ajustes, Modales y Hojas Inferiores) respetan estrictamente el modo Claro, Oscuro o Sistema.
+
+---
+
+## 📁 4. Estructura del Código Nativo
 
 ```
-c:\app\luxTune\
-├── src\
-│   ├── components\
-│   │   ├── ArtistSelectScreen.tsx   # Biblioteca principal: Canciones, Artistas, Álbumes, Listas, Carpetas
-│   │   ├── EqualizerModal.tsx       # Ecualizador DSP de 10 bandas + Perfiles Acústicos
-│   │   ├── OnboardingScreen.tsx     # Pantalla de bienvenida y permiso de almacenamiento
-│   │   ├── OrganicShapes.tsx        # Fórmulas SVG de 8 pétalos y contorno ondulado interactivo
-│   │   ├── PlayerScreen.tsx         # Reproductor completo con vinilo 80%/60%, letras y gestos
-│   │   ├── SleepTimerModal.tsx      # Temporizador de apagado con fade-out suave
-│   │   ├── SongCover.tsx            # Renderizador de carátulas locales/remotas con clipPath
-│   │   ├── StatsModal.tsx           # sonoraStats (tiempo de escucha y top canciones)
-│   │   ├── TagEditorModal.tsx       # Editor de etiquetas ID3 (Título, Artista, Álbum, Año, Género)
-│   │   └── ToolsScreen.tsx          # Ajustes: Tema, Barra de Navegación, Crossfade, Velocidad, Redondez
-│   ├── context\
-│   │   └── PlayerContext.tsx        # Estado global: Audio, Cola, Tema, Navegación, Persistencia
-│   ├── services\
-│   │   ├── nativeAudio.ts           # Interfaz con el reproductor nativo Android / Web Audio API
-│   │   └── nativeMedia.ts           # Lector de archivos locales y extracción de metadatos
-│   ├── App.tsx                      # Contenedor raíz con transiciones aceleradas y navegación
-│   ├── index.css                    # Variables CSS de Modo Claro y Modo Oscuro
-│   └── main.tsx                     # Punto de entrada de React
-├── android\                         # Proyecto Android nativo (Capacitor Bridge, Gradle, Manifest)
-├── capacitor.config.json            # Configuración de Sonora (App ID, nombre, permisos)
-└── package.json                     # Versión 2.1.0 y dependencias
+c:\app\luxTune\android\app\src\main\java\com\sonora\music\
+├── MainActivity.kt                      # Actividad principal con soporte Edge-to-Edge y barra de estado
+├── data\
+│   ├── model\
+│   │   ├── Song.kt                      # Modelo de datos de canción (ID, título, artista, carátula, calidad)
+│   │   ├── LyricLine.kt                 # Modelo de línea de letra sincronizada (tiempo ms y texto)
+│   │   └── Playlist.kt                  # Modelo de listas de reproducción personalizadas
+│   ├── local\
+│   │   └── SonoraPreferences.kt         # Gestión thread-safe de preferencias, temas, tabs y estadísticas
+│   └── repository\
+│       └── MediaStoreRepository.kt      # Repositorio optimizado de lectura MediaStore y parser de letras .LRC
+├── service\
+│   ├── SonoraAudioPlayer.kt             # Motor de audio AndroidX Media3 ExoPlayer, cola, shuffle y crossfade
+│   ├── SonoraMediaSessionService.kt     # Servicio en primer plano para reproducción en segundo plano
+│   └── SonoraEqualizerManager.kt        # Gestor de ecualizador DSP de 10 bandas y refuerzo de graves
+└── ui\
+    ├── components\
+    │   ├── EqualizerModal.kt            # Modal de ecualizador DSP con controles deslizantes
+    │   ├── OrganicShapes.kt             # Algoritmo de forma de flor de 8 pétalos simétricos
+    │   ├── QueueBottomSheet.kt          # Hoja inferior de cola de reproducción con reordenamiento
+    │   ├── SleepTimerModal.kt           # Modal de temporizador de apagado
+    │   ├── SongItemRow.kt               # Fila de canción con menú contextual de 3 puntos
+    │   ├── SongMenuBottomSheet.kt       # Menú de acciones (favoritos, detalles, agregar a lista)
+    │   ├── StatsModal.kt                # Modal de estadísticas sonoraStats 2.0 (Top 5 canciones)
+    │   ├── TagEditorModal.kt            # Editor de metadatos ID3
+    │   └── WavyScrubberRing.kt          # Anillo de progreso circular ondulado con control táctil
+    ├── screens\
+    │   ├── NativeLibraryScreen.kt       # Pantalla de biblioteca (Canciones, Álbumes, Artistas, Carpetas, Listas)
+    │   ├── NativePlayerScreen.kt        # Pantalla completa de reproductor con los 5 estilos de controles
+    │   └── SettingsScreen.kt            # Pantalla de ajustes, personalización de barra y temas
+    └── theme\
+        ├── Color.kt                     # Paleta de colores Warm Linen / Deep Velvet OLED
+        ├── Theme.kt                     # Proveedor de tema Compose SonoraTheme
+        └── Type.kt                      # Tipografía Plus Jakarta Sans
 ```
 
 ---
@@ -127,24 +146,17 @@ c:\app\luxTune\
 ## 🚀 5. Guía de Ejecución y Compilación
 
 ### Requisitos Previos:
-- Node.js (v18 o superior)
-- Android Studio / Android SDK (plataforma 34 o 35)
+- Java Development Kit (JDK 17 o superior)
+- Android SDK (Plataforma 34 o 35)
 - Dispositivo Android conectado con Depuración USB habilitada
 
 ### Comandos de Compilación & Firma:
 ```powershell
-# 1. Iniciar servidor de desarrollo web
-npm run dev
-
-# 2. Compilar assets y sincronizar con Android
-npm run build
-npx cap sync android
-
-# 3. Compilar APK Release Firmada (Producción)
+# 1. Compilar APK Release Firmada y Optimizada con R8/ProGuard
 cd android
 .\gradlew.bat assembleRelease
 
-# 4. Instalar APK Release en el dispositivo conectado
+# 2. Instalar APK Release directamente en el dispositivo conectado
 adb install -r app\build\outputs\apk\release\app-release.apk
 ```
 
@@ -162,15 +174,22 @@ adb install -r app\build\outputs\apk\release\app-release.apk
 
 ---
 
-## 💾 7. Claves de Almacenamiento Local (`localStorage`)
+## 💾 7. Claves de Almacenamiento Local (`SonoraPreferences`)
 
-| Clave | Descripción |
-|---|---|
-| `sonora_theme_mode` | Modo de tema seleccionado: `'system'`, `'light'`, `'dark'` |
-| `sonora_petal_roundness` | Radio de redondez de los 8 pétalos (0 a 100) |
-| `sonora_crossfade_seconds` | Segundos de fundido cruzado (0 a 12s) |
-| `sonora_nav_tabs` | Configuración y orden de pestañas de la barra de navegación |
-| `sonora_stats` | Minutos reproducidos, canciones escuchadas y artista más escuchado |
-| `sonora_custom_playlists` | Listas de reproducción locales creadas por el usuario |
-| `sonora_eq_settings` | Ajustes personalizados del ecualizador de 10 bandas |
+| Clave | Tipo | Descripción |
+|---|---|---|
+| `theme_mode` | String | Modo de tema: `"system"`, `"light"`, `"dark"` |
+| `petal_roundness` | Int | Amplitud y redondez de la flor de 8 pétalos (0 a 100) |
+| `crossfade_seconds` | Int | Segundos de fundido cruzado (0 a 12s) |
+| `nav_tabs` | String JSON | Lista ordenada de pestañas activas en la barra de navegación |
+| `nav_label_mode` | String | Modo de etiquetas: `"always"`, `"icons_only"`, `"active_only"` |
+| `player_controls_style` | String | Estilo de controles: `"dock"`, `"circles"`, `"organic"`, `"squircle"`, `"waveform"` |
+| `liked_song_ids` | Set\<String\> | Conjunto de IDs de canciones marcadas como favoritas |
+| `play_counts` | String JSON | Diccionario de número de reproducciones por ID de canción |
+| `total_listening_minutes` | Int | Minutos acumulados totales de reproducción de audio |
+| `eq_enabled` | Boolean | Estado del ecualizador DSP (activado/desactivado) |
+| `eq_preset_idx` | Int | Índice del perfil acústico seleccionado |
+| `eq_band_levels` | String JSON | Ganancia por banda en mB (-1000 a +1000) |
+| `eq_bass_boost` | Int | Nivel de refuerzo de graves (0 a 1000) |
+
 

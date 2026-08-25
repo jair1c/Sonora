@@ -34,6 +34,13 @@ android/capacitor-cordova-android-plugins/build/
 *.apk
 *.aab
 
-# Local Temp Screenshots
-screen_*.png
-lux_*.png
+# Local Screenshots & Captures
+/*.png
+/shot*.png
+/sonora_*.png
+/ref_*.png
+/screen_*.png
+/lux_*.png
+!assets/**
+!src/assets/**
+!android/app/src/main/res/**

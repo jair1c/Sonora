@@ -70,12 +70,25 @@ class SonoraAudioPlayer(private val context: Context) {
     val equalizerManager = SonoraEqualizerManager()
     val visualizerManager = SonoraVisualizerManager()
 
+    private val crossfadePlayer: ExoPlayer by lazy {
+        ExoPlayer.Builder(context)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .setUsage(C.USAGE_MEDIA)
+                    .build(),
+                false // Don't take audio focus from main player
+            )
+            .build()
+    }
+
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var progressJob: Job? = null
     private var sleepTimerJob: Job? = null
     private var crossfadeJob: Job? = null
 
     private var crossfadeSeconds: Int = 0
+    private var isCrossfading = false
 
     private var lastCountedSongId: Long = -1L
     private var lastCountedTimestamp: Long = 0L
@@ -229,9 +242,7 @@ class SonoraAudioPlayer(private val context: Context) {
                         _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
                     }
                 }
-                if (crossfadeSeconds > 0) {
-                    fadeInVolume(crossfadeSeconds)
-                } else {
+                if (!isCrossfading) {
                     player.volume = 1.0f
                 }
             }
@@ -279,11 +290,7 @@ class SonoraAudioPlayer(private val context: Context) {
         player.play()
         _isPlaying.value = true
 
-        if (crossfadeSeconds > 0) {
-            fadeInVolume(crossfadeSeconds)
-        } else {
-            player.volume = 1.0f
-        }
+        player.volume = 1.0f
     }
 
     fun savePlaybackState() {
@@ -364,18 +371,6 @@ class SonoraAudioPlayer(private val context: Context) {
         }
     }
 
-    fun nextTrack() {
-        if (player.hasNextMediaItem()) {
-            player.seekToNextMediaItem()
-            player.playWhenReady = true
-            player.play()
-        } else if (_playlist.value.isNotEmpty()) {
-            player.seekTo(0, 0L)
-            player.playWhenReady = true
-            player.play()
-        }
-    }
-
     fun prevTrack() {
         if (player.currentPosition > 3000L) {
             player.seekTo(0L)
@@ -441,17 +436,108 @@ class SonoraAudioPlayer(private val context: Context) {
         _repeatMode.value = nextMode
     }
 
-    private fun fadeInVolume(seconds: Int) {
-        crossfadeJob?.cancel()
-        crossfadeJob = scope.launch {
-            val totalSteps = (seconds * 10).coerceAtLeast(5)
-            val stepDelay = (seconds * 1000L) / totalSteps
-            player.volume = 0f
-            for (i in 1..totalSteps) {
-                delay(stepDelay)
-                player.volume = (i.toFloat() / totalSteps.toFloat()).coerceIn(0f, 1f)
+    fun performCrossfadeTransition(targetNextSong: Song? = null) {
+        if (isCrossfading || crossfadeSeconds <= 0) return
+        val current = _currentSong.value ?: return
+        val queue = _playlist.value
+        val nextSong = targetNextSong ?: run {
+            val currentIdx = queue.indexOfFirst { it.id == current.id }
+            if (currentIdx != -1 && currentIdx + 1 < queue.size) {
+                queue[currentIdx + 1]
+            } else if (_repeatMode.value == Player.REPEAT_MODE_ALL && queue.isNotEmpty()) {
+                queue.first()
+            } else {
+                null
             }
+        } ?: return
+
+        isCrossfading = true
+        crossfadeJob?.cancel()
+
+        val currentPos = player.currentPosition.coerceAtLeast(0L)
+
+        // 1. Play fading tail of Song A on crossfadePlayer
+        try {
+            crossfadePlayer.stop()
+            crossfadePlayer.clearMediaItems()
+            crossfadePlayer.setMediaItem(buildMediaItem(current, useFileFallback = true), currentPos)
+            crossfadePlayer.prepare()
+            crossfadePlayer.volume = 1.0f
+            crossfadePlayer.playWhenReady = true
+            crossfadePlayer.play()
+        } catch (e: Exception) {
+            android.util.Log.e("SonoraAudioPlayer", "Error starting crossfade tail", e)
+        }
+
+        // 2. Play Song B on primary player starting from volume 0.0f
+        val nextIndex = queue.indexOfFirst { it.id == nextSong.id }.coerceAtLeast(0)
+        player.setMediaItems(queue.map { buildMediaItem(it) }, nextIndex, 0L)
+        _currentSong.value = nextSong
+        sonoraPrefs.saveLastPlayback(nextSong.id, 0L, queue.map { it.id })
+        trackSongPlay(nextSong)
+        ensureMediaServiceStarted()
+        scope.launch(Dispatchers.IO) {
+            val lyrics = mediaRepo.getLyricsForSong(nextSong)
+            if (lyrics.isNotEmpty() && _currentSong.value?.id == nextSong.id) {
+                _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
+            }
+        }
+        player.prepare()
+        player.volume = 0.0f
+        player.playWhenReady = true
+        player.play()
+        _isPlaying.value = true
+
+        // 3. Smooth simultaneous DJ blend
+        crossfadeJob = scope.launch {
+            val durationMs = crossfadeSeconds * 1000L
+            val steps = (crossfadeSeconds * 20).coerceAtLeast(10)
+            val stepDelay = (durationMs / steps).coerceAtLeast(20L)
+
+            for (step in 1..steps) {
+                delay(stepDelay)
+                val progress = step.toFloat() / steps.toFloat()
+                player.volume = progress.coerceIn(0f, 1f)
+                try {
+                    crossfadePlayer.volume = (1.0f - progress).coerceIn(0f, 1f)
+                } catch (_: Exception) { }
+            }
+
             player.volume = 1.0f
+            try {
+                crossfadePlayer.stop()
+                crossfadePlayer.clearMediaItems()
+            } catch (_: Exception) { }
+            isCrossfading = false
+        }
+    }
+
+    fun nextTrack() {
+        if (crossfadeSeconds > 0 && player.isPlaying && !isCrossfading) {
+            val queue = _playlist.value
+            val current = _currentSong.value
+            val currentIdx = if (current != null) queue.indexOfFirst { it.id == current.id } else player.currentMediaItemIndex
+            val nextSong = if (currentIdx != -1 && currentIdx + 1 < queue.size) {
+                queue[currentIdx + 1]
+            } else if (_repeatMode.value == Player.REPEAT_MODE_ALL && queue.isNotEmpty()) {
+                queue.first()
+            } else {
+                null
+            }
+            if (nextSong != null) {
+                performCrossfadeTransition(nextSong)
+                return
+            }
+        }
+
+        if (player.hasNextMediaItem()) {
+            player.seekToNextMediaItem()
+            player.playWhenReady = true
+            player.play()
+        } else if (_playlist.value.isNotEmpty()) {
+            player.seekTo(0, 0L)
+            player.playWhenReady = true
+            player.play()
         }
     }
 
@@ -482,13 +568,12 @@ class SonoraAudioPlayer(private val context: Context) {
                     lastTickTime = now
                 }
 
-                // Crossfade fade-out when near track end
-                if (crossfadeSeconds > 0 && dur > crossfadeSeconds * 2000L) {
+                // DJ Crossfade trigger when near track end
+                if (crossfadeSeconds > 0 && dur > crossfadeSeconds * 1500L && !isCrossfading && player.isPlaying) {
                     val remainingMs = dur - pos
                     val crossfadeMs = crossfadeSeconds * 1000L
                     if (remainingMs in 0..crossfadeMs) {
-                        val factor = (remainingMs.toFloat() / crossfadeMs.toFloat()).coerceIn(0.05f, 1.0f)
-                        player.volume = factor
+                        performCrossfadeTransition()
                     }
                 }
 
@@ -574,6 +659,9 @@ class SonoraAudioPlayer(private val context: Context) {
         stopPositionTracking()
         visualizerManager.release()
         equalizerManager.release()
+        try {
+            crossfadePlayer.release()
+        } catch (_: Exception) {}
         player.removeListener(playerListener)
         player.release()
     }

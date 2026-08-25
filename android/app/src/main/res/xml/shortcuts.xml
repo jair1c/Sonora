@@ -8,7 +8,7 @@
         android:shortcutLongLabel="@string/shortcut_shuffle_mix_long">
         <intent
             android:action="com.sonora.music.ACTION_PLAY_MIX"
-            android:targetPackage="com.luxtune.app"
+            android:targetPackage="com.sonora.app"
             android:targetClass="com.sonora.music.SonoraNativeActivity" />
     </shortcut>
 
@@ -20,7 +20,7 @@
         android:shortcutLongLabel="@string/shortcut_favorites_long">
         <intent
             android:action="com.sonora.music.ACTION_FAVORITES"
-            android:targetPackage="com.luxtune.app"
+            android:targetPackage="com.sonora.app"
             android:targetClass="com.sonora.music.SonoraNativeActivity" />
     </shortcut>
 
@@ -32,7 +32,7 @@
         android:shortcutLongLabel="@string/shortcut_resume_long">
         <intent
             android:action="com.sonora.music.ACTION_RESUME"
-            android:targetPackage="com.luxtune.app"
+            android:targetPackage="com.sonora.app"
             android:targetClass="com.sonora.music.SonoraNativeActivity" />
     </shortcut>
 </shortcuts>

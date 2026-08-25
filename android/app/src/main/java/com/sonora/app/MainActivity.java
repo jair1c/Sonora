@@ -1,4 +1,4 @@
-package com.luxtune.app;
+package com.sonora.app;
 
 import android.Manifest;
 import android.content.ComponentName;

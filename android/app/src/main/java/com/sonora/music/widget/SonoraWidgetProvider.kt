@@ -11,7 +11,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.widget.RemoteViews
-import com.luxtune.app.R
+import com.sonora.app.R
 import com.sonora.music.SonoraNativeActivity
 import com.sonora.music.data.model.Song
 import com.sonora.music.service.SonoraAudioPlayer

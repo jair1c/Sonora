@@ -50,7 +50,7 @@ fun SettingsScreen(
                 @Suppress("DEPRECATION")
                 context.packageManager.getPackageInfo(context.packageName, 0)
             }
-            val vName = pInfo.versionName ?: com.luxtune.app.BuildConfig.VERSION_NAME
+            val vName = pInfo.versionName ?: com.sonora.app.BuildConfig.VERSION_NAME
             val vCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 pInfo.longVersionCode
             } else {
@@ -59,7 +59,7 @@ fun SettingsScreen(
             }
             Pair(vName, vCode)
         } catch (e: Exception) {
-            Pair(com.luxtune.app.BuildConfig.VERSION_NAME, com.luxtune.app.BuildConfig.VERSION_CODE.toLong())
+            Pair(com.sonora.app.BuildConfig.VERSION_NAME, com.sonora.app.BuildConfig.VERSION_CODE.toLong())
         }
     }
 

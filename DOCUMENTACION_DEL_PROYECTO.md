@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.3.0)
+# 🌸 Sonora Music Player (v3.4.0)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -7,16 +7,18 @@
 
 **Sonora** es un reproductor de música local de alta fidelidad diseñado para brindar una experiencia auditiva pura, libre de distracciones, con una estética visual basada en **formas orgánicas, flor de loto acústica y disco de vinilo en tonos Negro Obsidiana profundo y Oro Champaña metálico brillante**.
 
-El reproductor opera **100% de manera local y privada**, construido sobre una arquitectura **100% Nativa en Kotlin y Jetpack Compose** con el motor **AndroidX Media3 (ExoPlayer)**, integrando un procesador DSP de ecualización nativa de 10 bandas, fundido cruzado (*crossfade*), visualizador de espectro FFT en vivo, notificación multimedia en primer plano persistente, lectura instantánea de metadatos y carátulas embebidas en archivos `.flac`, `.mp3`, `.m4a`, `.wav`, `.ogg`, sincronización de letras `.lrc`, y un sistema de personalización visual sin precedentes.
+El reproductor opera **100% de manera local y privada**, construido sobre una arquitectura **100% Nativa en Kotlin y Jetpack Compose** con el motor **AndroidX Media3 (ExoPlayer)**, integrando un procesador DSP de ecualización nativa de 10 bandas, fundido cruzado (*crossfade*) con motor dual DJ de reproducción superpuesta, visualizador de espectro FFT en vivo, notificación multimedia en primer plano persistente, lectura instantánea de metadatos y carátulas embebidas en archivos `.flac`, `.mp3`, `.m4a`, `.wav`, `.ogg`, sincronización de letras `.lrc`, y un sistema de personalización visual sin precedentes.
 
 ---
 
 ## 🛠️ 2. Stack Tecnológico Nativo
 
 - **Lenguaje Principal**: Kotlin 2.0+ (JVM 21 / Android SDK 34 & 35)
+- **ID de Paquete / Namespace**: `com.sonora.app`
 - **Framework de UI**: Jetpack Compose (BOM 2024.10.01) + Material3 + Material Icons Extended
 - **Motor de Audio & Sesión**:
-  - `androidx.media3:media3-exoplayer:1.5.0`
+  - `androidx.media3:media3-exoplayer:1.5.0` (Instancia principal de sesión y cola)
+  - `crossfadePlayer` (Instancia auxiliar para mezcla DJ superpuesta simultánea)
   - `androidx.media3:media3-session:1.5.0`
   - `androidx.media3:media3-common:1.5.0`
   - `androidx.media3:media3-ui:1.5.0`
@@ -47,6 +49,11 @@ El reproductor opera **100% de manera local y privada**, construido sobre una ar
 - **Nuevo Imagotipo & Asset Branding**: Rediseño completo de la iconografía de la aplicación con estética Negro Obsidiana y Oro Champaña (*Lotus Acoustic Flower & Vinyl Wave*), exportada en todas las densidades mipmap (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`) y assets vectoriales adaptativos.
 - **Corrección de Watchdog de 30 Segundos**: Eliminación de llamadas directas a `startForegroundService` no gestionadas que causaban la muerte del proceso a los 30s exactos por el temporizador estricto de Android.
 - **Notificación en Primer Plano Media3**: Vinculación directa entre `SonoraMediaService` y `DefaultMediaNotificationProvider` con canal `sonora_music_playback`, control de visibilidad pública en pantalla de bloqueo y escucha reactiva de eventos `onIsPlayingChanged` y `onMediaItemTransition`.
+
+### 🔹 Fase 10: Fundido Cruzado DJ Dual-Engine & Migración de Paquete `com.sonora.app` (v3.4.0)
+- **True Dual-Engine DJ Crossfade**: Implementación de arquitectura de doble reproductor ExoPlayer simultáneo (`player` + `crossfadePlayer`). Al restar el tiempo de crossfade (e.g. 10s), la cola de la Canción A continúa atenuándose gradualmente mientras la Canción B comienza inmediatamente desde el segundo 0 a ganar volumen simultáneamente. ¡Cero silencios, mezcla 100% superpuesta y fluida!
+- **Soporte en Salto de Pistas (*Manual Next Track*)**: Al pulsar Siguiente teniendo activado el fundido cruzado, se activa la misma transición armónica superpuesta entre canciones.
+- **Migración Integral a `com.sonora.app`**: Refactorización del espacio de nombres y Application ID en `build.gradle`, `AndroidManifest.xml`, `strings.xml`, `shortcuts.xml`, `Typography.kt` y `SonoraWidgetProvider.kt`.
 
 ---
 

@@ -1,4 +1,4 @@
-package com.luxtune.app;
+package com.sonora.app;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -32,12 +32,12 @@ import java.io.File;
 
 public class MusicPlayerService extends Service {
 
-    public static final String ACTION_PLAY = "com.luxtune.app.ACTION_PLAY";
-    public static final String ACTION_PAUSE = "com.luxtune.app.ACTION_PAUSE";
-    public static final String ACTION_RESUME = "com.luxtune.app.ACTION_RESUME";
-    public static final String ACTION_PREV = "com.luxtune.app.ACTION_PREV";
-    public static final String ACTION_NEXT = "com.luxtune.app.ACTION_NEXT";
-    public static final String ACTION_STOP = "com.luxtune.app.ACTION_STOP";
+    public static final String ACTION_PLAY = "com.sonora.app.ACTION_PLAY";
+    public static final String ACTION_PAUSE = "com.sonora.app.ACTION_PAUSE";
+    public static final String ACTION_RESUME = "com.sonora.app.ACTION_RESUME";
+    public static final String ACTION_PREV = "com.sonora.app.ACTION_PREV";
+    public static final String ACTION_NEXT = "com.sonora.app.ACTION_NEXT";
+    public static final String ACTION_STOP = "com.sonora.app.ACTION_STOP";
 
     private static final String CHANNEL_ID = "luxtune_music_channel";
     private static final int NOTIFICATION_ID = 8801;

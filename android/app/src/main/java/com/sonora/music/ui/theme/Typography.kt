@@ -6,7 +6,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.luxtune.app.R
+import com.sonora.app.R
 
 val PlusJakartaSansFamily = FontFamily(
     Font(R.font.plus_jakarta_sans, weight = FontWeight.Light),

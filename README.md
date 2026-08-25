@@ -1,8 +1,8 @@
-# 🌸 Sonora Music (v3.3.0)
+# 🌸 Sonora Music (v3.4.0)
 > **Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-3.3.0-emerald.svg)
+![Version](https://img.shields.io/badge/version-3.4.0-emerald.svg)
 ![Platform](https://img.shields.io/badge/platform-Android_10+-brightgreen.svg)
 ![Stack](https://img.shields.io/badge/stack-Kotlin_+_Jetpack_Compose_+_Media3-blueviolet.svg)
 
@@ -10,6 +10,8 @@
 
 ## ✨ Características Principales
 
+- 🎚️ **Fundido Cruzado DJ Dual-Engine (*True Audio Crossfade*)**: Mezcla simultánea y superpuesta real entre la canción A (fade-out progresivo) y la canción B (fade-in entrante) con motor de doble instancia ExoPlayer sin silencios ni cortes.
+- 📦 **Paquete de Aplicación Oficial**: Migración completa a `com.sonora.app`.
 - 🌸 **Identidad Visual Premium & Nuevo Imagotipo**: Fusión minimalista de flor de loto acústica, ondas sonoras armónicas y disco de vinilo en tonos Negro Obsidiana y Oro Champaña brillante.
 - 🔔 **Notificación Multimedia en Primer Plano Persistente**: Integración nativa con `MediaSessionService` y Android Media Style Notification con controles completos (play/pause/prev/next, barra de progreso y carátula) visible en cajón de notificaciones y pantalla de bloqueo.
 - 📊 **Visualizador de Espectro en Vivo (Dual FFT + Motor Armónico)**: Renderizado dinámico de frecuencias de audio con resortes elásticos suaves y respaldo procedural garantizado.

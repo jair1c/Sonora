@@ -18,26 +18,32 @@ class MediaStoreRepository(private val context: Context) {
 
     suspend fun queryLocalSongs(): List<Song> = withContext(Dispatchers.IO) {
         val songsList = mutableListOf<Song>()
+        val seenPaths = mutableSetOf<String>()
+        val seenIds = mutableSetOf<Long>()
 
-        val projection = arrayOf(
-            MediaStore.Audio.Media._ID,
-            MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.ARTIST,
-            MediaStore.Audio.Media.ALBUM,
-            MediaStore.Audio.Media.DURATION,
-            MediaStore.Audio.Media.DATA,
-            MediaStore.Audio.Media.SIZE,
-            MediaStore.Audio.Media.ALBUM_ID,
-            MediaStore.Audio.Media.YEAR,
-            MediaStore.Audio.Media.DATE_ADDED,
-            MediaStore.Audio.Media.DATE_MODIFIED
-        )
+        val audioExtensions = setOf("mp3", "flac", "wav", "m4a", "aac", "ogg", "opus", "wma", "alac", "aiff", "dsf", "dff", "ape", "mid", "midi")
 
-        val selection = "${MediaStore.Audio.Media.DURATION} >= 10000"
-        val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
-        val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-
+        // 1. Primary Query: MediaStore.Audio.Media
         try {
+            val projection = arrayOf(
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.SIZE,
+                MediaStore.Audio.Media.ALBUM_ID,
+                MediaStore.Audio.Media.YEAR,
+                MediaStore.Audio.Media.DATE_ADDED,
+                MediaStore.Audio.Media.DATE_MODIFIED
+            )
+
+            // Do not filter out DURATION = 0 or NULL to avoid dropping FLAC, WAV, M4A, OGG
+            val selection = "${MediaStore.Audio.Media.SIZE} > 30000"
+            val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
+            val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+
             context.contentResolver.query(
                 collection,
                 projection,
@@ -59,23 +65,60 @@ class MediaStoreRepository(private val context: Context) {
 
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idCol)
-                    val title = cursor.getString(titleCol) ?: "Canción sin título"
-                    val artist = cursor.getString(artistCol)?.takeIf { it != "<unknown>" } ?: "Artista desconocido"
-                    val album = cursor.getString(albumCol)?.takeIf { it != "<unknown>" } ?: "Álbum desconocido"
-                    val durationMs = cursor.getLong(durationCol)
                     val filePath = cursor.getString(dataCol) ?: ""
+                    val ext = if (filePath.isNotEmpty()) File(filePath).extension.lowercase() else ""
+
+                    if (filePath.isNotEmpty() && !audioExtensions.contains(ext) && ext.isNotEmpty()) {
+                        continue
+                    }
+
+                    var title = cursor.getString(titleCol) ?: ""
+                    var artist = cursor.getString(artistCol)?.takeIf { it != "<unknown>" && it != "unknown" } ?: ""
+                    var album = cursor.getString(albumCol)?.takeIf { it != "<unknown>" && it != "unknown" } ?: ""
+                    var durationMs = cursor.getLong(durationCol)
                     val sizeBytes = cursor.getLong(sizeCol)
                     val albumId = cursor.getLong(albumIdCol)
                     val year = cursor.getInt(yearCol)
                     val dateAdded = cursor.getLong(dateAddedCol) * 1000L
                     val dateModified = cursor.getLong(dateModifiedCol) * 1000L
 
-                    val contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
+                    // Fallback metadata extraction for FLAC/WAV/M4A with 0 duration or missing tags
+                    if ((durationMs <= 0L || title.isBlank() || artist.isBlank()) && filePath.isNotEmpty() && File(filePath).exists()) {
+                        try {
+                            val mmr = MediaMetadataRetriever()
+                            mmr.setDataSource(filePath)
+                            val durStr = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                            if (durStr != null) durationMs = durStr.toLongOrNull() ?: durationMs
+                            if (title.isBlank()) {
+                                val t = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+                                if (!t.isNullOrBlank()) title = t
+                            }
+                            if (artist.isBlank()) {
+                                val a = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                                if (!a.isNullOrBlank()) artist = a
+                            }
+                            if (album.isBlank()) {
+                                val al = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
+                                if (!al.isNullOrBlank()) album = al
+                            }
+                            mmr.release()
+                        } catch (_: Exception) {}
+                    }
 
-                    // Album Cover URI via standard MediaStore albumart Content URI
+                    if (title.isBlank()) {
+                        title = if (filePath.isNotEmpty()) File(filePath).nameWithoutExtension else "Canción $id"
+                    }
+                    if (artist.isBlank()) artist = "Artista desconocido"
+                    if (album.isBlank()) album = "Álbum desconocido"
+                    if (durationMs <= 0L) durationMs = 180000L
+
+                    val contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
                     val coverUri = if (albumId > 0) {
                         ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), albumId)
                     } else null
+
+                    if (filePath.isNotEmpty()) seenPaths.add(filePath.lowercase())
+                    seenIds.add(id)
 
                     songsList.add(
                         Song(
@@ -91,16 +134,101 @@ class MediaStoreRepository(private val context: Context) {
                             dateModified = dateModified,
                             sizeBytes = sizeBytes,
                             year = year,
-                            lyrics = emptyList() // Lazy-loaded on demand for instantaneous startup
+                            lyrics = emptyList()
                         )
                     )
                 }
             }
-            android.util.Log.d("SonoraMedia", "Queried ${songsList.size} songs in record time from MediaStore")
         } catch (e: Exception) {
-            android.util.Log.e("SonoraMedia", "Error querying MediaStore", e)
+            android.util.Log.e("SonoraMedia", "Error querying MediaStore Audio", e)
         }
 
+        // 2. Secondary Query: MediaStore.Files for any unclassified FLAC, M4A, WAV, OGG, OPUS, AAC files
+        try {
+            val fileProjection = arrayOf(
+                MediaStore.Files.FileColumns._ID,
+                MediaStore.Files.FileColumns.DATA,
+                MediaStore.Files.FileColumns.SIZE,
+                MediaStore.Files.FileColumns.DATE_ADDED,
+                MediaStore.Files.FileColumns.DATE_MODIFIED
+            )
+            val fileUri = MediaStore.Files.getContentUri("external")
+            val selectionArgs = audioExtensions.map { "%.$it" }.toTypedArray()
+            val selection = audioExtensions.joinToString(" OR ") { "${MediaStore.Files.FileColumns.DATA} LIKE ?" }
+
+            context.contentResolver.query(
+                fileUri,
+                fileProjection,
+                "($selection) AND ${MediaStore.Files.FileColumns.SIZE} > 30000",
+                selectionArgs,
+                null
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                val dataCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA)
+                val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+                val dateAddedCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
+                val dateModifiedCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
+
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(idCol)
+                    val filePath = cursor.getString(dataCol) ?: ""
+                    if (filePath.isEmpty() || seenPaths.contains(filePath.lowercase()) || seenIds.contains(id)) {
+                        continue
+                    }
+                    val file = File(filePath)
+                    if (!file.exists() || !file.isFile) continue
+
+                    val sizeBytes = cursor.getLong(sizeCol)
+                    val dateAdded = cursor.getLong(dateAddedCol) * 1000L
+                    val dateModified = cursor.getLong(dateModifiedCol) * 1000L
+
+                    var title = file.nameWithoutExtension
+                    var artist = "Artista desconocido"
+                    var album = "Álbum desconocido"
+                    var durationMs = 180000L
+
+                    try {
+                        val mmr = MediaMetadataRetriever()
+                        mmr.setDataSource(filePath)
+                        val t = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+                        val a = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                        val al = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
+                        val d = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        if (!t.isNullOrBlank()) title = t
+                        if (!a.isNullOrBlank()) artist = a
+                        if (!al.isNullOrBlank()) album = al
+                        if (!d.isNullOrBlank()) durationMs = d.toLongOrNull() ?: durationMs
+                        mmr.release()
+                    } catch (_: Exception) {}
+
+                    val contentUri = Uri.fromFile(file)
+                    seenPaths.add(filePath.lowercase())
+                    seenIds.add(id)
+
+                    songsList.add(
+                        Song(
+                            id = id,
+                            title = title,
+                            artist = artist,
+                            album = album,
+                            durationMs = durationMs,
+                            contentUri = contentUri,
+                            filePath = filePath,
+                            coverUri = null,
+                            dateAdded = dateAdded,
+                            dateModified = dateModified,
+                            sizeBytes = sizeBytes,
+                            year = 0,
+                            lyrics = emptyList()
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SonoraMedia", "Error querying MediaStore Files fallback", e)
+        }
+
+        android.util.Log.d("SonoraMedia", "Total scanned audio files: ${songsList.size}")
         songsList
     }
 

@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.0.0)
+# 🌸 Sonora Music Player (v3.1.0)
 ### *Reproductor de Música Nativo Audiófilo con Diseño Orgánico y Arquitectura Jetpack Compose para Android*
 
 ---
@@ -29,7 +29,7 @@ El reproductor opera **100% de manera local y privada**, construido sobre una ar
 
 ---
 
-## 📜 3. Historial Cronológico Completo de Cambios (Changelog de v0.1 a v3.0.0)
+## 📜 3. Historial Cronológico Completo de Cambios (Changelog de v0.1 a v3.1.0)
 
 ### 🔹 Fase 1: Arquitectura Inicial y Motor de Reproducción Local (v0.1 - v0.5)
 - **Problema Inicial**: Prototipo híbrido en WebView sin persistencia ni notificación multimedia en la barra de Android; al salir de la app o bloquear el teléfono, la música se pausaba y el sistema cerraba el proceso.
@@ -99,6 +99,24 @@ El reproductor opera **100% de manera local y privada**, construido sobre una ar
   - Reordenamiento de pestañas con tarjetas de alto contraste e insignias circulares numeradas.
 - 🌓 **Consistencia Universal de Temas**:
   - Todas las pantallas (Biblioteca, Reproductor, Cola, Ajustes, Modales y Hojas Inferiores) respetan estrictamente el modo Claro, Oscuro o Sistema.
+
+---
+
+### 🔹 Fase 7: Servicio de Fondo Media3, Persistencia Continua & Escáner Multi-Formato Audiófilo (v3.1.0)
+- 🔔 **Notificación Multimedia en Primer Plano y Pantalla de Bloqueo (`MediaSessionService`)**:
+  - Creación de `SonoraMediaService.kt` vinculado a AndroidX Media3 con gestión automática de foco de audio y controles interactivos en la barra de estado y pantalla de bloqueo.
+  - Solicitud dinámica en tiempo de ejecución del permiso `POST_NOTIFICATIONS` para Android 13+ (Tiramisu / Android 14 / Android 15).
+- ⏱️ **Persistencia Continua & Reanudación al Segundo Exacto**:
+  - Guardado en segundo plano de la pista activa, cola de reproducción y posición en milisegundos en `SonoraPreferences.kt`.
+  - Restauración instantánea del reproductor flotante y precarga de ExoPlayer al abrir o reiniciar la app, reanudando la música desde el segundo exacto donde se detuvo.
+- 🎼 **Escáner Universal Multi-Formato Audiófilo**:
+  - Eliminación de filtros que descartaban archivos sin duración previa (`DURATION = 0`).
+  - Soporte exhaustivo para `.flac`, `.wav`, `.m4a`, `.mp3`, `.aac`, `.ogg`, `.opus`, `.wma`, `.alac`, `.aiff`, `.dsf`, `.dff`, `.ape`, `.mid`.
+  - Búsqueda de respaldo en `MediaStore.Files` y lectura en caliente de etiquetas y duración mediante `MediaMetadataRetriever`.
+- 🎚️ **Ecualizador Responsivo Orgánico**:
+  - Ajuste del modal del ecualizador a su contenido real (`wrapContentHeight`), eliminando espacios vacíos bajo la tarjeta de refuerzo de graves.
+- 👆 **Navegación Fluida al Tocar la Canción en Reproducción**:
+  - Al pulsar la pista activa en cualquier lista o pantalla de detalle, la app despliega el reproductor completo sin reiniciar la canción ni perder la posición.
 
 ---
 

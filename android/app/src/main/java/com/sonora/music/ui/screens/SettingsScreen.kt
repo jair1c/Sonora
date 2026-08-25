@@ -952,6 +952,47 @@ fun SettingsScreen(
                 }
             }
         }
+
+        // 9. ACERCA DE SONORA & INFORMACIÓN DE VERSIÓN
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(cardBg)
+                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .padding(18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "🌸 Sonora Music Player",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Black,
+                    color = textPrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Versión 3.1.0 (Compilación 310)",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = textSecondary
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(subCardBg)
+                        .padding(horizontal = 10.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = "Jetpack Compose Nativo + AndroidX Media3",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textSecondary
+                    )
+                }
+            }
+        }
     }
 
     // Modals

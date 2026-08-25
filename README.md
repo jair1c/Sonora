@@ -1,8 +1,8 @@
-# 🌸 Sonora (v3.0.0)
+# 🌸 Sonora (v3.1.0)
 > **Reproductor de Música Nativo Audiófilo con Diseño Orgánico y Arquitectura Jetpack Compose para Android**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-3.0.0-emerald.svg)
+![Version](https://img.shields.io/badge/version-3.1.0-emerald.svg)
 ![Platform](https://img.shields.io/badge/platform-Android_10+-brightgreen.svg)
 ![Stack](https://img.shields.io/badge/stack-Kotlin_+_Jetpack_Compose_+_Media3-blueviolet.svg)
 

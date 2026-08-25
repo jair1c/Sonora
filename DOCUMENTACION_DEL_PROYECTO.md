@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.4.2)
+# 🌸 Sonora Music Player (v3.4.3)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -62,6 +62,9 @@ El reproductor opera **100% de manera local y privada**, construido sobre una ar
 ### 🔹 Fase 12: Arquitectura Reactiva de Notificación MediaStyle & Compatibilidad Android 16 Baklava (v3.4.2)
 - **Notificación Reactiva NotificationCompat.MediaStyle**: Implementación de notificación explícita en `SonoraMediaService` acoplada reactivamente a los flujos `currentSong` e `isPlaying` de `SonoraAudioPlayer`. Incorpora portadas en alta resolución, acciones directas (*Anterior, Play/Pause, Siguiente, Cerrar*) y control `FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK` en Android 14/15/16.
 - **Gestor de Permiso de Notificación en Ajustes**: Tarjeta de estado en tiempo real en la pantalla de Ajustes que detecta `areNotificationsEnabled()` y permite al usuario abrir la pantalla de configuración del sistema de Android 16 con un solo toque.
+
+### 🔹 Fase 13: Integración de Token MediaSession con Samsung One UI & Panel de Control (v3.4.3)
+- **Vinculación de Token de Sesión en MediaStyle**: Se vinculó `MediaSessionCompat.Token` en `MediaStyle.setMediaSession(token)` y `android.mediaSession` en los extras de la notificación. Esto permite a la interfaz de Samsung One UI (One UI 6/7) reconocer a Sonora como un reproductor multimedia activo del sistema e integrarlo directamente en el widget de Control Multimedia del Panel Rápido (Quick Settings), la pantalla de bloqueo de Samsung y el control de salida multimedia.
 
 ---
 

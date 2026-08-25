@@ -186,10 +186,25 @@ class SonoraMediaService : MediaSessionService() {
                 toggleIntent
             )
             .addAction(R.drawable.ic_widget_next, "Siguiente", nextIntent)
-            .setStyle(
-                MediaStyle()
-                    .setShowActionsInCompactView(0, 1, 2)
-            )
+
+        val mediaStyle = MediaStyle()
+            .setShowActionsInCompactView(0, 1, 2)
+
+        try {
+            mediaSession?.sessionCompatToken?.let { token ->
+                mediaStyle.setMediaSession(token as android.support.v4.media.session.MediaSessionCompat.Token)
+            }
+        } catch (_: Exception) {}
+
+        builder.setStyle(mediaStyle)
+
+        try {
+            mediaSession?.platformToken?.let { platformToken ->
+                if (platformToken is android.os.Parcelable) {
+                    builder.extras.putParcelable("android.mediaSession", platformToken)
+                }
+            }
+        } catch (_: Exception) {}
 
         if (coverBitmap != null) {
             builder.setLargeIcon(coverBitmap)

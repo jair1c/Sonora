@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.4.3)
+# 🌸 Sonora Music Player (v3.5.0)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -65,6 +65,13 @@ El reproductor opera **100% de manera local y privada**, construido sobre una ar
 
 ### 🔹 Fase 13: Integración de Token MediaSession con Samsung One UI & Panel de Control (v3.4.3)
 - **Vinculación de Token de Sesión en MediaStyle**: Se vinculó `MediaSessionCompat.Token` en `MediaStyle.setMediaSession(token)` y `android.mediaSession` en los extras de la notificación. Esto permite a la interfaz de Samsung One UI (One UI 6/7) reconocer a Sonora como un reproductor multimedia activo del sistema e integrarlo directamente en el widget de Control Multimedia del Panel Rápido (Quick Settings), la pantalla de bloqueo de Samsung y el control de salida multimedia.
+
+### 🔹 Fase 14: Compatibilidad Universal Multi-OEM & Receptor de Botones de Auriculares (v3.5.0)
+- **Ecosistema Multi-Capa (Xiaomi HyperOS / MIUI, OPPO ColorOS, OnePlus OxygenOS, Vivo OriginOS, Huawei MagicOS, Motorola, Nothing, Pixel)**:
+  - Configuración silenciosa y sin vibración del canal de audio para evitar pitidos o vibraciones en transiciones de pista en HyperOS y ColorOS.
+  - Asignación de categoría `NotificationCompat.CATEGORY_TRANSPORT` para enrutamiento nativo a los centros de control multimedia de todas las marcas.
+  - Registro de `MediaButtonReceiver` y filtro de acción `android.intent.action.MEDIA_BUTTON` para compatibilidad universal con auriculares Bluetooth (Galaxy Buds, Xiaomi Buds, AirPods, etc.) y cables jack/USB-C (1 clic: Play/Pause, 2 clics: Siguiente, 3 clics: Anterior).
+  - Tarjeta en Ajustes con detección de fabricante de dispositivo (`Build.MANUFACTURER`) y enlace de 1 toque para deshabilitar la optimización agresiva de batería (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`).
 
 ---
 

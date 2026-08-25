@@ -85,6 +85,27 @@ fun SettingsScreen(
     var navLabelMode by remember { mutableStateOf(sonoraPrefs.getNavLabelMode()) }
     var playerControlsStyle by remember { mutableStateOf(sonoraPrefs.getPlayerControlsStyle()) }
 
+    val powerManager = remember { context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager }
+    val isIgnoringBatteryOptimizations = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+        } else true
+    }
+    val oemBrand = remember {
+        val manu = Build.MANUFACTURER.lowercase()
+        when {
+            manu.contains("samsung") -> "Samsung One UI"
+            manu.contains("xiaomi") || manu.contains("redmi") || manu.contains("poco") -> "Xiaomi HyperOS"
+            manu.contains("oppo") || manu.contains("oneplus") || manu.contains("realme") -> "ColorOS / OxygenOS"
+            manu.contains("huawei") || manu.contains("honor") -> "Huawei / MagicOS"
+            manu.contains("vivo") || manu.contains("iqoo") -> "Vivo Funtouch / OriginOS"
+            manu.contains("motorola") || manu.contains("moto") -> "Motorola Hello UI"
+            manu.contains("nothing") -> "Nothing OS"
+            manu.contains("google") -> "Google Pixel"
+            else -> "${Build.MANUFACTURER.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.ROOT) else it.toString() }} UI"
+        }
+    }
+
     val playCounts = remember(showStatsModal, songs) { sonoraPrefs.getPlayCounts() }
     val totalPlayedSongs = remember(songs, playCounts) {
         songs.count { (playCounts[it.id] ?: it.playCount) > 0 }
@@ -700,7 +721,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "NOTIFICACIÓN MULTIMEDIA",
+                            text = "INTEGRACIÓN CON EL SISTEMA",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
@@ -711,11 +732,54 @@ fun SettingsScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(100.dp))
+                            .background(Color(0xFFD4AF37).copy(alpha = 0.2f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = oemBrand,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD4AF37)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Compatibilidad con panel de control, pantalla de bloqueo y reproducción continua en Samsung, Xiaomi, Oppo, Pixel, Vivo, Motorola y más.",
+                    fontSize = 11.sp,
+                    color = textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Control Multimedia / Notificación
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Control Multimedia del Sistema",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
+                        Text(
+                            text = "Token de sesión activo para widgets nativos y pantalla de bloqueo.",
+                            fontSize = 10.sp,
+                            color = textSecondary
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
                             .background(if (areNotificationsEnabled) Color(0xFF1B5E20) else Color(0xFFB71C1C))
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = if (areNotificationsEnabled) "Activas" else "Permiso requerido",
+                            text = if (areNotificationsEnabled) "Activo" else "Permiso requerido",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -724,13 +788,6 @@ fun SettingsScreen(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Controla la reproducción desde el panel de notificaciones y la pantalla de bloqueo en Android 16.",
-                    fontSize = 11.sp,
-                    color = textSecondary
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
 
                 Box(
                     modifier = Modifier
@@ -757,11 +814,79 @@ fun SettingsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (areNotificationsEnabled) "Configurar Notificaciones del Sistema" else "🔔 Habilitar Permiso en Android 16",
-                        fontSize = 12.sp,
+                        text = if (areNotificationsEnabled) "Ajustes de Notificación en $oemBrand" else "🔔 Habilitar Permiso de Notificación",
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = activePillText
                     )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Batería & Segundo Plano
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Reproducción en Segundo Plano",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        )
+                        Text(
+                            text = if (isIgnoringBatteryOptimizations) "Sin restricciones de ahorro de energía" else "Ahorro de batería activo (puede pausar música)",
+                            fontSize = 10.sp,
+                            color = textSecondary
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(if (isIgnoringBatteryOptimizations) Color(0xFF1B5E20) else Color(0xFFE65100))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = if (isIgnoringBatteryOptimizations) "Ilimitado" else "Optimizado",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                if (!isIgnoringBatteryOptimizations && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFD4AF37).copy(alpha = 0.15f))
+                            .clickable {
+                                try {
+                                    val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                        data = android.net.Uri.parse("package:${context.packageName}")
+                                    }
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    try {
+                                        val intent = android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {}
+                                }
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "⚡ Quitar Restricción de Batería (Sin Cortes)",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD4AF37)
+                        )
+                    }
                 }
             }
         }

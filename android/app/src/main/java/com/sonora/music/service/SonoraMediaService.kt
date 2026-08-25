@@ -83,6 +83,8 @@ class SonoraMediaService : MediaSessionService() {
             ).apply {
                 description = "Controles de reproducción multimedia de Sonora"
                 setShowBadge(false)
+                setSound(null, null)
+                enableVibration(false)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
             val notificationManager = getSystemService(NotificationManager::class.java)
@@ -176,8 +178,10 @@ class SonoraMediaService : MediaSessionService() {
             .setContentIntent(sessionActivityPendingIntent)
             .setDeleteIntent(stopIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setOngoing(isPlaying)
             .setShowWhen(false)
+            .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .addAction(R.drawable.ic_widget_prev, "Anterior", prevIntent)
             .addAction(
@@ -202,9 +206,12 @@ class SonoraMediaService : MediaSessionService() {
             mediaSession?.platformToken?.let { platformToken ->
                 if (platformToken is android.os.Parcelable) {
                     builder.extras.putParcelable("android.mediaSession", platformToken)
+                    builder.extras.putParcelable(NotificationCompat.EXTRA_MEDIA_SESSION, platformToken)
                 }
             }
         } catch (_: Exception) {}
+
+        builder.extras.putString("android.substName", "Sonora")
 
         if (coverBitmap != null) {
             builder.setLargeIcon(coverBitmap)

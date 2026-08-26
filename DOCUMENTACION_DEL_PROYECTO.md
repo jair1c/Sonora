@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.6.0)
+# 🌸 Sonora Music Player (v3.6.1)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -314,7 +314,7 @@ La transición entre canciones A → B ahora es completamente fluida, sin cortes
 
 ---
 
-## 🚀 Fase 16 — Backup/Restore por Archivo + Indicador de Batería Reactivo (v3.6.0)
+## 🚀 Fase 16 — Backup/Restore por Archivo + Indicador de Batería Reactivo (v3.6.1)
 
 ### Cambios
 
@@ -376,3 +376,54 @@ Ahora el indicador "Ilimitado" aparece automáticamente al volver desde los ajus
 
 ### Versión
 `versionCode 360` · `versionName "3.6.0"` · Commit: `main`
+
+---
+
+## 🚀 Fase 17 — Crossfade sin Corte en Song B + Notificación en Tiempo Real (v3.6.1)
+
+### Problema Detectado
+Después de la v3.5.1 (preloading de Song B), el corte se movió del inicio al final:
+- **Corte en Song B**: al terminar el fade de 10s, `player.setMediaItems()` + `prepare()` trasladaba Song B al player principal, causando un corte de 50–200ms en Song B.
+- **Notificación stuck en Song A**: durante todo el crossfade, el player principal seguía en Song A (Song B estaba en `crossfadePlayer`). El MediaSession (fuente de la notificación) reportaba Song A hasta que ocurría el handoff.
+
+### Causa Raíz (Arquitectura Invertida)
+
+```
+v3.5.1 — INCORRECTO:
+  crossfadePlayer → Song B (fading IN, vol 0→1)
+  player          → Song A (fading OUT, vol 1→0)
+  Al finalizar: player.setMediaItems(Song B) + prepare() → CUT en Song B
+  Notificación: MediaSession = Song A durante 10s completos
+
+v3.6.1 — CORRECTO:
+  crossfadePlayer → Song A (tail, fading OUT, vol 1→0)  ← preloaded 20s antes
+  player          → Song B (fading IN, vol 0→1)         ← seekTo() sin prepare()
+  Al finalizar: crossfadePlayer.stop() únicamente → CERO corte
+  Notificación: MediaSession = Song B desde el primer segundo del fade
+```
+
+### Solución Implementada
+
+#### `preloadCurrentTailOnCrossfadePlayer(currentSong: Song)`
+- Reemplaza a `preloadNextSong()`. Ahora preloads la **cola de Song A** en `crossfadePlayer`
+- Se dispara en la ventana de preload (2× crossfade antes del final de la canción)
+- `crossfadePlayer.setMediaItem(currentSong, 0L)` + `prepare()` silenciosamente
+- En el trigger, hace `seekTo(currentPosition)` para sincronizarse exactamente con donde está Song A
+
+#### `performCrossfadeTransition()` — Arquitectura corregida
+
+1. **crossfadePlayer**: `seekTo(currentPos)` → `volume = 1.0f` → `play()` (Song A continúa aquí, ya buffered)
+2. **player**: `seekTo(nextIndex, 0L)` → Song B instantáneo (ya en la cola del ExoPlayer, sin `setMediaItems`/`prepare`)
+3. **Fade**: `crossfadePlayer` vol 1→0 (A), `player` vol 0→1 (B) — curva sinusoidal
+4. **Fin**: `crossfadePlayer.stop()` únicamente — Song B ya lleva N segundos en `player`
+
+#### `onMediaItemTransition` (listener del player)
+El guard `if (!isCrossfading) { player.volume = 1.0f }` previene que el listener resetee el volumen de Song B a 1.0f cuando `seekTo(nextIndex)` dispara la transición de mediaItem durante el crossfade.
+
+### Resultado
+- ✅ Sin corte al inicio del crossfade (Song A preloaded)
+- ✅ Sin corte al final del crossfade (Song B ya en player, sin handoff)
+- ✅ Notificación refleja Song B desde el primer segundo del fade (MediaSession ligado a `player`)
+
+### Versión
+`versionCode 361` · `versionName "3.6.1"` · Commit: `main`

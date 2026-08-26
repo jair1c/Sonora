@@ -406,9 +406,20 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun seekTo(positionMs: Long) {
+        // Cancel any active tail preload — it's now stale (user jumped to a different position).
+        // This also frees resources from crossfadePlayer playing silently in background.
+        if (preloadedSong != null) {
+            preloadJob?.cancel()
+            preloadedSong = null
+            try {
+                crossfadePlayer.stop()
+                crossfadePlayer.clearMediaItems()
+            } catch (_: Exception) {}
+        }
         player.seekTo(positionMs)
         _currentPositionMs.value = positionMs
     }
+
 
     fun toggleShuffle() {
         val willBeShuffle = !_isShuffle.value
@@ -457,31 +468,28 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     /**
-     * Preloads the CURRENT song's tail into crossfadePlayer so it is already
-     * buffered when the crossfade trigger fires.
+     * Preloads Song A's tail by starting crossfadePlayer from [startPositionMs] at volume 0.
      *
-     * Roles at crossfade time:
-     *   crossfadePlayer → Song A (current, fading OUT)  ← preloaded here
-     *   player          → Song B (next,    fading IN  via seekTo — already in queue, no prepare())
-     *
-     * This eliminates BOTH cuts:
-     *   - No cut at START: Song A tail already buffered, plays instantly at vol 1
-     *   - No cut at END:   Song B is already on the primary player — no handoff/setMediaItems needed
+     * Key idea: crossfadePlayer plays silently in background for the entire preload window.
+     * By the time the crossfade trigger fires (crossfadeMs later), crossfadePlayer is already
+     * at the correct position — synchronized with the main player naturally, with no seekTo().
+     * At trigger time we simply unmute (volume 0→1) → zero seek latency → zero cut in Song A.
      */
-    private fun preloadCurrentTailOnCrossfadePlayer(currentSong: Song) {
-        if (preloadedSong?.id == currentSong.id) return  // Already preloaded
+    private fun preloadCurrentTailOnCrossfadePlayer(currentSong: Song, startPositionMs: Long) {
+        if (preloadedSong?.id == currentSong.id) return  // Already running
         preloadJob?.cancel()
         preloadJob = scope.launch {
             try {
                 crossfadePlayer.stop()
                 crossfadePlayer.clearMediaItems()
-                // Load tail from beginning; we'll seekTo(currentPos) at trigger time
-                crossfadePlayer.setMediaItem(buildMediaItem(currentSong, useFileFallback = true), 0L)
+                // Start from the CURRENT position so it naturally drifts into sync by trigger time
+                crossfadePlayer.setMediaItem(buildMediaItem(currentSong, useFileFallback = true), startPositionMs)
                 crossfadePlayer.prepare()
                 crossfadePlayer.volume = 0f
-                crossfadePlayer.playWhenReady = false
+                // Play silently — by trigger time it will be at (startPositionMs + crossfadeMs) ≈ currentPos
+                crossfadePlayer.playWhenReady = true
                 preloadedSong = currentSong
-                android.util.Log.d("SonoraAudioPlayer", "Preloaded current song tail: ${currentSong.title}")
+                android.util.Log.d("SonoraAudioPlayer", "Preloading Song A tail silently from ${startPositionMs}ms: ${currentSong.title}")
             } catch (e: Exception) {
                 android.util.Log.w("SonoraAudioPlayer", "Tail preload failed, will load at trigger: ${e.message}")
                 preloadedSong = null
@@ -513,19 +521,17 @@ class SonoraAudioPlayer(private val context: Context) {
         val stepDelay = (durationMs / steps).coerceAtLeast(16L)
 
         // --- A) Song A tail on crossfadePlayer (fades OUT) ---
-        // If preloaded, seek to exact current position and play instantly.
-        // Otherwise load fresh — small delay possible only in this fallback path.
         val isTailPreloaded = preloadedSong?.id == current.id
         val currentPos = try { player.currentPosition.coerceAtLeast(0L) } catch (_: Exception) { 0L }
 
         if (isTailPreloaded) {
+            // crossfadePlayer has been playing silently since preload window — already synchronized.
+            // Just unmute: volume 0f → 1.0f. Zero seek latency → zero cut in Song A.
             try {
-                crossfadePlayer.seekTo(currentPos)
                 crossfadePlayer.volume = 1.0f
-                crossfadePlayer.playWhenReady = true
-                crossfadePlayer.play()
+                if (!crossfadePlayer.isPlaying) crossfadePlayer.play()
             } catch (e: Exception) {
-                android.util.Log.w("SonoraAudioPlayer", "Tail seek failed, reloading: ${e.message}")
+                android.util.Log.w("SonoraAudioPlayer", "crossfadePlayer unmute failed, reloading: ${e.message}")
                 try {
                     crossfadePlayer.stop()
                     crossfadePlayer.clearMediaItems()
@@ -537,7 +543,7 @@ class SonoraAudioPlayer(private val context: Context) {
                 } catch (_: Exception) {}
             }
         } else {
-            // Fallback: load Song A tail fresh at trigger time
+            // Fallback: load Song A tail fresh at trigger time (small delay possible)
             try {
                 crossfadePlayer.stop()
                 crossfadePlayer.clearMediaItems()
@@ -550,6 +556,7 @@ class SonoraAudioPlayer(private val context: Context) {
                 android.util.Log.e("SonoraAudioPlayer", "Error loading Song A tail", e)
             }
         }
+
 
         // --- B) Song B on primary player (already in queue — seekTo, no prepare!) ---
         // This is key: Song B is already buffered in the ExoPlayer queue.
@@ -676,11 +683,11 @@ class SonoraAudioPlayer(private val context: Context) {
                         // Crossfade trigger
                         performCrossfadeTransition()
                     } else if (remainingMs in 0..preloadWindowMs && preloadedSong == null) {
-                        // Preload window — silently buffer the CURRENT SONG'S TAIL into crossfadePlayer
-                        // (Song B is already in the main player's queue, no extra buffering needed)
+                        // Preload window — start playing Song A's tail silently from current position.
+                        // By trigger time (crossfadeMs later), crossfadePlayer will be in sync → no seekTo needed.
                         val current = _currentSong.value
                         if (current != null) {
-                            preloadCurrentTailOnCrossfadePlayer(current)
+                            preloadCurrentTailOnCrossfadePlayer(current, pos)
                         }
                     }
                 }

@@ -827,7 +827,7 @@ fun NativeHomeScreen(
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
-                                        .padding(bottom = 182.dp)
+                                        .padding(bottom = 130.dp)
                                         .clip(RoundedCornerShape(100.dp))
                                         .background(if (isDark) Color.White else Color(0xFF121212))
                                         .border(1.dp, if (isDark) Color.Transparent else Color(0xFF333333), RoundedCornerShape(100.dp))

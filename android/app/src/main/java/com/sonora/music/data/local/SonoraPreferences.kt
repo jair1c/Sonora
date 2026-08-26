@@ -333,17 +333,24 @@ class SonoraPreferences(private val context: Context) {
     // --- BACKUP & RESTORE ---
     fun exportBackupJson(): String {
         val root = JSONObject()
-        root.put("version", 1)
+        root.put("version", 2)
         root.put("exportedAt", System.currentTimeMillis())
+        // Appearance
         root.put("themeMode", getThemeMode())
         root.put("petalRoundness", getPetalRoundness())
+        // Playback
         root.put("crossfadeSeconds", getCrossfadeSeconds())
         root.put("playbackSpeed", getPlaybackSpeed())
+        root.put("sortMode", getSortMode())
+        // Navigation & UI
         root.put("navLabelMode", getNavLabelMode())
         root.put("playerControlsStyle", getPlayerControlsStyle())
+        // Equalizer / DSP
         root.put("eqPreset", getEqualizerPreset())
         root.put("bassBoost", getBassBoost())
         root.put("preAmpGain", getPreAmpGain())
+        root.put("autoVolumeLeveling", isAutoVolumeLeveling())
+        // Stats
         root.put("totalListeningSeconds", getTotalListeningSeconds())
 
         val likedArr = JSONArray()
@@ -385,18 +392,25 @@ class SonoraPreferences(private val context: Context) {
             val root = JSONObject(jsonString)
             val editor = prefs.edit()
 
+            // Appearance
             if (root.has("themeMode")) editor.putString(KEY_THEME_MODE, root.getString("themeMode"))
             if (root.has("petalRoundness")) editor.putInt(KEY_PETAL_ROUNDNESS, root.getInt("petalRoundness"))
+            // Playback
             if (root.has("crossfadeSeconds")) editor.putInt(KEY_CROSSFADE_SECONDS, root.getInt("crossfadeSeconds"))
             if (root.has("playbackSpeed")) editor.putFloat(KEY_PLAYBACK_SPEED, root.getDouble("playbackSpeed").toFloat())
+            if (root.has("sortMode")) editor.putString(KEY_SORT_MODE, root.getString("sortMode"))
+            // Navigation & UI
             if (root.has("navLabelMode")) editor.putString(KEY_NAV_LABEL_MODE, root.getString("navLabelMode"))
             if (root.has("playerControlsStyle")) editor.putString(KEY_PLAYER_CONTROLS_STYLE, root.getString("playerControlsStyle"))
+            // Equalizer / DSP
             if (root.has("eqPreset")) editor.putInt(KEY_EQ_PRESET, root.getInt("eqPreset"))
             if (root.has("bassBoost")) editor.putInt(KEY_BASS_BOOST, root.getInt("bassBoost"))
             if (root.has("preAmpGain")) editor.putFloat(KEY_PRE_AMP_GAIN, root.getDouble("preAmpGain").toFloat())
+            if (root.has("autoVolumeLeveling")) editor.putBoolean(KEY_AUTO_VOLUME_LEVELING, root.getBoolean("autoVolumeLeveling"))
+            // Stats
             if (root.has("totalListeningSeconds")) editor.putLong(KEY_TOTAL_LISTENING_SECONDS, root.getLong("totalListeningSeconds"))
 
-            // Liked
+            // Liked songs
             if (root.has("likedSongIds")) {
                 val arr = root.getJSONArray("likedSongIds")
                 val set = mutableSetOf<String>()
@@ -406,12 +420,24 @@ class SonoraPreferences(private val context: Context) {
                 editor.putStringSet(KEY_LIKED_IDS, set)
             }
 
+            // Recent songs (previously missing from import)
+            if (root.has("recentSongIds")) {
+                val arr = root.getJSONArray("recentSongIds")
+                val recentList = mutableListOf<Long>()
+                for (i in 0 until arr.length()) {
+                    recentList.add(arr.getLong(i))
+                }
+                val recentArr = JSONArray()
+                recentList.forEach { recentArr.put(it) }
+                editor.putString(KEY_RECENT_IDS, recentArr.toString())
+            }
+
             // Play counts
             if (root.has("playCounts")) {
                 editor.putString(KEY_PLAY_COUNTS, root.getJSONObject("playCounts").toString())
             }
 
-            // Blacklist
+            // Blacklisted folders
             if (root.has("blacklistedFolders")) {
                 val arr = root.getJSONArray("blacklistedFolders")
                 val set = mutableSetOf<String>()
@@ -439,6 +465,7 @@ class SonoraPreferences(private val context: Context) {
                 saveCustomPlaylists(list)
             }
 
+            // Navigation tabs order
             if (root.has("navTabs")) {
                 editor.putString(KEY_NAV_TABS, root.getJSONArray("navTabs").toString())
             }

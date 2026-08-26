@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.5.1)
+# 🌸 Sonora Music Player (v3.6.0)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -311,3 +311,68 @@ La transición entre canciones A → B ahora es completamente fluida, sin cortes
 
 ### Versión
 `versionCode 351` · `versionName "3.5.1"` · Commit: `main`
+
+---
+
+## 🚀 Fase 16 — Backup/Restore por Archivo + Indicador de Batería Reactivo (v3.6.0)
+
+### Cambios
+
+#### 1. Botón "Aplicar" / "Restaurar" invisible — Fix visual
+El botón de restauración ahora usa fondo dorado `Color(0xFFD4AF37)` con texto `Color(0xFF121212)` (negro), siempre legible independientemente del tema.
+
+#### 2. Sistema de Backup/Restore por Archivo `.sonora`
+
+**Problema anterior**: El backup funcionaba copiando un JSON al portapapeles y pegándolo manualmente en un campo de texto. Era frágil, incómodo y no soportaba todos los ajustes.
+
+**Solución**: Se reemplazó completamente por el **Storage Access Framework (SAF)** de Android:
+- **Exportar**: `ActivityResultContracts.CreateDocument("application/octet-stream")` → el sistema muestra el selector de carpeta del dispositivo para guardar `sonora-backup-{fecha}.sonora`
+- **Restaurar**: `ActivityResultContracts.OpenDocument()` con filtro `["*/*"]` → el usuario selecciona el archivo `.sonora` desde cualquier carpeta
+
+**Cobertura completa del backup (v2)**:
+| Campo | Antes | Ahora |
+|---|---|---|
+| `themeMode` | ✅ | ✅ |
+| `petalRoundness` | ✅ | ✅ |
+| `crossfadeSeconds` | ✅ | ✅ |
+| `playbackSpeed` | ✅ | ✅ |
+| `sortMode` (orden de canciones) | ❌ | ✅ |
+| `navLabelMode` | ✅ | ✅ |
+| `playerControlsStyle` | ✅ | ✅ |
+| `eqPreset` | ✅ | ✅ |
+| `bassBoost` | ✅ | ✅ |
+| `preAmpGain` | ✅ | ✅ |
+| `autoVolumeLeveling` | ❌ | ✅ |
+| `likedSongIds` (favoritos) | ✅ | ✅ |
+| `recentSongIds` (recientes) | export ✅ / import ❌ | ✅ ✅ |
+| `playCounts` (estadísticas) | ✅ | ✅ |
+| `blacklistedFolders` (carpetas ocultas) | ✅ | ✅ |
+| `customPlaylists` | ✅ | ✅ |
+| `navTabs` (orden de pestañas) | ✅ | ✅ |
+| `totalListeningSeconds` | ✅ | ✅ |
+
+**Archivos modificados**:
+- `SonoraPreferences.kt`: `exportBackupJson()` (versión 1→2), `importBackupJson()` (restaura todos los campos)
+- `SettingsScreen.kt`: launchers SAF `exportLauncher` / `importLauncher`, botones actualizados, dialog de portapapeles eliminado
+
+#### 3. Indicador de Batería Reactivo
+
+**Problema**: `isIgnoringBatteryOptimizations` era un `remember {}` estático calculado una sola vez al abrir Settings. Al aceptar "sin restricciones" en el sistema y volver, el estado no se actualizaba hasta reiniciar la pantalla.
+
+**Solución**: Se convirtió a `mutableStateOf` + `DisposableEffect` con `LifecycleEventObserver`:
+```kotlin
+var isIgnoringBatteryOptimizations by remember { mutableStateOf(...) }
+DisposableEffect(lifecycleOwner) {
+    val observer = LifecycleEventObserver { _, event ->
+        if (event == Lifecycle.Event.ON_RESUME) {
+            isIgnoringBatteryOptimizations = powerManager?.isIgnoringBatteryOptimizations(...)
+        }
+    }
+    lifecycleOwner.lifecycle.addObserver(observer)
+    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+}
+```
+Ahora el indicador "Ilimitado" aparece automáticamente al volver desde los ajustes del sistema, sin necesidad de salir y volver a entrar a Settings.
+
+### Versión
+`versionCode 360` · `versionName "3.6.0"` · Commit: `main`

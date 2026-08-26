@@ -74,7 +74,6 @@ fun SettingsScreen(
 
     var showSleepModal by remember { mutableStateOf(false) }
     var showStatsModal by remember { mutableStateOf(false) }
-    var showRestoreDialog by remember { mutableStateOf(false) }
 
     val sleepTimerSeconds by audioPlayer.sleepTimerSecondsLeft.collectAsState()
     var currentTheme by remember { mutableStateOf(sonoraPrefs.getThemeMode()) }
@@ -85,12 +84,80 @@ fun SettingsScreen(
     var navLabelMode by remember { mutableStateOf(sonoraPrefs.getNavLabelMode()) }
     var playerControlsStyle by remember { mutableStateOf(sonoraPrefs.getPlayerControlsStyle()) }
 
+    // Battery optimization — reactive: updates automatically when user returns from system settings
     val powerManager = remember { context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager }
-    val isIgnoringBatteryOptimizations = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
-        } else true
+    var isIgnoringBatteryOptimizations by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+            } else true
+        )
     }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                isIgnoringBatteryOptimizations = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+                } else true
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // SAF launcher — Export backup to .sonora file
+    val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        uri?.let {
+            try {
+                val json = sonoraPrefs.exportBackupJson()
+                context.contentResolver.openOutputStream(it)?.use { stream ->
+                    stream.write(json.toByteArray(Charsets.UTF_8))
+                }
+                Toast.makeText(context, "✅ Copia exportada exitosamente", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error al exportar: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    // SAF launcher — Import backup from .sonora file
+    val importLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            try {
+                val json = context.contentResolver.openInputStream(it)?.use { stream ->
+                    stream.readBytes().toString(Charsets.UTF_8)
+                } ?: ""
+                if (json.isBlank()) {
+                    Toast.makeText(context, "El archivo está vacío o no es válido", Toast.LENGTH_SHORT).show()
+                    return@let
+                }
+                val success = sonoraPrefs.importBackupJson(json)
+                if (success) {
+                    currentTheme = sonoraPrefs.getThemeMode()
+                    petalRoundness = sonoraPrefs.getPetalRoundness()
+                    crossfadeSeconds = sonoraPrefs.getCrossfadeSeconds()
+                    playbackSpeed = sonoraPrefs.getPlaybackSpeed()
+                    activeNavTabs = sonoraPrefs.getNavTabs()
+                    navLabelMode = sonoraPrefs.getNavLabelMode()
+                    playerControlsStyle = sonoraPrefs.getPlayerControlsStyle()
+                    onThemeChanged(sonoraPrefs.getThemeMode())
+                    onRescanLibrary()
+                    Toast.makeText(context, "✅ ¡Copia restaurada exitosamente!", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(context, "Archivo inválido o corrupto", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error al restaurar: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+
     val oemBrand = remember {
         val manu = Build.MANUFACTURER.lowercase()
         when {
@@ -1187,7 +1254,11 @@ fun SettingsScreen(
                     Text("COPIA DE SEGURIDAD & RESTAURACIÓN", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textPrimary)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Exporta o restaura tus listas de reproducción, favoritos, ecualización y temas.", fontSize = 11.sp, color = textSecondary)
+                Text(
+                    "Exporta o restaura toda tu configuración: listas, favoritos, carpetas, ecualización, temas y más. El archivo se guarda con extensión .sonora.",
+                    fontSize = 11.sp,
+                    color = textSecondary
+                )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -1195,7 +1266,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Export button
+                    // Export button — opens SAF file saver
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -1204,11 +1275,11 @@ fun SettingsScreen(
                             .background(subCardBg)
                             .border(1.dp, borderCol, RoundedCornerShape(12.dp))
                             .clickable {
-                                val jsonBackup = sonoraPrefs.exportBackupJson()
-                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
-                                val clip = android.content.ClipData.newPlainText("Sonora Backup", jsonBackup)
-                                clipboard?.setPrimaryClip(clip)
-                                Toast.makeText(context, "Copia de seguridad copiada al portapapeles", Toast.LENGTH_LONG).show()
+                                val timestamp = java.text.SimpleDateFormat(
+                                    "yyyy-MM-dd",
+                                    java.util.Locale.getDefault()
+                                ).format(java.util.Date())
+                                exportLauncher.launch("sonora-backup-$timestamp.sonora")
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -1221,15 +1292,15 @@ fun SettingsScreen(
                         }
                     }
 
-                    // Import button
+                    // Restore button — opens SAF file picker directly
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(activePillBg)
+                            .background(Color(0xFFD4AF37))
                             .clickable {
-                                showRestoreDialog = true
+                                importLauncher.launch(arrayOf("*/*"))
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -1237,13 +1308,14 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(Icons.Default.CloudDownload, contentDescription = null, tint = activePillText, modifier = Modifier.size(16.dp))
-                            Text("Restaurar", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = activePillText)
+                            Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color(0xFF121212), modifier = Modifier.size(16.dp))
+                            Text("Restaurar", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF121212))
                         }
                     }
                 }
             }
         }
+
 
         // 9. PRIVACIDAD
         item {
@@ -1344,119 +1416,8 @@ fun SettingsScreen(
         }
     )
 
-    if (showRestoreDialog) {
-        var restoreText by remember { mutableStateOf("") }
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = { showRestoreDialog = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.65f))
-                    .clickable { showRestoreDialog = false },
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(cardBg)
-                        .border(1.dp, borderCol, RoundedCornerShape(24.dp))
-                        .clickable(enabled = false) {}
-                        .padding(20.dp)
-                ) {
-                    Text(
-                        text = "Restaurar Copia de Seguridad",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = textPrimary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Pega a continuación el código JSON de tu copia de seguridad:",
-                        fontSize = 11.sp,
-                        color = textSecondary
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = restoreText,
-                        onValueChange = { restoreText = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp),
-                        placeholder = { Text("Pega el JSON aquí...", fontSize = 11.sp, color = textSecondary) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = textPrimary,
-                            unfocusedBorderColor = borderCol,
-                            focusedTextColor = textPrimary,
-                            unfocusedTextColor = textPrimary
-                        ),
-                        shape = RoundedCornerShape(14.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Paste button
-                        Button(
-                            onClick = {
-                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
-                                val clipText = clipboard?.primaryClip?.getItemAt(0)?.text?.toString() ?: ""
-                                if (clipText.isNotEmpty()) {
-                                    restoreText = clipText
-                                } else {
-                                    Toast.makeText(context, "El portapapeles está vacío", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = subCardBg, contentColor = textPrimary),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Pegar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-
-                        // Apply restore
-                        Button(
-                            onClick = {
-                                if (restoreText.isBlank()) {
-                                    Toast.makeText(context, "El texto no puede estar vacío", Toast.LENGTH_SHORT).show()
-                                    return@Button
-                                }
-                                val success = sonoraPrefs.importBackupJson(restoreText)
-                                if (success) {
-                                    Toast.makeText(context, "¡Copia restaurada exitosamente!", Toast.LENGTH_LONG).show()
-                                    currentTheme = sonoraPrefs.getThemeMode()
-                                    petalRoundness = sonoraPrefs.getPetalRoundness()
-                                    crossfadeSeconds = sonoraPrefs.getCrossfadeSeconds()
-                                    playbackSpeed = sonoraPrefs.getPlaybackSpeed()
-                                    activeNavTabs = sonoraPrefs.getNavTabs()
-                                    navLabelMode = sonoraPrefs.getNavLabelMode()
-                                    playerControlsStyle = sonoraPrefs.getPlayerControlsStyle()
-                                    onThemeChanged(sonoraPrefs.getThemeMode())
-                                    onRescanLibrary()
-                                    showRestoreDialog = false
-                                } else {
-                                    Toast.makeText(context, "Error: JSON inválido o corrupto", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = activePillBg, contentColor = activePillText),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Aplicar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
+
 
 @Composable
 fun QuickActionCard(

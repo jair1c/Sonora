@@ -376,7 +376,7 @@ class SonoraAudioPlayer(private val context: Context) {
             if (lyrics.isNotEmpty() && _currentSong.value?.id == song.id) {
                 _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
             }
-            if (song.coverUri == null) {
+            if (activePlayer.mediaMetadata.artworkData == null) {
                 try {
                     val coverUrl = SongCoverRepository.getSongCoverUrl(song)
                     if (coverUrl != null && coverUrl.startsWith("http")) {

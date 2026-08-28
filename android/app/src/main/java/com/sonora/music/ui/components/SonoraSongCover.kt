@@ -26,24 +26,34 @@ fun SonoraSongCover(
         return
     }
 
-    val localCover = song.coverUri
-    var coverModel by remember(song.id) {
-        mutableStateOf<Any?>(localCover ?: SongCoverRepository.getCachedCoverUrl(song))
-    }
+    var loadFailed by remember(song.id) { mutableStateOf(false) }
+    var onlineCoverUrl by remember(song.id) { mutableStateOf(SongCoverRepository.getCachedCoverUrl(song)) }
 
-    LaunchedEffect(song.id) {
-        if (localCover == null && coverModel == null) {
-            val online = SongCoverRepository.getSongCoverUrl(song)
-            if (online != null) {
-                coverModel = online
+    // If local cover is null OR if loading local cover failed, fetch online!
+    LaunchedEffect(song.id, loadFailed) {
+        if ((song.coverUri == null || loadFailed) && onlineCoverUrl == null) {
+            val url = SongCoverRepository.getSongCoverUrl(song)
+            if (url != null) {
+                onlineCoverUrl = url
             }
         }
     }
 
+    val currentModel = if (!loadFailed && song.coverUri != null) {
+        song.coverUri
+    } else {
+        onlineCoverUrl ?: fallbackUrl
+    }
+
     AsyncImage(
-        model = coverModel ?: fallbackUrl,
+        model = currentModel,
         contentDescription = contentDescription,
         contentScale = contentScale,
-        modifier = modifier
+        modifier = modifier,
+        onError = {
+            if (!loadFailed) {
+                loadFailed = true
+            }
+        }
     )
 }

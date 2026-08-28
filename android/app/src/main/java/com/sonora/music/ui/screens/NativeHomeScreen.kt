@@ -903,8 +903,11 @@ fun NativeHomeScreen(
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(Color.Gray.copy(alpha = 0.2f))
                                     ) {
-                                        AsyncImage(
-                                            model = album.coverUri,
+                                        val firstSongOfAlbum = remember(album.title) {
+                                            availableSongs.firstOrNull { it.album.equals(album.title, ignoreCase = true) }
+                                        }
+                                        SonoraSongCover(
+                                            song = firstSongOfAlbum,
                                             contentDescription = album.title,
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier.fillMaxSize()

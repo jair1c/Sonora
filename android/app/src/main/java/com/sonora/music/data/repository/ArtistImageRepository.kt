@@ -14,21 +14,49 @@ object ArtistImageRepository {
 
     fun extractPrimaryArtist(rawName: String): String {
         var name = rawName.trim()
-        if (name.isEmpty() || name.equals("<unknown>", ignoreCase = true) || name.equals("unknown", ignoreCase = true)) {
+        if (name.isEmpty() || name.equals("<unknown>", ignoreCase = true) || name.equals("unknown", ignoreCase = true) || name.equals("Artista desconocido", ignoreCase = true)) {
             return ""
         }
 
-        // Remove (feat. ...), [feat. ...], (with ...), etc.
-        name = name.replace(Regex("(?i)\\s*\\([^)]*(?:feat|ft|with|prod)[^)]*\\)"), "").trim()
-        name = name.replace(Regex("(?i)\\s*\\[[^\\]]*(?:feat|ft|with|prod)[^\\]*\\]"), "").trim()
+        // 1. Remove parenthesized or bracketed feat/ft/with/prod
+        name = removeEnclosedFeat(name, '(', ')')
+        name = removeEnclosedFeat(name, '[', ']')
 
-        // Split by collaboration indicators: feat., ft., featuring, with, vs., vs, &, ,, /, ;, x, X, +
-        val splitRegex = Regex("(?i)\\s+(?:feat\\.?|ft\\.?|featuring|with|vs\\.?|x|\\&|\\+|\\/|;)\\s+|,|\\/|;")
-        val parts = name.split(splitRegex)
-        val firstPart = parts.firstOrNull()?.trim() ?: ""
+        // 2. Split by standard delimiters and collaboration keywords
+        val delimiters = arrayOf(
+            " feat. ", " feat ", " ft. ", " ft ", " featuring ", " with ", " vs. ", " vs ",
+            " & ", " / ", " | ", " x ", " X ", " + ", ",", ";", "/", "\\"
+        )
+        for (d in delimiters) {
+            val idx = name.indexOf(d, ignoreCase = true)
+            if (idx > 0) {
+                name = name.substring(0, idx).trim()
+            }
+        }
 
-        val cleaned = firstPart.trim('"', '\'', ' ', ',', ';', '-', '/', '&')
-        return if (cleaned.isNotEmpty()) cleaned else name
+        // 3. Clean trailing / leading punctuation
+        val cleaned = name.trim { it <= ' ' || it == '"' || it == '\'' || it == '-' || it == ',' || it == ';' || it == '&' || it == '/' || it == '\\' }
+        return if (cleaned.isNotEmpty()) cleaned else rawName.trim()
+    }
+
+    private fun removeEnclosedFeat(text: String, open: Char, close: Char): String {
+        var result = text
+        var start = result.indexOf(open)
+        while (start != -1) {
+            val end = result.indexOf(close, start + 1)
+            if (end != -1) {
+                val inner = result.substring(start + 1, end).lowercase()
+                if (inner.contains("feat") || inner.contains("ft") || inner.contains("with") || inner.contains("prod")) {
+                    result = result.removeRange(start, end + 1).trim()
+                    start = result.indexOf(open)
+                } else {
+                    start = result.indexOf(open, end + 1)
+                }
+            } else {
+                break
+            }
+        }
+        return result
     }
 
     fun getCachedArtistImageUrl(artistName: String): String? {
@@ -41,7 +69,7 @@ object ArtistImageRepository {
 
     suspend fun getArtistImageUrl(artistName: String): String? {
         val cleanName = artistName.trim()
-        if (cleanName.isEmpty() || cleanName.equals("<unknown>", ignoreCase = true) || cleanName.equals("unknown", ignoreCase = true)) {
+        if (cleanName.isEmpty() || cleanName.equals("<unknown>", ignoreCase = true) || cleanName.equals("unknown", ignoreCase = true) || cleanName.equals("Artista desconocido", ignoreCase = true)) {
             return null
         }
 
@@ -92,7 +120,7 @@ object ArtistImageRepository {
                 connectTimeout = 3500
                 readTimeout = 3500
                 requestMethod = "GET"
-                setRequestProperty("User-Agent", "SonoraMusicApp/3.7.0")
+                setRequestProperty("User-Agent", "SonoraMusicApp/3.8.0")
             }
 
             if (conn.responseCode == 200) {
@@ -130,7 +158,7 @@ object ArtistImageRepository {
                 connectTimeout = 3000
                 readTimeout = 3000
                 requestMethod = "GET"
-                setRequestProperty("User-Agent", "SonoraMusicApp/3.7.0")
+                setRequestProperty("User-Agent", "SonoraMusicApp/3.8.0")
             }
 
             if (conn.responseCode == 200) {

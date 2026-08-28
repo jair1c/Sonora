@@ -2,6 +2,8 @@ package com.sonora.music.service
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.AudioAttributes as AndroidAudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import java.io.File
 
 class SonoraAudioPlayer(private val context: Context) {
@@ -110,7 +113,7 @@ class SonoraAudioPlayer(private val context: Context) {
                     .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                     .setUsage(C.USAGE_MEDIA)
                     .build(),
-                false // Important: false prevents player1 and player2 from ducking/pausing each other during crossfade!
+                false
             )
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_LOCAL)
@@ -220,29 +223,43 @@ class SonoraAudioPlayer(private val context: Context) {
         }
     }
 
-    private fun buildMediaItem(s: Song, useFileFallback: Boolean = false): MediaItem {
+    fun buildMediaItem(s: Song, useFileFallback: Boolean = false): MediaItem {
         val uri = if (useFileFallback && s.filePath.isNotEmpty() && File(s.filePath).exists()) {
             android.net.Uri.fromFile(File(s.filePath))
         } else {
             s.contentUri
         }
+
+        val metadataBuilder = MediaMetadata.Builder()
+            .setTitle(s.title)
+            .setArtist(s.artist)
+            .setAlbumTitle(s.album)
+            .setArtworkUri(s.coverUri)
+
+        // Embed artwork bytes for 100% reliable lockscreen / notification rendering on Samsung One UI & Android 13+
+        if (s.coverUri != null) {
+            try {
+                context.contentResolver.openInputStream(s.coverUri)?.use { stream ->
+                    val bitmap = BitmapFactory.decodeStream(stream)
+                    if (bitmap != null) {
+                        val byteStream = ByteArrayOutputStream()
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, byteStream)
+                        val bytes = byteStream.toByteArray()
+                        metadataBuilder.setArtworkData(bytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
         return MediaItem.Builder()
             .setUri(uri)
             .setMediaId(s.id.toString())
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(s.title)
-                    .setArtist(s.artist)
-                    .setAlbumTitle(s.album)
-                    .setArtworkUri(s.coverUri)
-                    .build()
-            )
+            .setMediaMetadata(metadataBuilder.build())
             .build()
     }
 
     private fun createPlayerListener(p: ExoPlayer) = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
-            // Guard: during crossfade, the fading-out player stopping must not mark playback as stopped!
             if (isCrossfading && !playing && p != activePlayer) {
                 return
             }
@@ -340,11 +357,13 @@ class SonoraAudioPlayer(private val context: Context) {
         activePlayer.clearMediaItems()
         activePlayer.setMediaItem(buildMediaItem(song, useFileFallback = true))
         activePlayer.volume = 1.0f
-        _activePlayerFlow.value = activePlayer
 
         _currentSong.value = song
         _currentPositionMs.value = 0L
         _durationMs.value = song.durationMs
+        _isPlaying.value = true
+        _activePlayerFlow.value = activePlayer
+
         sonoraPrefs.saveLastPlayback(song.id, 0L, listToUse.map { it.id })
         trackSongPlay(song)
         ensureMediaServiceStarted()
@@ -360,7 +379,6 @@ class SonoraAudioPlayer(private val context: Context) {
         activePlayer.prepare()
         activePlayer.playWhenReady = true
         activePlayer.play()
-        _isPlaying.value = true
         startPositionTracking()
     }
 

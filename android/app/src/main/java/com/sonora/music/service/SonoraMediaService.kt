@@ -13,6 +13,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.Player
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult
@@ -46,6 +47,61 @@ class SonoraMediaService : MediaSessionService() {
         const val ACTION_STOP = "com.sonora.app.ACTION_STOP"
     }
 
+    private class SonoraForwardingPlayer(
+        private val delegatePlayer: Player,
+        private val audioPlayer: SonoraAudioPlayer
+    ) : ForwardingPlayer(delegatePlayer) {
+
+        override fun getAvailableCommands(): Player.Commands {
+            return super.getAvailableCommands().buildUpon()
+                .add(Player.COMMAND_SEEK_TO_NEXT)
+                .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                .add(Player.COMMAND_SEEK_TO_PREVIOUS)
+                .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                .add(Player.COMMAND_PLAY_PAUSE)
+                .add(Player.COMMAND_STOP)
+                .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                .build()
+        }
+
+        override fun isCommandAvailable(command: Int): Boolean {
+            return when (command) {
+                Player.COMMAND_SEEK_TO_NEXT,
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                Player.COMMAND_SEEK_TO_PREVIOUS,
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                Player.COMMAND_PLAY_PAUSE,
+                Player.COMMAND_STOP,
+                Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM -> true
+                else -> super.isCommandAvailable(command)
+            }
+        }
+
+        override fun seekToNext() {
+            audioPlayer.nextTrack()
+        }
+
+        override fun seekToNextMediaItem() {
+            audioPlayer.nextTrack()
+        }
+
+        override fun seekToPrevious() {
+            audioPlayer.prevTrack()
+        }
+
+        override fun seekToPreviousMediaItem() {
+            audioPlayer.prevTrack()
+        }
+
+        override fun play() {
+            audioPlayer.resume()
+        }
+
+        override fun pause() {
+            audioPlayer.pause()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
@@ -66,7 +122,6 @@ class SonoraMediaService : MediaSessionService() {
                 session: MediaSession,
                 controller: MediaSession.ControllerInfo
             ): ConnectionResult {
-                // Ensure Next, Previous, and Play/Pause commands are ALWAYS available on lockscreen and notification
                 val availableCommands = ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
                     .add(Player.COMMAND_SEEK_TO_NEXT)
                     .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
@@ -122,17 +177,19 @@ class SonoraMediaService : MediaSessionService() {
             }
         }
 
-        mediaSession = MediaSession.Builder(this, audioPlayer.exoPlayer)
+        val initialForwardingPlayer = SonoraForwardingPlayer(audioPlayer.exoPlayer, audioPlayer)
+
+        mediaSession = MediaSession.Builder(this, initialForwardingPlayer)
             .setSessionActivity(sessionActivityPendingIntent)
             .setCallback(callback)
             .setId("SonoraMediaSession")
             .build()
 
-        // Keep MediaSession synced with the active player when crossfade swaps players
         playerObserverJob = serviceScope.launch {
             audioPlayer.activePlayerFlow.collect { activeExo ->
                 try {
-                    mediaSession?.setPlayer(activeExo)
+                    val wrapped = SonoraForwardingPlayer(activeExo, audioPlayer)
+                    mediaSession?.setPlayer(wrapped)
                 } catch (_: Throwable) {}
             }
         }

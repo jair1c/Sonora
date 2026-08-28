@@ -8,8 +8,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.AudioAttributes as AndroidAudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
 import android.os.Build
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -51,77 +49,24 @@ class SonoraAudioPlayer(private val context: Context) {
         }
     }
 
-    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-    private var audioFocusRequest: AudioFocusRequest? = null
 
-    private fun requestSystemAudioFocus(): Boolean {
-        if (audioManager == null) return true
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val playbackAttributes = AndroidAudioAttributes.Builder()
-                .setUsage(AndroidAudioAttributes.USAGE_MEDIA)
-                .setContentType(AndroidAudioAttributes.CONTENT_TYPE_MUSIC)
-                .build()
-            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(playbackAttributes)
-                .setAcceptsDelayedFocusGain(true)
-                .setOnAudioFocusChangeListener { focusChange ->
-                    when (focusChange) {
-                        AudioManager.AUDIOFOCUS_LOSS -> pause()
-                        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> pause()
-                        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                            if (!isCrossfading) activePlayer.volume = 0.3f
-                        }
-                        AudioManager.AUDIOFOCUS_GAIN -> {
-                            if (!isCrossfading) activePlayer.volume = 1.0f
-                        }
-                    }
-                }
-                .build()
-            audioFocusRequest = request
-            audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        } else {
-            @Suppress("DEPRECATION")
-            audioManager.requestAudioFocus(
-                { focusChange ->
-                    if (focusChange == AudioManager.AUDIOFOCUS_LOSS || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-                        pause()
-                    }
-                },
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN
-            ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        }
-    }
-
-    private fun abandonSystemAudioFocus() {
-        if (audioManager == null) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
-            audioFocusRequest = null
-        } else {
-            @Suppress("DEPRECATION")
-            audioManager.abandonAudioFocus(null)
-        }
-    }
 
     private fun createExoPlayer(): ExoPlayer {
         val extractorsFactory = DefaultExtractorsFactory()
             .setConstantBitrateSeekingEnabled(true)
-            .setFlacExtractorFlags(0)
         val dataSourceFactory = DefaultDataSource.Factory(context)
         val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory)
         val renderersFactory = DefaultRenderersFactory(context)
             .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
 
+        val audioAttributes = AudioAttributes.Builder()
+            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+            .setUsage(C.USAGE_MEDIA)
+            .build()
+
         return ExoPlayer.Builder(context, renderersFactory)
             .setMediaSourceFactory(mediaSourceFactory)
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                    .setUsage(C.USAGE_MEDIA)
-                    .build(),
-                false
-            )
+            .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .build().apply {
@@ -431,8 +376,7 @@ class SonoraAudioPlayer(private val context: Context) {
             }
         }
 
-        requestSystemAudioFocus()
-        activePlayer.prepare()
+                activePlayer.prepare()
         activePlayer.playWhenReady = true
         activePlayer.play()
         startPositionTracking()
@@ -487,8 +431,7 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun resume() {
-        requestSystemAudioFocus()
-        if (activePlayer.playbackState == Player.STATE_IDLE) {
+                if (activePlayer.playbackState == Player.STATE_IDLE) {
             activePlayer.prepare()
         } else if (activePlayer.playbackState == Player.STATE_ENDED) {
             activePlayer.seekTo(0L)
@@ -503,8 +446,7 @@ class SonoraAudioPlayer(private val context: Context) {
     fun pause() {
         activePlayer.pause()
         _isPlaying.value = false
-        abandonSystemAudioFocus()
-        savePlaybackState()
+                savePlaybackState()
     }
 
     fun togglePlay() {
@@ -874,8 +816,7 @@ class SonoraAudioPlayer(private val context: Context) {
         preloadedSong = null
         cancelSleepTimer()
         stopPositionTracking()
-        abandonSystemAudioFocus()
-        visualizerManager.release()
+                visualizerManager.release()
         equalizerManager.release()
         try {
             player1.release()

@@ -1,8 +1,8 @@
-# 🌸 Sonora Music (v3.8.2)
+# 🌸 Sonora Music (v3.9.0)
 > **Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-3.8.2-emerald.svg)
+![Version](https://img.shields.io/badge/version-3.9.0-emerald.svg)
 ![Platform](https://img.shields.io/badge/platform-Android_10+-brightgreen.svg)
 ![Stack](https://img.shields.io/badge/stack-Kotlin_+_Jetpack_Compose_+_Media3-blueviolet.svg)
 

@@ -236,7 +236,10 @@ class MediaStoreRepository(private val context: Context) {
 
     suspend fun getLyricsForSong(song: Song): List<LyricLine> = withContext(Dispatchers.IO) {
         lyricsCache[song.id]?.let { return@withContext it }
-        val lyrics = loadLyrics(song.filePath, song.durationMs)
+        var lyrics = loadLyrics(song.filePath, song.durationMs)
+        if (lyrics.isEmpty()) {
+            lyrics = LrclibRepository.getSyncedLyrics(song)
+        }
         lyricsCache[song.id] = lyrics
         lyrics
     }

@@ -1,5 +1,8 @@
 package com.sonora.music.service
 
+import com.sonora.music.util.AudioMetadataHelper
+import com.sonora.music.util.AudioFormatDetails
+
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -187,6 +190,15 @@ class SonoraAudioPlayer(private val context: Context) {
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong = _currentSong.asStateFlow()
 
+    private val _realAudioFormat = MutableStateFlow<AudioFormatDetails?>(null)
+    val realAudioFormat = _realAudioFormat.asStateFlow()
+
+    private val _playbackSpeed = MutableStateFlow(1.0f)
+    val playbackSpeed = _playbackSpeed.asStateFlow()
+
+    private val _playbackPitch = MutableStateFlow(1.0f)
+    val playbackPitch = _playbackPitch.asStateFlow()
+
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
 
@@ -372,6 +384,7 @@ class SonoraAudioPlayer(private val context: Context) {
         ensureMediaServiceStarted()
         visualizerManager.setPlaying(true)
         scope.launch(Dispatchers.IO) {
+            _realAudioFormat.value = AudioMetadataHelper.getAudioDetails(song)
             val lyrics = mediaRepo.getLyricsForSong(song)
             if (lyrics.isNotEmpty() && _currentSong.value?.id == song.id) {
                 _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
@@ -821,8 +834,20 @@ class SonoraAudioPlayer(private val context: Context) {
         _sleepTimerFinishSong.value = false
     }
 
+    fun setPlaybackParameters(speed: Float, pitch: Float) {
+        val s = speed.coerceIn(0.25f, 3.0f)
+        val p = pitch.coerceIn(0.25f, 2.0f)
+        _playbackSpeed.value = s
+        _playbackPitch.value = p
+        val params = androidx.media3.common.PlaybackParameters(s, p)
+        try {
+            activePlayer.playbackParameters = params
+            standbyPlayer.playbackParameters = params
+        } catch (_: Exception) {}
+    }
+
     fun setPlaybackSpeed(speed: Float) {
-        activePlayer.setPlaybackSpeed(speed)
+        setPlaybackParameters(speed, _playbackPitch.value)
     }
 
     fun release() {

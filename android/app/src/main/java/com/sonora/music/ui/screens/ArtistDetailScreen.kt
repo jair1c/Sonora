@@ -76,10 +76,16 @@ fun ArtistDetailScreen(
     val artistCover = artistSongs.firstOrNull()?.coverUri
 
     var artistPhotoUrl by remember(artistName) { mutableStateOf<String?>(ArtistImageRepository.getCachedArtistImageUrl(artistName)) }
+    var artistBio by remember(artistName) { mutableStateOf<com.sonora.music.data.repository.ArtistBioInfo?>(null) }
+
     LaunchedEffect(artistName) {
         val photo = ArtistImageRepository.getArtistImageUrl(artistName)
         if (photo != null) {
             artistPhotoUrl = photo
+        }
+        val bio = ArtistImageRepository.getArtistBioInfo(artistName)
+        if (bio != null) {
+            artistBio = bio
         }
     }
 

@@ -8,9 +8,80 @@ import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 
+data class ArtistBioInfo(
+    val name: String,
+    val fans: Int = 0,
+    val topTracks: List<String> = emptyList()
+)
+
 object ArtistImageRepository {
 
     private val cache = ConcurrentHashMap<String, String?>()
+    private val bioCache = ConcurrentHashMap<String, ArtistBioInfo?>()
+
+    suspend fun getArtistBioInfo(artistName: String): ArtistBioInfo? {
+        val clean = extractPrimaryArtist(artistName)
+        if (clean.isEmpty()) return null
+        if (bioCache.containsKey(clean)) return bioCache[clean]
+
+        return withContext(Dispatchers.IO) {
+            try {
+                val encoded = URLEncoder.encode(clean, "UTF-8")
+                val apiUrl = "https://api.deezer.com/search/artist/?q=" + encoded + "&limit=1"
+                val conn = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 3500
+                    readTimeout = 3500
+                    requestMethod = "GET"
+                    setRequestProperty("User-Agent", "SonoraMusicApp/3.8.2")
+                }
+
+                if (conn.responseCode == 200) {
+                    val jsonStr = conn.inputStream.bufferedReader().use { it.readText() }
+                    val root = JSONObject(jsonStr)
+                    val data = root.optJSONArray("data")
+                    if (data != null && data.length() > 0) {
+                        val first = data.getJSONObject(0)
+                        val id = first.optLong("id", 0L)
+                        val name = first.optString("name", clean)
+                        val fans = first.optInt("nb_fan", 0)
+
+                        val topList = mutableListOf<String>()
+                        if (id > 0) {
+                            try {
+                                val topUrl = "https://api.deezer.com/artist/" + id + "/top?limit=5"
+                                val topConn = (URL(topUrl).openConnection() as HttpURLConnection).apply {
+                                    connectTimeout = 3000
+                                    readTimeout = 3000
+                                    requestMethod = "GET"
+                                    setRequestProperty("User-Agent", "SonoraMusicApp/3.8.2")
+                                }
+                                if (topConn.responseCode == 200) {
+                                    val topJson = topConn.inputStream.bufferedReader().use { it.readText() }
+                                    val topRoot = JSONObject(topJson)
+                                    val topData = topRoot.optJSONArray("data")
+                                    if (topData != null) {
+                                        for (j in 0 until topData.length()) {
+                                            val track = topData.getJSONObject(j)
+                                            val tTitle = track.optString("title", "")
+                                            if (tTitle.isNotEmpty()) topList.add(tTitle)
+                                        }
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                        }
+
+                        val info = ArtistBioInfo(name = name, fans = fans, topTracks = topList)
+                        bioCache[clean] = info
+                        return@withContext info
+                    }
+                }
+                bioCache[clean] = null
+                null
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
 
     fun extractPrimaryArtist(rawName: String): String {
         var name = rawName.trim()

@@ -1,5 +1,8 @@
 package com.sonora.music.ui.screens
 
+import com.sonora.music.ui.components.PlaybackSpeedModal
+import com.sonora.music.util.AudioFormatDetails
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -109,6 +112,7 @@ fun NativePlayerScreen(
 
     var showExpandedLyrics by remember { mutableStateOf(false) }
     var showQueueSheet by remember { mutableStateOf(false) }
+    var showSpeedModal by remember { mutableStateOf(false) }
     var offsetY by remember { mutableFloatStateOf(0f) }
     var isLiked by remember(currentSong) { mutableStateOf(currentSong?.let { sonoraPrefs.isSongLiked(it.id) } ?: false) }
 
@@ -260,19 +264,48 @@ fun NativePlayerScreen(
                     letterSpacing = 1.sp
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                val formatDetails by audioPlayer.realAudioFormat.collectAsState()
+                val currentSpeed by audioPlayer.playbackSpeed.collectAsState()
+                val currentPitch by audioPlayer.playbackPitch.collectAsState()
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = currentSong?.audioQualityBadge ?: "Hi-Fi Audio",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        color = textColor
-                    )
+                    val isHiRes = formatDetails?.isHiRes == true
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isHiRes) Color(0xFFD97706).copy(alpha = 0.22f) else if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                            .border(1.dp, if (isHiRes) Color(0xFFD97706).copy(alpha = 0.6f) else Color.Transparent, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = formatDetails?.formattedString ?: currentSong?.audioQualityBadge ?: "Hi-Fi Audio",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            color = if (isHiRes) Color(0xFFFBBF24) else textColor
+                        )
+                    }
+
+                    // Speed Pill Button
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (currentSpeed != 1.0f || currentPitch != 1.0f) Color(0xFF10B981).copy(alpha = 0.22f) else if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                            .border(1.dp, if (currentSpeed != 1.0f || currentPitch != 1.0f) Color(0xFF10B981).copy(alpha = 0.6f) else Color.Transparent, RoundedCornerShape(12.dp))
+                            .clickable { showSpeedModal = true }
+                            .padding(horizontal = 9.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (currentSpeed != 1.0f || currentPitch != 1.0f) "⚡ ${String.format(java.util.Locale.US, "%.2fx", currentSpeed)}" else "1.0x",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            color = if (currentSpeed != 1.0f || currentPitch != 1.0f) Color(0xFF10B981) else subtextColor
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))

@@ -112,6 +112,7 @@ class SonoraAudioPlayer(private val context: Context) {
         val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory)
         val renderersFactory = DefaultRenderersFactory(context)
             .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
+            .setEnableAudioFloatOutput(true)
 
         return ExoPlayer.Builder(context, renderersFactory)
             .setMediaSourceFactory(mediaSourceFactory)
@@ -252,21 +253,6 @@ class SonoraAudioPlayer(private val context: Context) {
             .setAlbumTitle(s.album)
             .setArtworkUri(s.coverUri)
 
-        // Embed artwork bytes for 100% reliable lockscreen / notification rendering on Samsung One UI & Android 13+
-        if (s.coverUri != null) {
-            try {
-                context.contentResolver.openInputStream(s.coverUri)?.use { stream ->
-                    val bitmap = BitmapFactory.decodeStream(stream)
-                    if (bitmap != null) {
-                        val byteStream = ByteArrayOutputStream()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, byteStream)
-                        val bytes = byteStream.toByteArray()
-                        metadataBuilder.setArtworkData(bytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-
         return MediaItem.Builder()
             .setUri(uri)
             .setMediaId(s.id.toString())
@@ -301,10 +287,14 @@ class SonoraAudioPlayer(private val context: Context) {
                 return
             }
             if (p == activePlayer) {
-                _isPlaying.value = p.isPlaying
                 when (playbackState) {
                     Player.STATE_READY -> {
                         _durationMs.value = p.duration.coerceAtLeast(0L)
+                        if (p.playWhenReady) {
+                            _isPlaying.value = true
+                            startPositionTracking()
+                            visualizerManager.setPlaying(true)
+                        }
                         equalizerManager.attachAudioSession(p.audioSessionId)
                         equalizerManager.setPreAmp(sonoraPrefs.getPreAmpGain())
                         equalizerManager.setBassBoost(sonoraPrefs.getBassBoost().toShort())
@@ -371,7 +361,7 @@ class SonoraAudioPlayer(private val context: Context) {
 
         activePlayer.stop()
         activePlayer.clearMediaItems()
-        activePlayer.setMediaItem(buildMediaItem(song, useFileFallback = true))
+        activePlayer.setMediaItem(buildMediaItem(song, useFileFallback = false))
         activePlayer.volume = 1.0f
 
         _currentSong.value = song
@@ -386,7 +376,7 @@ class SonoraAudioPlayer(private val context: Context) {
         visualizerManager.setPlaying(true)
         val hasArtwork = activePlayer.mediaMetadata.artworkData != null
         scope.launch(Dispatchers.IO) {
-            val format = AudioMetadataHelper.getAudioDetails(song)
+            val format = AudioMetadataHelper.getAudioDetails(song, context)
             _realAudioFormat.value = format
 
             val lyrics = mediaRepo.getLyricsForSong(song)
@@ -651,7 +641,7 @@ class SonoraAudioPlayer(private val context: Context) {
         trackSongPlay(nextSong)
         ensureMediaServiceStarted()
         scope.launch(Dispatchers.IO) {
-            _realAudioFormat.value = AudioMetadataHelper.getAudioDetails(nextSong)
+            _realAudioFormat.value = AudioMetadataHelper.getAudioDetails(nextSong, context)
             val lyrics = mediaRepo.getLyricsForSong(nextSong)
             if (lyrics.isNotEmpty() && _currentSong.value?.id == nextSong.id) {
                 _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)

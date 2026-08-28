@@ -112,7 +112,6 @@ class SonoraAudioPlayer(private val context: Context) {
         val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory)
         val renderersFactory = DefaultRenderersFactory(context)
             .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
-            .setEnableAudioFloatOutput(true)
 
         return ExoPlayer.Builder(context, renderersFactory)
             .setMediaSourceFactory(mediaSourceFactory)
@@ -268,7 +267,11 @@ class SonoraAudioPlayer(private val context: Context) {
             if (p == activePlayer) {
                 _isPlaying.value = playing
                 visualizerManager.setPlaying(playing)
-                if (playing) startPositionTracking() else stopPositionTracking()
+                if (playing) {
+                    startPositionTracking()
+                } else if (!p.playWhenReady) {
+                    stopPositionTracking()
+                }
             }
         }
 
@@ -314,17 +317,29 @@ class SonoraAudioPlayer(private val context: Context) {
         override fun onPlayerError(error: PlaybackException) {
             android.util.Log.e("SonoraAudioPlayer", "Playback error: ${error.errorCodeName} (${error.errorCode})", error)
             val current = _currentSong.value
-            if (current != null && current.filePath.isNotEmpty() && File(current.filePath).exists()) {
-                val fileItem = buildMediaItem(current, useFileFallback = true)
-                p.setMediaItem(fileItem)
-                p.prepare()
-                p.playWhenReady = true
-                p.play()
-                if (p == activePlayer) _isPlaying.value = true
-            } else {
-                if (p == activePlayer && !isCrossfading) {
-                    _isPlaying.value = false
-                    stopPositionTracking()
+            if (current != null && p == activePlayer) {
+                try {
+                    val currentUri = p.currentMediaItem?.localConfiguration?.uri
+                    val fallbackUri = if (currentUri == current.contentUri && current.filePath.isNotEmpty() && File(current.filePath).exists()) {
+                        android.net.Uri.fromFile(File(current.filePath))
+                    } else {
+                        current.contentUri
+                    }
+                    val fallbackItem = MediaItem.Builder()
+                        .setUri(fallbackUri)
+                        .setMediaId(current.id.toString())
+                        .build()
+                    p.setMediaItem(fallbackItem)
+                    p.prepare()
+                    p.playWhenReady = true
+                    p.play()
+                    _isPlaying.value = true
+                    startPositionTracking()
+                } catch (_: Exception) {
+                    if (!isCrossfading) {
+                        _isPlaying.value = false
+                        stopPositionTracking()
+                    }
                 }
             }
         }
@@ -359,9 +374,12 @@ class SonoraAudioPlayer(private val context: Context) {
         }
         _playlist.value = listToUse
 
+        val useFile = song.filePath.isNotEmpty() && File(song.filePath).exists() && File(song.filePath).canRead()
+        val mediaItem = buildMediaItem(song, useFileFallback = useFile)
+
         activePlayer.stop()
         activePlayer.clearMediaItems()
-        activePlayer.setMediaItem(buildMediaItem(song, useFileFallback = false))
+        activePlayer.setMediaItem(mediaItem)
         activePlayer.volume = 1.0f
 
         _currentSong.value = song

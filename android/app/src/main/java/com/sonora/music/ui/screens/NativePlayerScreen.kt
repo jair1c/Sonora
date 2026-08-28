@@ -109,6 +109,8 @@ fun NativePlayerScreen(
     val isShuffle by audioPlayer.isShuffle.collectAsState()
     val repeatMode by audioPlayer.repeatMode.collectAsState()
     val fftData by audioPlayer.visualizerManager.fftData.collectAsState()
+    val currentSpeed by audioPlayer.playbackSpeed.collectAsState()
+    val currentPitch by audioPlayer.playbackPitch.collectAsState()
 
     var showExpandedLyrics by remember { mutableStateOf(false) }
     var showQueueSheet by remember { mutableStateOf(false) }
@@ -265,8 +267,7 @@ fun NativePlayerScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 val formatDetails by audioPlayer.realAudioFormat.collectAsState()
-                val currentSpeed by audioPlayer.playbackSpeed.collectAsState()
-                val currentPitch by audioPlayer.playbackPitch.collectAsState()
+
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -638,6 +639,18 @@ fun NativePlayerScreen(
                 onDismiss = { showQueueSheet = false }
             )
         }
+
+        PlaybackSpeedModal(
+            isOpen = showSpeedModal,
+            onClose = { showSpeedModal = false },
+            currentSpeed = currentSpeed,
+            currentPitch = currentPitch,
+            onApply = { speed, pitch ->
+                audioPlayer.setPlaybackParameters(speed, pitch)
+                showSpeedModal = false
+            },
+            isDark = isDark
+        )
     }
 }
 

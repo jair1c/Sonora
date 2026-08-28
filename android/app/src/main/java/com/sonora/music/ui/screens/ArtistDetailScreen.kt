@@ -49,6 +49,7 @@ import com.sonora.music.data.model.Song
 import com.sonora.music.data.repository.ArtistImageRepository
 import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.Organic8PetalShape
+import com.sonora.music.ui.components.SonoraSongCover
 import com.sonora.music.ui.theme.SonoraObsidianCard
 import com.sonora.music.ui.theme.SonoraObsidianDark
 import com.sonora.music.ui.theme.SonoraPaperBeige
@@ -74,7 +75,7 @@ fun ArtistDetailScreen(
     }
     val artistCover = artistSongs.firstOrNull()?.coverUri
 
-    var artistPhotoUrl by remember(artistName) { mutableStateOf<String?>(null) }
+    var artistPhotoUrl by remember(artistName) { mutableStateOf<String?>(ArtistImageRepository.getCachedArtistImageUrl(artistName)) }
     LaunchedEffect(artistName) {
         val photo = ArtistImageRepository.getArtistImageUrl(artistName)
         if (photo != null) {
@@ -225,14 +226,14 @@ fun ArtistDetailScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.weight(1f)
                     ) {
-                        AsyncImage(
-                            model = song.coverUri ?: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600&auto=format&fit=crop",
-                            contentDescription = song.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                        )
+                        Box(modifier = Modifier.size(42.dp).clip(RoundedCornerShape(10.dp))) {
+                            SonoraSongCover(
+                                song = song,
+                                contentDescription = song.title,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(

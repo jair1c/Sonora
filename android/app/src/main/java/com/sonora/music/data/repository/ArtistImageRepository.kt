@@ -12,20 +12,73 @@ object ArtistImageRepository {
 
     private val cache = ConcurrentHashMap<String, String?>()
 
+    fun extractPrimaryArtist(rawName: String): String {
+        var name = rawName.trim()
+        if (name.isEmpty() || name.equals("<unknown>", ignoreCase = true) || name.equals("unknown", ignoreCase = true)) {
+            return ""
+        }
+
+        // Remove (feat. ...), [feat. ...], (with ...), etc.
+        name = name.replace(Regex("(?i)\\s*\\([^)]*(?:feat|ft|with|prod)[^)]*\\)"), "").trim()
+        name = name.replace(Regex("(?i)\\s*\\[[^\\]]*(?:feat|ft|with|prod)[^\\]*\\]"), "").trim()
+
+        // Split by collaboration indicators: feat., ft., featuring, with, vs., vs, &, ,, /, ;, x, X, +
+        val splitRegex = Regex("(?i)\\s+(?:feat\\.?|ft\\.?|featuring|with|vs\\.?|x|\\&|\\+|\\/|;)\\s+|,|\\/|;")
+        val parts = name.split(splitRegex)
+        val firstPart = parts.firstOrNull()?.trim() ?: ""
+
+        val cleaned = firstPart.trim('"', '\'', ' ', ',', ';', '-', '/', '&')
+        return if (cleaned.isNotEmpty()) cleaned else name
+    }
+
+    fun getCachedArtistImageUrl(artistName: String): String? {
+        val clean = artistName.trim()
+        if (cache.containsKey(clean)) return cache[clean]
+        val primary = extractPrimaryArtist(clean)
+        if (primary.isNotEmpty() && cache.containsKey(primary)) return cache[primary]
+        return null
+    }
+
     suspend fun getArtistImageUrl(artistName: String): String? {
         val cleanName = artistName.trim()
-        if (cleanName.isEmpty() || cleanName.equals("<unknown>", ignoreCase = true)) {
+        if (cleanName.isEmpty() || cleanName.equals("<unknown>", ignoreCase = true) || cleanName.equals("unknown", ignoreCase = true)) {
             return null
         }
 
+        val primaryName = extractPrimaryArtist(cleanName)
+
+        // Check memory cache
         if (cache.containsKey(cleanName)) {
             return cache[cleanName]
         }
+        if (primaryName.isNotEmpty() && cache.containsKey(primaryName)) {
+            return cache[primaryName]
+        }
 
         return withContext(Dispatchers.IO) {
-            val url = fetchFromDeezer(cleanName) ?: fetchFromITunes(cleanName)
+            // 1. Try primary artist on Deezer first (highest quality artist profile photo)
+            var url = if (primaryName.isNotEmpty()) fetchFromDeezer(primaryName) else null
+
+            // 2. If no result, try full clean artist name on Deezer
+            if (url == null && cleanName != primaryName) {
+                url = fetchFromDeezer(cleanName)
+            }
+
+            // 3. Fallback to iTunes with primary artist
+            if (url == null && primaryName.isNotEmpty()) {
+                url = fetchFromITunes(primaryName)
+            }
+
+            // 4. Fallback to iTunes with full name
+            if (url == null && cleanName != primaryName) {
+                url = fetchFromITunes(cleanName)
+            }
+
             if (url != null) {
                 cache[cleanName] = url
+                if (primaryName.isNotEmpty()) {
+                    cache[primaryName] = url
+                }
             }
             url
         }
@@ -51,7 +104,8 @@ object ArtistImageRepository {
                         val item = data.getJSONObject(i)
                         val pictureBig = item.optString("picture_big", "")
                         val pictureMedium = item.optString("picture_medium", "")
-                        val picture = if (pictureBig.isNotEmpty()) pictureBig else pictureMedium
+                        val pictureXl = item.optString("picture_xl", "")
+                        val picture = if (pictureXl.isNotEmpty()) pictureXl else if (pictureBig.isNotEmpty()) pictureBig else pictureMedium
 
                         if (picture.isNotEmpty() && !picture.contains("default") && !picture.contains("d41d8cd98f00b204e9800998ecf8427e")) {
                             return picture

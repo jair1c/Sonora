@@ -77,6 +77,8 @@ import com.sonora.music.data.local.SonoraPreferences
 import com.sonora.music.data.model.Song
 import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.Organic8PetalShape
+import com.sonora.music.ui.components.SonoraSongCover
+import com.sonora.music.data.repository.SongCoverRepository
 import com.sonora.music.ui.components.WavyScrubberRing
 import com.sonora.music.ui.theme.SonoraObsidianDark
 import com.sonora.music.ui.theme.SonoraPaperBeige
@@ -347,14 +349,14 @@ fun NativePlayerScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    AsyncImage(
-                        model = currentSong?.coverUri ?: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600&auto=format&fit=crop",
-                        contentDescription = currentSong?.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .rotate(if (isPlaying) rotationAngle else 0f)
-                    )
+                    Box(modifier = Modifier.fillMaxSize().rotate(if (isPlaying) rotationAngle else 0f)) {
+                        SonoraSongCover(
+                            song = currentSong,
+                            contentDescription = currentSong?.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
 
                     // Vinyl center pinhole
                     Box(

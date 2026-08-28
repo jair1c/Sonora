@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sonora.music.ui.components.SonoraSongCover
 import coil.compose.AsyncImage
 import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.theme.SonoraObsidianCard
@@ -149,14 +151,14 @@ fun QueueBottomSheet(
                                     modifier = Modifier.size(20.dp).padding(end = 6.dp)
                                 )
                             }
-                            AsyncImage(
-                                model = song.coverUri ?: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600&auto=format&fit=crop",
-                                contentDescription = song.title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                            )
+                            Box(modifier = Modifier.size(38.dp).clip(RoundedCornerShape(8.dp))) {
+                                SonoraSongCover(
+                                    song = song,
+                                    contentDescription = song.title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(

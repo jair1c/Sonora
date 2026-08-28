@@ -20,6 +20,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import com.sonora.music.data.model.Song
+import com.sonora.music.data.repository.SongCoverRepository
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -372,6 +375,29 @@ class SonoraAudioPlayer(private val context: Context) {
             val lyrics = mediaRepo.getLyricsForSong(song)
             if (lyrics.isNotEmpty() && _currentSong.value?.id == song.id) {
                 _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
+            }
+            if (song.coverUri == null) {
+                try {
+                    val coverUrl = SongCoverRepository.getSongCoverUrl(song)
+                    if (coverUrl != null && coverUrl.startsWith("http")) {
+                        val conn = (URL(coverUrl).openConnection() as HttpURLConnection).apply {
+                            connectTimeout = 3000
+                            readTimeout = 3000
+                        }
+                        if (conn.responseCode == 200) {
+                            val bitmap = BitmapFactory.decodeStream(conn.inputStream)
+                            if (bitmap != null && _currentSong.value?.id == song.id) {
+                                val byteStream = ByteArrayOutputStream()
+                                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, byteStream)
+                                val bytes = byteStream.toByteArray()
+                                val updatedMetadata = activePlayer.mediaMetadata.buildUpon()
+                                    .setArtworkData(bytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                                    .build()
+                                activePlayer.setPlaylistMetadata(updatedMetadata)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
             }
         }
 

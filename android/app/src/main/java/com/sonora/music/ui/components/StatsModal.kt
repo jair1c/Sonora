@@ -254,15 +254,19 @@ fun StatsModal(
                                     modifier = Modifier.padding(start = 4.dp)
                                 )
 
-                                AsyncImage(
-                                    model = song.coverUri,
-                                    contentDescription = song.title,
-                                    contentScale = ContentScale.Crop,
+                                Box(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(Color.Gray.copy(alpha = 0.2f))
-                                )
+                                ) {
+                                    SonoraSongCover(
+                                        song = song,
+                                        contentDescription = song.title,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(

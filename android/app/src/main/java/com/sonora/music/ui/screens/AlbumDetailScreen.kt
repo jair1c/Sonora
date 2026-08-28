@@ -44,6 +44,7 @@ import coil.compose.AsyncImage
 import com.sonora.music.data.model.Song
 import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.Organic8PetalShape
+import com.sonora.music.ui.components.SonoraSongCover
 import com.sonora.music.ui.theme.SonoraObsidianCard
 import com.sonora.music.ui.theme.SonoraObsidianDark
 import com.sonora.music.ui.theme.SonoraPaperBeige
@@ -120,8 +121,8 @@ fun AlbumDetailScreen(
                             .background(cardBg),
                         contentAlignment = Alignment.Center
                     ) {
-                        AsyncImage(
-                            model = albumCover ?: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600&auto=format&fit=crop",
+                        SonoraSongCover(
+                            song = albumSongs.firstOrNull(),
                             contentDescription = albumTitle,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()

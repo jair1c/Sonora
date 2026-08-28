@@ -50,6 +50,8 @@ import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.Organic8PetalShape
 import com.sonora.music.ui.components.SleepTimerModal
 import com.sonora.music.ui.components.StatsModal
+import com.sonora.music.ui.components.SonoraSongCover
+import com.sonora.music.data.repository.SongCoverRepository
 
 enum class LibraryTab(val id: String, val label: String, val icon: ImageVector) {
     ARTISTAS("artistas", "Artistas", Icons.Default.Person),
@@ -638,8 +640,8 @@ fun NativeHomeScreen(
                                                     .background(Color.Gray.copy(alpha = 0.2f)),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                AsyncImage(
-                                                    model = song.coverUri,
+                                                SonoraSongCover(
+                                                    song = song,
                                                     contentDescription = song.title,
                                                     contentScale = ContentScale.Crop,
                                                     modifier = Modifier.fillMaxSize()
@@ -741,7 +743,7 @@ fun NativeHomeScreen(
                             ) {
                                 items(artistsList) { artist ->
                                     val isSelected = selectedArtistMix.contains(artist.name)
-                                    var artistPhotoUrl by remember(artist.name) { mutableStateOf<String?>(null) }
+                                    var artistPhotoUrl by remember(artist.name) { mutableStateOf<String?>(ArtistImageRepository.getCachedArtistImageUrl(artist.name)) }
                                     LaunchedEffect(artist.name) {
                                         val photo = ArtistImageRepository.getArtistImageUrl(artist.name)
                                         if (photo != null) {
@@ -1040,8 +1042,8 @@ fun NativeHomeScreen(
                                 .clip(CircleShape)
                                 .background(if (isDark) Color.DarkGray else Color(0xFFEAE5DA))
                         ) {
-                            AsyncImage(
-                                model = currentSong!!.coverUri,
+                            SonoraSongCover(
+                                song = currentSong,
                                 contentDescription = currentSong!!.title,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()

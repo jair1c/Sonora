@@ -9,8 +9,8 @@ android {
         applicationId "com.sonora.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 394
-        versionName "3.9.4"
+        versionCode 395
+        versionName "3.9.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

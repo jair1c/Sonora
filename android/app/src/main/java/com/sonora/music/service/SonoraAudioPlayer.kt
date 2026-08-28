@@ -136,6 +136,9 @@ class SonoraAudioPlayer(private val context: Context) {
 
     val exoPlayer: ExoPlayer get() = activePlayer
 
+    private val _activePlayerFlow = MutableStateFlow<ExoPlayer>(player1)
+    val activePlayerFlow = _activePlayerFlow.asStateFlow()
+
     val equalizerManager = SonoraEqualizerManager()
     val visualizerManager = SonoraVisualizerManager()
 
@@ -337,6 +340,7 @@ class SonoraAudioPlayer(private val context: Context) {
         activePlayer.clearMediaItems()
         activePlayer.setMediaItem(buildMediaItem(song, useFileFallback = true))
         activePlayer.volume = 1.0f
+        _activePlayerFlow.value = activePlayer
 
         _currentSong.value = song
         _currentPositionMs.value = 0L
@@ -606,6 +610,7 @@ class SonoraAudioPlayer(private val context: Context) {
             fadingInPlayer.volume = 1.0f
             activePlayer = fadingInPlayer
             standbyPlayer = fadingOutPlayer
+            _activePlayerFlow.value = activePlayer
 
             // 2. Attach effects to new active player
             equalizerManager.attachAudioSession(activePlayer.audioSessionId)

@@ -17,7 +17,7 @@ class SonoraVisualizerManager {
 
     private var visualizer: Visualizer? = null
     private var currentSessionId: Int = 0
-    private var isUiActive: Boolean = false
+    private var isUiActive: Boolean = true
     private var isPlaying: Boolean = false
     private var lastHardwareFftTime: Long = 0L
 
@@ -30,8 +30,9 @@ class SonoraVisualizerManager {
     fun attachAudioSession(audioSessionId: Int) {
         if (audioSessionId == 0) return
         currentSessionId = audioSessionId
-        if (isUiActive) {
-            setupVisualizer()
+        setupVisualizer()
+        if (isPlaying) {
+            startFallbackLoopIfNeeded()
         }
     }
 
@@ -40,18 +41,10 @@ class SonoraVisualizerManager {
         if (active) {
             if (visualizer == null && currentSessionId != 0) {
                 setupVisualizer()
-            } else {
-                try {
-                    visualizer?.enabled = true
-                } catch (_: Throwable) {}
             }
-            startFallbackLoopIfNeeded()
-        } else {
-            try {
-                visualizer?.enabled = false
-            } catch (_: Throwable) {}
-            stopFallbackLoop()
-            _fftData.value = FloatArray(16) { 0f }
+            if (isPlaying) {
+                startFallbackLoopIfNeeded()
+            }
         }
     }
 
@@ -88,7 +81,7 @@ class SonoraVisualizerManager {
                         fft: ByteArray?,
                         samplingRate: Int
                     ) {
-                        if (fft == null || !isUiActive || !isPlaying) return
+                        if (fft == null || !isPlaying) return
                         try {
                             val bandCount = 16
                             val magnitudes = FloatArray(bandCount)
@@ -116,7 +109,7 @@ class SonoraVisualizerManager {
                 false,
                 true
             )
-            v.enabled = isUiActive
+            v.enabled = true
             visualizer = v
         } catch (_: Throwable) {
             visualizer = null
@@ -124,29 +117,29 @@ class SonoraVisualizerManager {
     }
 
     private fun startFallbackLoopIfNeeded() {
-        if (!isUiActive || !isPlaying) return
+        if (!isPlaying) return
         if (fallbackJob?.isActive == true) return
 
         fallbackJob = scope.launch {
             var phase = 0.0
             val bandCount = 16
-            while (isActive && isUiActive && isPlaying) {
+            while (isActive && isPlaying) {
                 val now = System.currentTimeMillis()
-                // If no hardware FFT was received in the last 200ms, use fluid procedural harmonic spectrum
-                if (now - lastHardwareFftTime > 200L) {
-                    phase += 0.18
+                // If no hardware FFT was received recently, generate smooth organic reactive harmonic waveform
+                if (now - lastHardwareFftTime > 150L) {
+                    phase += 0.22
                     val magnitudes = FloatArray(bandCount)
                     for (i in 0 until bandCount) {
                         val wave1 = sin(phase + i * 0.45)
                         val wave2 = sin(phase * 1.6 + i * 0.9)
-                        val combined = (abs(wave1 * 0.65 + wave2 * 0.35)).toFloat()
-                        // Bell-curve shaping for natural audio frequency distribution (higher in bass/mids)
+                        val wave3 = sin(phase * 0.7 - i * 0.3)
+                        val combined = abs(wave1 * 0.5 + wave2 * 0.3 + wave3 * 0.2).toFloat()
                         val freqShape = (1.0f - (abs(i - 4) / 12f)).coerceIn(0.35f, 1.0f)
                         magnitudes[i] = (combined * freqShape).coerceIn(0.08f, 0.95f)
                     }
                     _fftData.value = magnitudes
                 }
-                delay(35) // ~30 FPS smooth reactive animation
+                delay(35) // ~30 FPS smooth fluid animation
             }
         }
     }

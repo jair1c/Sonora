@@ -29,6 +29,7 @@ class SonoraMediaService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
     private var observerJob: Job? = null
+    private var playerObserverJob: Job? = null
 
     companion object {
         const val NOTIFICATION_CHANNEL_ID = "sonora_music_playback"
@@ -47,7 +48,6 @@ class SonoraMediaService : MediaSessionService() {
         createNotificationChannel()
 
         val audioPlayer = SonoraAudioPlayer.getInstance(applicationContext)
-        val player = audioPlayer.exoPlayer
 
         val sessionActivityPendingIntent = PendingIntent.getActivity(
             this,
@@ -58,10 +58,42 @@ class SonoraMediaService : MediaSessionService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        mediaSession = MediaSession.Builder(this, player)
+        val callback = object : MediaSession.Callback {
+            override fun onMediaButtonEvent(
+                session: MediaSession,
+                controllerInfo: MediaSession.ControllerInfo,
+                intent: Intent
+            ): Boolean {
+                val keyEvent = intent.getParcelableExtra<android.view.KeyEvent>(Intent.EXTRA_KEY_EVENT)
+                if (keyEvent != null && keyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
+                    when (keyEvent.keyCode) {
+                        android.view.KeyEvent.KEYCODE_MEDIA_PLAY -> audioPlayer.resume()
+                        android.view.KeyEvent.KEYCODE_MEDIA_PAUSE -> audioPlayer.pause()
+                        android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+                        android.view.KeyEvent.KEYCODE_HEADSETHOOK -> audioPlayer.togglePlay()
+                        android.view.KeyEvent.KEYCODE_MEDIA_NEXT -> audioPlayer.nextTrack()
+                        android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS -> audioPlayer.prevTrack()
+                    }
+                    return true
+                }
+                return super.onMediaButtonEvent(session, controllerInfo, intent)
+            }
+        }
+
+        mediaSession = MediaSession.Builder(this, audioPlayer.exoPlayer)
             .setSessionActivity(sessionActivityPendingIntent)
+            .setCallback(callback)
             .setId("SonoraMediaSession")
             .build()
+
+        // Keep MediaSession synced with the active player when crossfade swaps players
+        playerObserverJob = serviceScope.launch {
+            audioPlayer.activePlayerFlow.collect { activeExo ->
+                try {
+                    mediaSession?.setPlayer(activeExo)
+                } catch (_: Throwable) {}
+            }
+        }
 
         observerJob = serviceScope.launch {
             combine(audioPlayer.currentSong, audioPlayer.isPlaying) { song, isPlaying ->
@@ -251,19 +283,11 @@ class SonoraMediaService : MediaSessionService() {
         return mediaSession
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        val player = mediaSession?.player
-        if (player == null || !player.playWhenReady || player.mediaItemCount == 0) {
-            stopSelf()
-        }
-    }
-
     override fun onDestroy() {
-        observerJob?.cancel()
-        mediaSession?.run {
-            release()
-            mediaSession = null
-        }
         super.onDestroy()
+        playerObserverJob?.cancel()
+        observerJob?.cancel()
+        mediaSession?.release()
+        mediaSession = null
     }
 }

@@ -13,8 +13,11 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import androidx.media3.common.Player
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSession.ConnectionResult
 import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionResult
 import com.sonora.app.R
 import com.sonora.music.SonoraNativeActivity
 import com.sonora.music.data.model.Song
@@ -59,6 +62,45 @@ class SonoraMediaService : MediaSessionService() {
         )
 
         val callback = object : MediaSession.Callback {
+            override fun onConnect(
+                session: MediaSession,
+                controller: MediaSession.ControllerInfo
+            ): ConnectionResult {
+                // Ensure Next, Previous, and Play/Pause commands are ALWAYS available on lockscreen and notification
+                val availableCommands = ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
+                    .add(Player.COMMAND_SEEK_TO_NEXT)
+                    .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                    .add(Player.COMMAND_SEEK_TO_PREVIOUS)
+                    .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                    .add(Player.COMMAND_PLAY_PAUSE)
+                    .add(Player.COMMAND_STOP)
+                    .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                    .build()
+                return ConnectionResult.AcceptedResultBuilder(session)
+                    .setAvailablePlayerCommands(availableCommands)
+                    .build()
+            }
+
+            override fun onPlayerCommandRequest(
+                session: MediaSession,
+                controller: MediaSession.ControllerInfo,
+                playerCommand: Int
+            ): Int {
+                when (playerCommand) {
+                    Player.COMMAND_SEEK_TO_NEXT,
+                    Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> {
+                        audioPlayer.nextTrack()
+                        return SessionResult.RESULT_SUCCESS
+                    }
+                    Player.COMMAND_SEEK_TO_PREVIOUS,
+                    Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> {
+                        audioPlayer.prevTrack()
+                        return SessionResult.RESULT_SUCCESS
+                    }
+                }
+                return super.onPlayerCommandRequest(session, controller, playerCommand)
+            }
+
             override fun onMediaButtonEvent(
                 session: MediaSession,
                 controllerInfo: MediaSession.ControllerInfo,
@@ -273,6 +315,10 @@ class SonoraMediaService : MediaSessionService() {
                     @Suppress("DEPRECATION")
                     stopForeground(false)
                 }
+            }
+            val notificationManager = NotificationManagerCompat.from(this)
+            if (notificationManager.areNotificationsEnabled()) {
+                notificationManager.notify(NOTIFICATION_ID, notification)
             }
         } catch (e: Exception) {
             android.util.Log.e("SonoraMediaService", "Error posting notification", e)

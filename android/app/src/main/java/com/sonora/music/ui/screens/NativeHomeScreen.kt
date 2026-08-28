@@ -88,6 +88,9 @@ fun NativeHomeScreen(
 
     var currentTab by remember { mutableStateOf(LibraryTab.CANCIONES) }
     var searchQuery by remember { mutableStateOf("") }
+
+    val prefsRevision by sonoraPrefs.prefsRevision.collectAsState()
+
     var sortMode by remember {
         val saved = sonoraPrefs.getSortMode()
         mutableStateOf(try { SortMode.valueOf(saved) } catch (e: Exception) { SortMode.TITLE_AZ })
@@ -96,11 +99,24 @@ fun NativeHomeScreen(
 
     var showSleepModal by remember { mutableStateOf(false) }
     var showStatsModal by remember { mutableStateOf(false) }
-    val navTabs = remember { sonoraPrefs.getNavTabs() }
+    var navTabs by remember { mutableStateOf(sonoraPrefs.getNavTabs()) }
 
-    val blacklistedFolders = remember { mutableStateListOf<String>().apply { addAll(sonoraPrefs.getBlacklistedFolders()) } }
-    val likedSongIds = remember { mutableStateListOf<Long>().apply { addAll(sonoraPrefs.getLikedSongIds()) } }
+    val blacklistedFolders = remember { mutableStateListOf<String>() }
+    val likedSongIds = remember { mutableStateListOf<Long>() }
     val selectedArtistMix = remember { mutableStateListOf<String>() }
+
+    LaunchedEffect(prefsRevision) {
+        val savedSort = sonoraPrefs.getSortMode()
+        sortMode = try { SortMode.valueOf(savedSort) } catch (_: Exception) { SortMode.TITLE_AZ }
+
+        blacklistedFolders.clear()
+        blacklistedFolders.addAll(sonoraPrefs.getBlacklistedFolders())
+
+        likedSongIds.clear()
+        likedSongIds.addAll(sonoraPrefs.getLikedSongIds())
+
+        navTabs = sonoraPrefs.getNavTabs()
+    }
 
     val currentSong by audioPlayer.currentSong.collectAsState()
     val isPlaying by audioPlayer.isPlaying.collectAsState()

@@ -9,12 +9,21 @@ import com.sonora.music.data.model.Playlist
 import com.sonora.music.data.model.Song
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 
 class SonoraPreferences(private val context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences("sonora_native_prefs", Context.MODE_PRIVATE)
+
+    private val _prefsRevision = MutableStateFlow(0)
+    val prefsRevision = _prefsRevision.asStateFlow()
+
+    fun notifyPrefsChanged() {
+        _prefsRevision.value++
+    }
 
     companion object {
         private const val KEY_LIKED_IDS = "sonora_liked_song_ids"
@@ -43,7 +52,7 @@ class SonoraPreferences(private val context: Context) {
 
     // --- SORT MODE ---
     fun getSortMode(): String = prefs.getString(KEY_SORT_MODE, "TITLE_AZ") ?: "TITLE_AZ"
-    fun setSortMode(mode: String) = prefs.edit().putString(KEY_SORT_MODE, mode).apply()
+    fun setSortMode(mode: String) { prefs.edit().putString(KEY_SORT_MODE, mode).apply(); notifyPrefsChanged() }
 
     // --- TOOLS & PREFERENCES ---
     fun getPlayerControlsStyle(): String = prefs.getString(KEY_PLAYER_CONTROLS_STYLE, "dock") ?: "dock"
@@ -171,11 +180,12 @@ class SonoraPreferences(private val context: Context) {
 
     // --- BLACKLISTED FOLDERS ---
     fun getBlacklistedFolders(): Set<String> {
-        return prefs.getStringSet(KEY_BLACKLISTED_FOLDERS, emptySet()) ?: emptySet()
+        val raw = prefs.getStringSet(KEY_BLACKLISTED_FOLDERS, emptySet()) ?: emptySet()
+        return HashSet(raw)
     }
 
     fun toggleBlacklistFolder(folderName: String): Boolean {
-        val current = getBlacklistedFolders().toMutableSet()
+        val current = HashSet(getBlacklistedFolders())
         val isBlocked = if (current.contains(folderName)) {
             current.remove(folderName)
             false
@@ -184,19 +194,22 @@ class SonoraPreferences(private val context: Context) {
             true
         }
         prefs.edit().putStringSet(KEY_BLACKLISTED_FOLDERS, current).apply()
+        notifyPrefsChanged()
         return isBlocked
     }
 
     fun blacklistFolder(folderName: String) {
-        val current = getBlacklistedFolders().toMutableSet()
+        val current = HashSet(getBlacklistedFolders())
         current.add(folderName)
         prefs.edit().putStringSet(KEY_BLACKLISTED_FOLDERS, current).apply()
+        notifyPrefsChanged()
     }
 
     fun unblacklistFolder(folderName: String) {
-        val current = getBlacklistedFolders().toMutableSet()
+        val current = HashSet(getBlacklistedFolders())
         current.remove(folderName)
         prefs.edit().putStringSet(KEY_BLACKLISTED_FOLDERS, current).apply()
+        notifyPrefsChanged()
     }
 
     // --- CUSTOM PLAYLISTS ---
@@ -413,14 +426,14 @@ class SonoraPreferences(private val context: Context) {
             // Liked songs
             if (root.has("likedSongIds")) {
                 val arr = root.getJSONArray("likedSongIds")
-                val set = mutableSetOf<String>()
+                val set = HashSet<String>()
                 for (i in 0 until arr.length()) {
                     set.add(arr.getLong(i).toString())
                 }
                 editor.putStringSet(KEY_LIKED_IDS, set)
             }
 
-            // Recent songs (previously missing from import)
+            // Recent songs
             if (root.has("recentSongIds")) {
                 val arr = root.getJSONArray("recentSongIds")
                 val recentList = mutableListOf<Long>()
@@ -440,7 +453,7 @@ class SonoraPreferences(private val context: Context) {
             // Blacklisted folders
             if (root.has("blacklistedFolders")) {
                 val arr = root.getJSONArray("blacklistedFolders")
-                val set = mutableSetOf<String>()
+                val set = HashSet<String>()
                 for (i in 0 until arr.length()) {
                     set.add(arr.getString(i))
                 }
@@ -450,19 +463,7 @@ class SonoraPreferences(private val context: Context) {
             // Custom Playlists
             if (root.has("customPlaylists")) {
                 val arr = root.getJSONArray("customPlaylists")
-                val list = mutableListOf<Playlist>()
-                for (i in 0 until arr.length()) {
-                    val obj = arr.getJSONObject(i)
-                    val id = obj.getString("id")
-                    val name = obj.getString("name")
-                    val songIdsArr = obj.getJSONArray("songIds")
-                    val songIds = mutableListOf<Long>()
-                    for (j in 0 until songIdsArr.length()) {
-                        songIds.add(songIdsArr.getLong(j))
-                    }
-                    list.add(Playlist(id, name, songIds))
-                }
-                saveCustomPlaylists(list)
+                editor.putString(KEY_CUSTOM_PLAYLISTS, arr.toString())
             }
 
             // Navigation tabs order
@@ -470,8 +471,9 @@ class SonoraPreferences(private val context: Context) {
                 editor.putString(KEY_NAV_TABS, root.getJSONArray("navTabs").toString())
             }
 
-            editor.apply()
-            true
+            val committed = editor.commit()
+            notifyPrefsChanged()
+            committed
         } catch (_: Exception) {
             false
         }

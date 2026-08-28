@@ -145,6 +145,8 @@ fun SettingsScreen(
                     activeNavTabs = sonoraPrefs.getNavTabs()
                     navLabelMode = sonoraPrefs.getNavLabelMode()
                     playerControlsStyle = sonoraPrefs.getPlayerControlsStyle()
+                    audioPlayer.setCrossfadeSeconds(sonoraPrefs.getCrossfadeSeconds())
+                    audioPlayer.setPlaybackSpeed(sonoraPrefs.getPlaybackSpeed())
                     onThemeChanged(sonoraPrefs.getThemeMode())
                     onRescanLibrary()
                     Toast.makeText(context, "✅ ¡Copia restaurada exitosamente!", Toast.LENGTH_LONG).show()

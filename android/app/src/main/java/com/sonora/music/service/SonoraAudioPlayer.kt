@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 
@@ -383,13 +384,17 @@ class SonoraAudioPlayer(private val context: Context) {
         trackSongPlay(song)
         ensureMediaServiceStarted()
         visualizerManager.setPlaying(true)
+        val hasArtwork = activePlayer.mediaMetadata.artworkData != null
         scope.launch(Dispatchers.IO) {
-            _realAudioFormat.value = AudioMetadataHelper.getAudioDetails(song)
+            val format = AudioMetadataHelper.getAudioDetails(song)
+            _realAudioFormat.value = format
+
             val lyrics = mediaRepo.getLyricsForSong(song)
             if (lyrics.isNotEmpty() && _currentSong.value?.id == song.id) {
                 _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
             }
-            if (activePlayer.mediaMetadata.artworkData == null) {
+
+            if (!hasArtwork) {
                 try {
                     val coverUrl = SongCoverRepository.getSongCoverUrl(song)
                     if (coverUrl != null && coverUrl.startsWith("http")) {
@@ -403,10 +408,14 @@ class SonoraAudioPlayer(private val context: Context) {
                                 val byteStream = ByteArrayOutputStream()
                                 bitmap.compress(Bitmap.CompressFormat.JPEG, 85, byteStream)
                                 val bytes = byteStream.toByteArray()
-                                val updatedMetadata = activePlayer.mediaMetadata.buildUpon()
-                                    .setArtworkData(bytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
-                                    .build()
-                                activePlayer.setPlaylistMetadata(updatedMetadata)
+                                withContext(Dispatchers.Main) {
+                                    if (_currentSong.value?.id == song.id) {
+                                        val updatedMetadata = activePlayer.mediaMetadata.buildUpon()
+                                            .setArtworkData(bytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                                            .build()
+                                        activePlayer.setPlaylistMetadata(updatedMetadata)
+                                    }
+                                }
                             }
                         }
                     }
@@ -642,6 +651,7 @@ class SonoraAudioPlayer(private val context: Context) {
         trackSongPlay(nextSong)
         ensureMediaServiceStarted()
         scope.launch(Dispatchers.IO) {
+            _realAudioFormat.value = AudioMetadataHelper.getAudioDetails(nextSong)
             val lyrics = mediaRepo.getLyricsForSong(nextSong)
             if (lyrics.isNotEmpty() && _currentSong.value?.id == nextSong.id) {
                 _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)

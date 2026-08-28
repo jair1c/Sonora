@@ -2,6 +2,9 @@ package com.sonora.music.service
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes as AndroidAudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Build
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -38,6 +41,59 @@ class SonoraAudioPlayer(private val context: Context) {
         }
     }
 
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+    private var audioFocusRequest: AudioFocusRequest? = null
+
+    private fun requestSystemAudioFocus(): Boolean {
+        if (audioManager == null) return true
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val playbackAttributes = AndroidAudioAttributes.Builder()
+                .setUsage(AndroidAudioAttributes.USAGE_MEDIA)
+                .setContentType(AndroidAudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(playbackAttributes)
+                .setAcceptsDelayedFocusGain(true)
+                .setOnAudioFocusChangeListener { focusChange ->
+                    when (focusChange) {
+                        AudioManager.AUDIOFOCUS_LOSS -> pause()
+                        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> pause()
+                        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                            if (!isCrossfading) activePlayer.volume = 0.3f
+                        }
+                        AudioManager.AUDIOFOCUS_GAIN -> {
+                            if (!isCrossfading) activePlayer.volume = 1.0f
+                        }
+                    }
+                }
+                .build()
+            audioFocusRequest = request
+            audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                { focusChange ->
+                    if (focusChange == AudioManager.AUDIOFOCUS_LOSS || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                        pause()
+                    }
+                },
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN
+            ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        }
+    }
+
+    private fun abandonSystemAudioFocus() {
+        if (audioManager == null) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+            audioFocusRequest = null
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.abandonAudioFocus(null)
+        }
+    }
+
     private fun createExoPlayer(): ExoPlayer {
         val extractorsFactory = DefaultExtractorsFactory()
             .setConstantBitrateSeekingEnabled(true)
@@ -54,7 +110,7 @@ class SonoraAudioPlayer(private val context: Context) {
                     .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                     .setUsage(C.USAGE_MEDIA)
                     .build(),
-                true // Auto-handle AudioFocus
+                false // Important: false prevents player1 and player2 from ducking/pausing each other during crossfade!
             )
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_LOCAL)
@@ -183,6 +239,10 @@ class SonoraAudioPlayer(private val context: Context) {
 
     private fun createPlayerListener(p: ExoPlayer) = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
+            // Guard: during crossfade, the fading-out player stopping must not mark playback as stopped!
+            if (isCrossfading && !playing && p != activePlayer) {
+                return
+            }
             if (p == activePlayer) {
                 _isPlaying.value = playing
                 visualizerManager.setPlaying(playing)
@@ -201,6 +261,9 @@ class SonoraAudioPlayer(private val context: Context) {
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
+            if (isCrossfading && p != activePlayer) {
+                return
+            }
             if (p == activePlayer) {
                 _isPlaying.value = p.isPlaying
                 when (playbackState) {
@@ -223,7 +286,7 @@ class SonoraAudioPlayer(private val context: Context) {
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            android.util.Log.e("SonoraAudioPlayer", "Playback error on ${_currentSong.value?.title}: ${error.errorCodeName} (${error.errorCode})", error)
+            android.util.Log.e("SonoraAudioPlayer", "Playback error: ${error.errorCodeName} (${error.errorCode})", error)
             val current = _currentSong.value
             if (current != null && current.filePath.isNotEmpty() && File(current.filePath).exists()) {
                 val fileItem = buildMediaItem(current, useFileFallback = true)
@@ -233,7 +296,7 @@ class SonoraAudioPlayer(private val context: Context) {
                 p.play()
                 if (p == activePlayer) _isPlaying.value = true
             } else {
-                if (p == activePlayer) {
+                if (p == activePlayer && !isCrossfading) {
                     _isPlaying.value = false
                     stopPositionTracking()
                 }
@@ -276,6 +339,8 @@ class SonoraAudioPlayer(private val context: Context) {
         activePlayer.volume = 1.0f
 
         _currentSong.value = song
+        _currentPositionMs.value = 0L
+        _durationMs.value = song.durationMs
         sonoraPrefs.saveLastPlayback(song.id, 0L, listToUse.map { it.id })
         trackSongPlay(song)
         ensureMediaServiceStarted()
@@ -287,10 +352,12 @@ class SonoraAudioPlayer(private val context: Context) {
             }
         }
 
+        requestSystemAudioFocus()
         activePlayer.prepare()
         activePlayer.playWhenReady = true
         activePlayer.play()
         _isPlaying.value = true
+        startPositionTracking()
     }
 
     fun savePlaybackState() {
@@ -342,6 +409,7 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun resume() {
+        requestSystemAudioFocus()
         if (activePlayer.playbackState == Player.STATE_IDLE) {
             activePlayer.prepare()
         } else if (activePlayer.playbackState == Player.STATE_ENDED) {
@@ -357,6 +425,7 @@ class SonoraAudioPlayer(private val context: Context) {
     fun pause() {
         activePlayer.pause()
         _isPlaying.value = false
+        abandonSystemAudioFocus()
         savePlaybackState()
     }
 
@@ -505,7 +574,9 @@ class SonoraAudioPlayer(private val context: Context) {
             android.util.Log.e("SonoraAudioPlayer", "Error starting standbyPlayer", e)
         }
 
+        // Update metadata and UI immediately at t=0 of crossfade
         _currentSong.value = nextSong
+        _isPlaying.value = true
         sonoraPrefs.saveLastPlayback(nextSong.id, 0L, queue.map { it.id })
         trackSongPlay(nextSong)
         ensureMediaServiceStarted()
@@ -522,27 +593,34 @@ class SonoraAudioPlayer(private val context: Context) {
         crossfadeJob = scope.launch {
             for (step in 1..steps) {
                 delay(stepDelay)
-                val t = step.toFloat() / steps.toFloat()
-                val eased = (0.5f - 0.5f * Math.cos(Math.PI * t.toDouble())).toFloat()
-                try { fadingOutPlayer.volume = (1f - eased).coerceIn(0f, 1f) } catch (_: Exception) {}
-                try { fadingInPlayer.volume = eased.coerceIn(0f, 1f) } catch (_: Exception) {}
+                val t = step.toDouble() / steps.toDouble()
+                // Constant power crossfade curve: cos(t * pi/2) for fade out, sin(t * pi/2) for fade in
+                val angle = t * (Math.PI / 2.0)
+                val volOut = Math.cos(angle).toFloat().coerceIn(0f, 1f)
+                val volIn = Math.sin(angle).toFloat().coerceIn(0f, 1f)
+                try { fadingOutPlayer.volume = volOut } catch (_: Exception) {}
+                try { fadingInPlayer.volume = volIn } catch (_: Exception) {}
             }
 
+            // 1. Promote fadingInPlayer to activePlayer FIRST
+            fadingInPlayer.volume = 1.0f
+            activePlayer = fadingInPlayer
+            standbyPlayer = fadingOutPlayer
+
+            // 2. Attach effects to new active player
+            equalizerManager.attachAudioSession(activePlayer.audioSessionId)
+            visualizerManager.attachAudioSession(activePlayer.audioSessionId)
+
+            // 3. Stop fadingOutPlayer safely now that it is standbyPlayer
             try {
                 fadingOutPlayer.stop()
                 fadingOutPlayer.clearMediaItems()
             } catch (_: Exception) {}
 
-            fadingInPlayer.volume = 1.0f
-
-            activePlayer = fadingInPlayer
-            standbyPlayer = fadingOutPlayer
-
-            equalizerManager.attachAudioSession(activePlayer.audioSessionId)
-            visualizerManager.attachAudioSession(activePlayer.audioSessionId)
-
             preloadedSong = null
             isCrossfading = false
+            _isPlaying.value = true
+            startPositionTracking()
         }
     }
 
@@ -572,13 +650,14 @@ class SonoraAudioPlayer(private val context: Context) {
         progressJob = scope.launch {
             var lastTickTime = System.currentTimeMillis()
             while (isActive) {
-                val pos = activePlayer.currentPosition.coerceAtLeast(0L)
-                val dur = activePlayer.duration.coerceAtLeast(0L)
+                val currentPlayer = if (isCrossfading) standbyPlayer else activePlayer
+                val pos = currentPlayer.currentPosition.coerceAtLeast(0L)
+                val dur = currentPlayer.duration.coerceAtLeast(0L)
                 _currentPositionMs.value = pos
                 if (dur > 0L) _durationMs.value = dur
 
                 val now = System.currentTimeMillis()
-                if (activePlayer.isPlaying) {
+                if (activePlayer.isPlaying || (isCrossfading && standbyPlayer.isPlaying)) {
                     val elapsedSec = (now - lastTickTime) / 1000L
                     if (elapsedSec >= 1L) {
                         sonoraPrefs.addListeningSeconds(elapsedSec)
@@ -594,23 +673,28 @@ class SonoraAudioPlayer(private val context: Context) {
                     lastTickTime = now
                 }
 
-                if (crossfadeSeconds > 0 && dur > crossfadeSeconds * 1500L && !isCrossfading && activePlayer.isPlaying) {
-                    val remainingMs = dur - pos
-                    val crossfadeMs = crossfadeSeconds * 1000L
-                    val preloadWindowMs = crossfadeMs * 2
+                // Check crossfade trigger based on activePlayer (Song A)
+                if (crossfadeSeconds > 0 && !isCrossfading && activePlayer.isPlaying) {
+                    val activePos = activePlayer.currentPosition.coerceAtLeast(0L)
+                    val activeDur = activePlayer.duration.coerceAtLeast(0L)
+                    if (activeDur > crossfadeSeconds * 1500L) {
+                        val remainingMs = activeDur - activePos
+                        val crossfadeMs = crossfadeSeconds * 1000L
+                        val preloadWindowMs = crossfadeMs * 2
 
-                    if (remainingMs in 0..crossfadeMs) {
-                        performCrossfadeTransition()
-                    } else if (remainingMs in 0..preloadWindowMs && preloadedSong == null) {
-                        val currentIdx = if (_currentSong.value != null) _playlist.value.indexOfFirst { it.id == _currentSong.value?.id } else -1
-                        val next = if (currentIdx != -1 && currentIdx + 1 < _playlist.value.size) {
-                            _playlist.value[currentIdx + 1]
-                        } else if (_repeatMode.value == Player.REPEAT_MODE_ALL && _playlist.value.isNotEmpty()) {
-                            _playlist.value.first()
-                        } else null
+                        if (remainingMs in 0..crossfadeMs) {
+                            performCrossfadeTransition()
+                        } else if (remainingMs in 0..preloadWindowMs && preloadedSong == null) {
+                            val currentIdx = if (_currentSong.value != null) _playlist.value.indexOfFirst { it.id == _currentSong.value?.id } else -1
+                            val next = if (currentIdx != -1 && currentIdx + 1 < _playlist.value.size) {
+                                _playlist.value[currentIdx + 1]
+                            } else if (_repeatMode.value == Player.REPEAT_MODE_ALL && _playlist.value.isNotEmpty()) {
+                                _playlist.value.first()
+                            } else null
 
-                        if (next != null) {
-                            preloadNextSong(next)
+                            if (next != null) {
+                                preloadNextSong(next)
+                            }
                         }
                     }
                 }
@@ -621,6 +705,7 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     private fun stopPositionTracking() {
+        if (isCrossfading) return
         progressJob?.cancel()
         progressJob = null
         try {
@@ -697,6 +782,7 @@ class SonoraAudioPlayer(private val context: Context) {
         preloadedSong = null
         cancelSleepTimer()
         stopPositionTracking()
+        abandonSystemAudioFocus()
         visualizerManager.release()
         equalizerManager.release()
         try {

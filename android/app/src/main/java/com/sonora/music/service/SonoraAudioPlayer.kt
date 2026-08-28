@@ -206,30 +206,37 @@ class SonoraAudioPlayer(private val context: Context) {
 
     private fun createPlayerListener(p: ExoPlayer) = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
-            if (isCrossfading && !playing && p != activePlayer) {
+            if (isCrossfading) {
+                if (playing) {
+                    _isPlaying.value = true
+                    startPositionTracking()
+                    visualizerManager.setPlaying(true)
+                }
                 return
             }
             if (p == activePlayer) {
-                val shouldBePlaying = p.playWhenReady && p.playbackState != Player.STATE_ENDED
-                _isPlaying.value = shouldBePlaying
-                visualizerManager.setPlaying(playing)
                 if (playing) {
+                    _isPlaying.value = true
                     startPositionTracking()
-                } else if (!p.playWhenReady) {
+                    visualizerManager.setPlaying(true)
+                } else if (!p.playWhenReady && p.playbackState != Player.STATE_BUFFERING) {
+                    _isPlaying.value = false
                     stopPositionTracking()
+                    visualizerManager.setPlaying(false)
                 }
             }
         }
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             if (p == activePlayer && !isCrossfading) {
-                val shouldBePlaying = playWhenReady && p.playbackState != Player.STATE_ENDED
-                _isPlaying.value = shouldBePlaying
-                if (shouldBePlaying) {
-                    startPositionTracking()
-                } else {
+                if (!playWhenReady) {
+                    _isPlaying.value = false
                     stopPositionTracking()
                     visualizerManager.setPlaying(false)
+                } else if (p.playbackState != Player.STATE_ENDED) {
+                    _isPlaying.value = true
+                    startPositionTracking()
+                    visualizerManager.setPlaying(true)
                 }
             }
         }
@@ -245,17 +252,15 @@ class SonoraAudioPlayer(private val context: Context) {
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            if (isCrossfading && p != activePlayer) {
+            if (isCrossfading && p != activePlayer && p != standbyPlayer) {
                 return
             }
             if (p == activePlayer) {
-                val shouldBePlaying = p.playWhenReady && playbackState != Player.STATE_ENDED
-                _isPlaying.value = shouldBePlaying
-
                 when (playbackState) {
                     Player.STATE_READY -> {
                         _durationMs.value = p.duration.coerceAtLeast(0L)
                         if (p.playWhenReady) {
+                            _isPlaying.value = true
                             startPositionTracking()
                             visualizerManager.setPlaying(true)
                         }
@@ -266,10 +271,10 @@ class SonoraAudioPlayer(private val context: Context) {
                         visualizerManager.attachAudioSession(p.audioSessionId)
                     }
                     Player.STATE_ENDED -> {
-                        _isPlaying.value = false
-                        stopPositionTracking()
-                        visualizerManager.setPlaying(false)
                         if (!isCrossfading) {
+                            _isPlaying.value = false
+                            stopPositionTracking()
+                            visualizerManager.setPlaying(false)
                             nextTrack()
                         }
                     }
@@ -393,8 +398,8 @@ class SonoraAudioPlayer(private val context: Context) {
             }
         }
 
-                activePlayer.prepare()
-        activePlayer.playWhenReady = true
+                activePlayer.playWhenReady = true
+        activePlayer.prepare()
         activePlayer.play()
         startPositionTracking()
     }
@@ -592,12 +597,12 @@ class SonoraAudioPlayer(private val context: Context) {
         val steps = (crossfadeSeconds * 50).coerceAtLeast(25)
         val stepDelay = (durationMs / steps).coerceAtLeast(16L)
 
+        val useFile = nextSong.filePath.isNotEmpty() && File(nextSong.filePath).exists() && File(nextSong.filePath).canRead()
         if (preloadedSong?.id != nextSong.id) {
             try {
                 standbyPlayer.stop()
                 standbyPlayer.clearMediaItems()
-                standbyPlayer.setMediaItem(buildMediaItem(nextSong, useFileFallback = true))
-                standbyPlayer.prepare()
+                standbyPlayer.setMediaItem(buildMediaItem(nextSong, useFileFallback = useFile))
             } catch (e: Exception) {
                 android.util.Log.e("SonoraAudioPlayer", "Error preparing standbyPlayer for crossfade", e)
             }
@@ -606,6 +611,7 @@ class SonoraAudioPlayer(private val context: Context) {
         try {
             standbyPlayer.volume = 0f
             standbyPlayer.playWhenReady = true
+            standbyPlayer.prepare()
             standbyPlayer.play()
         } catch (e: Exception) {
             android.util.Log.e("SonoraAudioPlayer", "Error starting standbyPlayer", e)

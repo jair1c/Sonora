@@ -45,6 +45,7 @@ import com.sonora.music.data.model.Artist
 import com.sonora.music.data.model.FolderGroup
 import com.sonora.music.data.model.Song
 import com.sonora.music.data.model.SortMode
+import com.sonora.music.data.repository.ArtistImageRepository
 import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.Organic8PetalShape
 import com.sonora.music.ui.components.SleepTimerModal
@@ -740,6 +741,13 @@ fun NativeHomeScreen(
                             ) {
                                 items(artistsList) { artist ->
                                     val isSelected = selectedArtistMix.contains(artist.name)
+                                    var artistPhotoUrl by remember(artist.name) { mutableStateOf<String?>(null) }
+                                    LaunchedEffect(artist.name) {
+                                        val photo = ArtistImageRepository.getArtistImageUrl(artist.name)
+                                        if (photo != null) {
+                                            artistPhotoUrl = photo
+                                        }
+                                    }
 
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -766,7 +774,7 @@ fun NativeHomeScreen(
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 AsyncImage(
-                                                    model = artist.avatarUri,
+                                                    model = artistPhotoUrl ?: artist.avatarUri,
                                                     contentDescription = artist.name,
                                                     contentScale = ContentScale.Crop,
                                                     modifier = Modifier.fillMaxSize()
@@ -827,7 +835,7 @@ fun NativeHomeScreen(
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
-                                        .padding(bottom = 130.dp)
+                                        .padding(bottom = 135.dp)
                                         .clip(RoundedCornerShape(100.dp))
                                         .background(if (isDark) Color.White else Color(0xFF121212))
                                         .border(1.dp, if (isDark) Color.Transparent else Color(0xFF333333), RoundedCornerShape(100.dp))

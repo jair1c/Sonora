@@ -29,9 +29,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.sonora.music.data.model.Song
+import com.sonora.music.data.repository.ArtistImageRepository
 import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.Organic8PetalShape
 import com.sonora.music.ui.theme.SonoraObsidianCard
@@ -69,6 +73,14 @@ fun ArtistDetailScreen(
         allSongs.filter { it.artist.equals(artistName, ignoreCase = true) }
     }
     val artistCover = artistSongs.firstOrNull()?.coverUri
+
+    var artistPhotoUrl by remember(artistName) { mutableStateOf<String?>(null) }
+    LaunchedEffect(artistName) {
+        val photo = ArtistImageRepository.getArtistImageUrl(artistName)
+        if (photo != null) {
+            artistPhotoUrl = photo
+        }
+    }
 
     val currentSong by audioPlayer.currentSong.collectAsState()
 
@@ -120,7 +132,7 @@ fun ArtistDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         AsyncImage(
-                            model = artistCover ?: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=300&auto=format&fit=crop",
+                            model = artistPhotoUrl ?: artistCover ?: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=300&auto=format&fit=crop",
                             contentDescription = artistName,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()

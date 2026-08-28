@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v3.6.1)
+# 🌸 Sonora Music Player (v3.7.0)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -314,7 +314,7 @@ La transición entre canciones A → B ahora es completamente fluida, sin cortes
 
 ---
 
-## 🚀 Fase 16 — Backup/Restore por Archivo + Indicador de Batería Reactivo (v3.6.1)
+## 🚀 Fase 16 — Backup/Restore por Archivo + Indicador de Batería Reactivo (v3.7.0)
 
 ### Cambios
 
@@ -379,7 +379,7 @@ Ahora el indicador "Ilimitado" aparece automáticamente al volver desde los ajus
 
 ---
 
-## 🚀 Fase 17 — Crossfade sin Corte en Song B + Notificación en Tiempo Real (v3.6.1)
+## 🚀 Fase 17 — Crossfade sin Corte en Song B + Notificación en Tiempo Real (v3.7.0)
 
 ### Problema Detectado
 Después de la v3.5.1 (preloading de Song B), el corte se movió del inicio al final:
@@ -427,3 +427,30 @@ El guard `if (!isCrossfading) { player.volume = 1.0f }` previene que el listener
 
 ### Versión
 `versionCode 361` · `versionName "3.6.1"` · Commit: `main`
+
+---
+
+## 🚀 Fase 18 — Crossfade Simétrico de Doble Reproductor + Fotos Reales de Artistas (v3.7.0)
+
+### 1. Crossfade Simétrico Sin Cortes (Symmetric Player Swapping)
+- **Problema anterior:** Al intentar mover Canción A entre reproductores o llamar `seekTo(nextIndex)` en el reproductor principal, ExoPlayer cortaba el buffer de Canción A provocando un micro-corte.
+- **Nueva Arquitectura:** Implementación de dos reproductores simétricos (`player1` y `player2`) con punteros dinámicos `activePlayer` y `standbyPlayer`.
+  - **Canción A** continúa reproduciéndose en `activePlayer` mientras su volumen baja de `1.0` a `0.0`.
+  - **Canción B** inicia desde `00:00` en `standbyPlayer` subiendo su volumen de `0.0` a `1.0`.
+  - **Metadatos y Notificación:** Se actualizan a Canción B inmediatamente al inicio de la mezcla.
+  - **Al terminar la mezcla:** `activePlayer` se detiene y los punteros se intercambian (`activePlayer` pasa a ser el reproductor que ya tiene a Canción B sonando al 100%).
+  - **Resultado:** Cero cortes en Canción A, cero cortes en Canción B y cero cortes al final del crossfade.
+
+### 2. Fotos Reales de Artistas (API Pública Deezer + iTunes)
+- Se creó `ArtistImageRepository` que consulta de forma optimizada y gratuita las fotos oficiales de los artistas en alta resolución (`picture_big` / `600x600`).
+- Sistema de caché en memoria (`ConcurrentHashMap`) para evitar llamadas redundantes.
+- Fallback automático a la carátula del álbum en caso de no encontrar coincidencia o no tener conexión.
+- Integrado tanto en la cuadrícula de la pestaña **Artistas** (`NativeHomeScreen`) como en la cabecera hero de **Detalle del Artista** (`ArtistDetailScreen`).
+
+### 3. Ajustes de UI y Seek
+- Píldora **Reproducir Mix** ajustada a `135dp` del fondo.
+- Desvanecimiento rápido de 120ms en `seekTo` para eliminar chasquidos de decodificación al arrastrar la barra de progreso bruscamente.
+
+### Versión
+`versionCode 370` · `versionName "3.7.0"` · Commit: `main`
+

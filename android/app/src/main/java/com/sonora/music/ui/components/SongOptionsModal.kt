@@ -72,7 +72,7 @@ fun SongOptionsModal(
 ) {
     val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
     val isGlass = themeColors.isGlass
-    val bgCard = if (isGlass) (if (isDark) Color(0x351E293B) else Color(0xCCFFFFFF)) else (if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA))
+    val bgCard = if (isGlass) (if (isDark) Color(0xF610141D) else Color(0xF8F0F4F8)) else (if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA))
     val cardBg = themeColors.subCardBg
     val borderCol = themeColors.borderCol
     val textColor = themeColors.textPrimary
@@ -87,7 +87,7 @@ fun SongOptionsModal(
         sheetState = sheetState,
         containerColor = bgCard,
         contentColor = textColor,
-        scrimColor = Color.Black.copy(alpha = 0.65f),
+        scrimColor = Color.Black.copy(alpha = 0.72f),
         dragHandle = {
             Box(
                 modifier = Modifier

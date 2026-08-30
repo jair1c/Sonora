@@ -1,4 +1,6 @@
 package com.sonora.music.ui.screens
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Brush
 
 import android.widget.Toast
 import androidx.compose.foundation.background

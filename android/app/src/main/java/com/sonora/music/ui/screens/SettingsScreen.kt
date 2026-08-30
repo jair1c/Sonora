@@ -1,4 +1,6 @@
 package com.sonora.music.ui.screens
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Brush
 
 import android.content.pm.PackageManager
 import android.os.Build
@@ -200,8 +202,16 @@ fun SettingsScreen(
     )
 
     val baseSettingsBg = if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg
-    val backBtnBg = if (isGlass) (if (isDark) Color(0x28FFFFFF) else Color(0x75FFFFFF)) else (if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
-    val backBtnBorder = if (isGlass) (if (isDark) Color(0x45FFFFFF) else Color(0xB5FFFFFF)) else borderCol
+    val backBtnBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x3540567A), Color(0x181F2C40))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
+    }
+    val backBtnBorderBrush = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0x75FFFFFF), Color(0x18FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+    } else {
+        SolidColor(borderCol)
+    }
 
     Box(
         modifier = Modifier
@@ -230,8 +240,8 @@ fun SettingsScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(backBtnBg)
-                        .border(1.dp, backBtnBorder, CircleShape)
+                        .background(backBtnBrush)
+                        .border(if (isGlass) 1.2.dp else 1.dp, backBtnBorderBrush, CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,

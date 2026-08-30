@@ -1,4 +1,8 @@
 package com.sonora.music.ui.screens
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Brush
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,6 +70,16 @@ fun AlbumDetailScreen(
     val cardBg = themeColors.cardBg
     val textColor = themeColors.textPrimary
     val subtextColor = themeColors.textSecondary
+    val backBtnBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x3540567A), Color(0x181F2C40))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
+    }
+    val backBtnBorderBrush = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0x75FFFFFF), Color(0x18FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+    } else {
+        SolidColor(themeColors.borderCol)
+    }
 
     val albumSongs = remember(albumTitle, allSongs) {
         allSongs.filter { it.album.equals(albumTitle, ignoreCase = true) }
@@ -96,8 +110,16 @@ fun AlbumDetailScreen(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Regresar", tint = textColor)
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(backBtnBrush)
+                    .border(if (isGlass) 1.2.dp else 1.dp, backBtnBorderBrush, CircleShape)
+                    .clickable(onClick = onBack),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Regresar", tint = textColor, modifier = Modifier.size(16.dp))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(

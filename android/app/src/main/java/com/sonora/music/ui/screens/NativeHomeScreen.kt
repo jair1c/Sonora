@@ -1,4 +1,5 @@
 package com.sonora.music.ui.screens
+import androidx.compose.ui.graphics.Brush
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -88,8 +89,45 @@ fun NativeHomeScreen(
     val activePillBg = themeColors.activePillBg
     val activePillText = themeColors.activePillText
 
-    val headerBtnBg = if (isGlass) (if (isDark) Color(0x28FFFFFF) else Color(0x75FFFFFF)) else (if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
-    val headerBtnBorder = if (isGlass) (if (isDark) Color(0x45FFFFFF) else Color(0xB5FFFFFF)) else borderCol
+    val headerBtnBrush = if (isGlass) {
+        if (isDark) {
+            Brush.linearGradient(
+                listOf(
+                    Color(0x3540567A),
+                    Color(0x181F2C40)
+                )
+            )
+        } else {
+            Brush.linearGradient(
+                listOf(
+                    Color(0xEEFFFFFF),
+                    Color(0xC0E2E8F0)
+                )
+            )
+        }
+    } else {
+        SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
+    }
+
+    val headerBtnBorderBrush = if (isGlass) {
+        if (isDark) {
+            Brush.verticalGradient(
+                listOf(
+                    Color(0x75FFFFFF),
+                    Color(0x18FFFFFF)
+                )
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(
+                    Color(0xFFFFFFFF),
+                    Color(0x8094A3B8)
+                )
+            )
+        }
+    } else {
+        SolidColor(borderCol)
+    }
     val searchBarBg = if (isGlass) (if (isDark) Color(0x1EFFFFFF) else Color(0x65FFFFFF)) else subCardBg
     val searchBarBorder = if (isGlass) (if (isDark) Color(0x38FFFFFF) else Color(0xB5FFFFFF)) else borderCol
     val inactivePillBg = if (isGlass) (if (isDark) Color(0x1CFFFFFF) else Color(0x60FFFFFF)) else subCardBg
@@ -191,8 +229,8 @@ fun NativeHomeScreen(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(headerBtnBg)
-                        .border(1.dp, headerBtnBorder, CircleShape)
+                        .background(headerBtnBrush)
+                        .border(if (isGlass) 1.2.dp else 1.dp, headerBtnBorderBrush, CircleShape)
                         .clickable { currentTab = LibraryTab.CANCIONES },
                     contentAlignment = Alignment.Center
                 ) {
@@ -223,8 +261,8 @@ fun NativeHomeScreen(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(headerBtnBg)
-                            .border(1.dp, headerBtnBorder, CircleShape)
+                            .background(headerBtnBrush)
+                            .border(if (isGlass) 1.2.dp else 1.dp, headerBtnBorderBrush, CircleShape)
                             .clickable { onOpenEqualizer() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -241,8 +279,8 @@ fun NativeHomeScreen(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(headerBtnBg)
-                            .border(1.dp, if (sleepTimerSeconds != null) Color(0xFF10B981) else headerBtnBorder, CircleShape)
+                            .background(headerBtnBrush)
+                            .border(if (isGlass) 1.2.dp else 1.dp, if (sleepTimerSeconds != null) SolidColor(Color(0xFF10B981)) else headerBtnBorderBrush, CircleShape)
                             .clickable { showSleepModal = true },
                         contentAlignment = Alignment.Center
                     ) {
@@ -259,8 +297,8 @@ fun NativeHomeScreen(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(headerBtnBg)
-                            .border(1.dp, headerBtnBorder, CircleShape)
+                            .background(headerBtnBrush)
+                            .border(if (isGlass) 1.2.dp else 1.dp, headerBtnBorderBrush, CircleShape)
                             .clickable { showStatsModal = true },
                         contentAlignment = Alignment.Center
                     ) {
@@ -342,8 +380,8 @@ fun NativeHomeScreen(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
-                        .background(headerBtnBg)
-                        .border(1.dp, headerBtnBorder, RoundedCornerShape(100.dp))
+                        .background(headerBtnBrush)
+                        .border(if (isGlass) 1.2.dp else 1.dp, headerBtnBorderBrush, RoundedCornerShape(100.dp))
                         .clickable {
                             onRescanLibrary()
                             Toast.makeText(context, "Biblioteca actualizada", Toast.LENGTH_SHORT).show()
@@ -565,7 +603,7 @@ fun NativeHomeScreen(
                                 state = songsListState,
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(top = 4.dp, bottom = 160.dp)
+                                contentPadding = PaddingValues(top = 4.dp, bottom = if (currentSong != null) 175.dp else 100.dp)
                             ) {
                                 items(availableSongs, key = { it.id }) { song ->
                                     val isCurrent = currentSong?.id == song.id
@@ -992,26 +1030,76 @@ fun NativeHomeScreen(
             }
         }
 
-        // 6. FLOATING MINIPLAYER (At bottom above nav bar)
+        // 6. FLOATING MINIPLAYER (Luminous Liquid Glass Capsule - Floating above Dock)
         if (currentSong != null) {
-            val miniPlayerBg = if (isGlass) (if (isDark) Color(0xF2141720) else Color(0xF2FFFFFF)) else (if (isDark) Color(0xFF1A1917) else Color(0xFFFAF7F0))
-            val miniPlayerBorder = if (isGlass) (if (isDark) Color(0x55FFFFFF) else Color(0xD0FFFFFF)) else (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD))
-            val miniPlayerTitle = textPrimary
-            val miniPlayerSub = textSecondary
-            val miniPlayBtnBg = activePillBg
-            val miniPlayBtnIcon = activePillText
+            val miniPlayerBrush = if (isGlass) {
+                if (isDark) {
+                    Brush.linearGradient(
+                        listOf(
+                            Color(0xF21E2A3E),
+                            Color(0xF0101724)
+                        )
+                    )
+                } else {
+                    Brush.linearGradient(
+                        listOf(
+                            Color(0xF8FFFFFF),
+                            Color(0xF0EDF2F7)
+                        )
+                    )
+                }
+            } else {
+                SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFFAF7F0))
+            }
+
+            val miniPlayerBorderBrush = if (isGlass) {
+                if (isDark) {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0x95FFFFFF),
+                            Color(0x30FFFFFF)
+                        )
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFFFFFFFF),
+                            Color(0x90CBD5E1)
+                        )
+                    )
+                }
+            } else {
+                SolidColor(borderCol)
+            }
+
+            val miniPlayerTitle = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else textPrimary
+            val miniPlayerSub = if (isGlass) (if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)) else textSecondary
+            val miniPlayBtnBrush = if (isGlass) {
+                if (isDark) {
+                    Brush.linearGradient(listOf(Color(0x45FFFFFF), Color(0x20FFFFFF)))
+                } else {
+                    Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+                }
+            } else {
+                SolidColor(if (isDark) Color.White else Color(0xFF121212))
+            }
+            val miniPlayBtnBorderBrush = if (isGlass) {
+                if (isDark) Brush.verticalGradient(listOf(Color(0x85FFFFFF), Color(0x25FFFFFF))) else SolidColor(Color.Transparent)
+            } else SolidColor(Color.Transparent)
+            val miniPlayBtnIcon = if (isGlass) (if (isDark) Color.White else Color.White) else (if (isDark) Color.Black else Color.White)
 
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = 16.dp, vertical = 72.dp)
+                    .navigationBarsPadding()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 86.dp)
                     .fillMaxWidth()
-                    .height(58.dp)
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(miniPlayerBg)
-                    .border(1.dp, miniPlayerBorder, RoundedCornerShape(100.dp))
+                    .height(60.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(miniPlayerBrush)
+                    .border(if (isGlass) 1.5.dp else 1.dp, miniPlayerBorderBrush, RoundedCornerShape(22.dp))
                     .clickable { onOpenPlayer() }
-                    .padding(horizontal = 10.dp),
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(
@@ -1062,7 +1150,8 @@ fun NativeHomeScreen(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(miniPlayBtnBg)
+                            .background(miniPlayBtnBrush)
+                            .border(if (isGlass) 1.dp else 0.dp, miniPlayBtnBorderBrush, CircleShape)
                             .clickable {
                                 if (isPlaying) audioPlayer.pause() else audioPlayer.resume()
                             },
@@ -1079,18 +1168,60 @@ fun NativeHomeScreen(
             }
         }
 
-        // 7. BOTTOM NAVIGATION BAR (Fixed)
+        // 7. BOTTOM NAVIGATION BAR (WhatsApp DELTA Style Floating Pill Dock)
         val navLabelMode = remember(sonoraPrefs) { sonoraPrefs.getNavLabelMode() }
-        val navBarBg = if (isGlass) (if (isDark) Color(0xF80E1118) else Color(0xF8F0F4F8)) else bgColor
+        val navDockBg = if (isGlass) {
+            if (isDark) {
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xF0182232),
+                        Color(0xF00D121B)
+                    )
+                )
+            } else {
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xF4FFFFFF),
+                        Color(0xEEF0F4F8)
+                    )
+                )
+            }
+        } else {
+            SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFFAF7F0))
+        }
+
+        val navDockBorder = if (isGlass) {
+            if (isDark) {
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0x85FFFFFF),
+                        Color(0x25FFFFFF)
+                    )
+                )
+            } else {
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFFFFFFFF),
+                        Color(0x80CBD5E1)
+                    )
+                )
+            }
+        } else {
+            SolidColor(borderCol)
+        }
+
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(start = 20.dp, end = 20.dp, bottom = 12.dp)
                 .fillMaxWidth()
-                .height(64.dp)
-                .background(navBarBg)
-                .border(1.dp, borderCol.copy(alpha = if (isGlass) 0.6f else 0.5f))
-                .clickable(enabled = false) {} // Intercept taps to prevent triggering underlying song items
-                .padding(horizontal = 4.dp),
+                .height(62.dp)
+                .clip(RoundedCornerShape(32.dp))
+                .background(navDockBg)
+                .border(if (isGlass) 1.2.dp else 1.dp, navDockBorder, RoundedCornerShape(32.dp))
+                .clickable(enabled = false) {} // Intercept taps
+                .padding(horizontal = 8.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -1236,9 +1367,17 @@ fun BottomNavItem(
         else -> isSelected
     }
 
+    val activePillIndicator = if (isSelected && isGlass) {
+        if (isDark) Color(0x30FFFFFF) else Color(0x250F172A)
+    } else if (isSelected) {
+        if (isDark) Color(0x20FFFFFF) else Color(0x15000000)
+    } else Color.Transparent
+
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(activePillIndicator)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

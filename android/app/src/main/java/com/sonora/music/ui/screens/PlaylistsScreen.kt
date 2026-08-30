@@ -108,11 +108,13 @@ fun PlaylistsScreen(
                     color = textSecondary
                 )
 
+                val newPlBtnBg = if (isGlass) (if (isDark) Color(0x28FFFFFF) else Color(0x75FFFFFF)) else subCardBg
+                val newPlBtnBorder = if (isGlass) (if (isDark) Color(0x45FFFFFF) else Color(0xB5FFFFFF)) else borderCol
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
-                        .background(subCardBg)
-                        .border(1.dp, borderCol, RoundedCornerShape(100.dp))
+                        .background(newPlBtnBg)
+                        .border(1.dp, newPlBtnBorder, RoundedCornerShape(100.dp))
                         .clickable { showCreateDialog = true }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
@@ -185,13 +187,14 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.Black),
+                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Reproducir",
-                        tint = Color.White,
+                        tint = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) Color.Black else Color.White),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -256,13 +259,14 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.Black),
+                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Reproducir",
-                        tint = Color.White,
+                        tint = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) Color.Black else Color.White),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -327,13 +331,14 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.Black),
+                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Reproducir",
-                        tint = Color.White,
+                        tint = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) Color.Black else Color.White),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -398,13 +403,14 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.Black),
+                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Reproducir",
-                        tint = Color.White,
+                        tint = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) Color.Black else Color.White),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -469,13 +475,14 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.Black),
+                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Reproducir",
-                        tint = Color.White,
+                        tint = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) Color.Black else Color.White),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -540,13 +547,14 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.Black),
+                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Reproducir",
-                        tint = Color.White,
+                        tint = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) Color.Black else Color.White),
                         modifier = Modifier.size(18.dp)
                     )
                 }

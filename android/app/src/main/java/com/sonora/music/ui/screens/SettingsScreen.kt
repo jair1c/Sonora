@@ -64,14 +64,16 @@ fun SettingsScreen(
         }
     }
 
-    val bgColor = if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA)
-    val cardBg = if (isDark) Color(0xFF161513) else Color(0xFFEAE5DA)
-    val subCardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFECE7DC)
-    val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
-    val textPrimary = if (isDark) Color(0xFFF5F2EA) else Color(0xFF121212)
-    val textSecondary = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
-    val activePillBg = if (isDark) Color.White else Color(0xFF121212)
-    val activePillText = if (isDark) Color.Black else Color.White
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val bgColor = if (isGlass) Color.Transparent else themeColors.bg
+    val cardBg = themeColors.cardBg
+    val subCardBg = themeColors.subCardBg
+    val borderCol = themeColors.borderCol
+    val textPrimary = themeColors.textPrimary
+    val textSecondary = themeColors.textSecondary
+    val activePillBg = themeColors.activePillBg
+    val activePillText = themeColors.activePillText
 
     var showSleepModal by remember { mutableStateOf(false) }
     var showStatsModal by remember { mutableStateOf(false) }
@@ -197,14 +199,25 @@ fun SettingsScreen(
         Pair("ajustes", "Ajustes")
     )
 
-    LazyColumn(
+    val baseSettingsBg = if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg
+    val backBtnBg = if (isGlass) (if (isDark) Color(0x28FFFFFF) else Color(0x75FFFFFF)) else (if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
+    val backBtnBorder = if (isGlass) (if (isDark) Color(0x45FFFFFF) else Color(0xB5FFFFFF)) else borderCol
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(bgColor)
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+            .background(baseSettingsBg)
     ) {
+        if (isGlass) {
+            com.sonora.music.ui.theme.LiquidGlassBackdrop(isDark = isDark)
+        }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp)
+        ) {
         // 1. Top Bar & Title
         item {
             Row(
@@ -217,8 +230,8 @@ fun SettingsScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
-                        .border(1.dp, borderCol, CircleShape)
+                        .background(backBtnBg)
+                        .border(1.dp, backBtnBorder, CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
@@ -1480,7 +1493,7 @@ fun SettingsScreen(
             audioPlayer.playSong(song, songs)
         }
     )
-
+    }
 }
 
 

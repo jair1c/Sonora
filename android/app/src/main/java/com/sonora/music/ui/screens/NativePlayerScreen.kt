@@ -157,10 +157,11 @@ fun NativePlayerScreen(
         label = "flower_scale"
     )
 
+    val basePlayerBg = if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(bgColor)
+            .background(basePlayerBg)
             .offset { IntOffset(0, offsetY.roundToInt()) }
             .pointerInput(Unit) {
                 detectVerticalDragGestures(

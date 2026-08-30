@@ -93,12 +93,19 @@ fun ArtistDetailScreen(
 
     val currentSong by audioPlayer.currentSong.collectAsState()
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(bgColor)
-            .padding(top = 16.dp)
+            .background(if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg)
     ) {
+        if (isGlass) {
+            com.sonora.music.ui.theme.LiquidGlassBackdrop(isDark = isDark)
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 16.dp)
+        ) {
         // Top Bar
         Row(
             modifier = Modifier
@@ -284,4 +291,5 @@ fun ArtistDetailScreen(
             item { Spacer(modifier = Modifier.height(100.dp)) }
         }
     }
+}
 }

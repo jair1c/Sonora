@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.animation.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -77,6 +78,7 @@ fun SettingsScreen(
 
     val sleepTimerSeconds by audioPlayer.sleepTimerSecondsLeft.collectAsState()
     var currentTheme by remember { mutableStateOf(sonoraPrefs.getThemeMode()) }
+    var currentGlassVariant by remember { mutableStateOf(sonoraPrefs.getGlassVariant()) }
     var petalRoundness by remember { mutableIntStateOf(sonoraPrefs.getPetalRoundness()) }
     var crossfadeSeconds by remember { mutableIntStateOf(sonoraPrefs.getCrossfadeSeconds()) }
     var playbackSpeed by remember { mutableFloatStateOf(sonoraPrefs.getPlaybackSpeed()) }
@@ -139,6 +141,7 @@ fun SettingsScreen(
                 val success = sonoraPrefs.importBackupJson(json)
                 if (success) {
                     currentTheme = sonoraPrefs.getThemeMode()
+                    currentGlassVariant = sonoraPrefs.getGlassVariant()
                     petalRoundness = sonoraPrefs.getPetalRoundness()
                     crossfadeSeconds = sonoraPrefs.getCrossfadeSeconds()
                     playbackSpeed = sonoraPrefs.getPlaybackSpeed()
@@ -379,17 +382,18 @@ fun SettingsScreen(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(
                         Pair("system", "Sistema"),
                         Pair("dark", "Oscuro"),
-                        Pair("light", "Claro")
+                        Pair("light", "Claro"),
+                        Pair("glass", "Liquid Glass 💎")
                     ).forEach { (mode, label) ->
                         val isSelected = currentTheme == mode
                         Box(
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(if (mode == "glass") 1.25f else 1f)
                                 .height(42.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (isSelected) activePillBg else subCardBg)
@@ -403,10 +407,69 @@ fun SettingsScreen(
                         ) {
                             Text(
                                 text = label,
-                                fontSize = 12.sp,
+                                fontSize = if (mode == "glass") 10.5.sp else 11.5.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) activePillText else textPrimary
                             )
+                        }
+                    }
+                }
+
+                // Sub-desglose dinámico de opciones Liquid Glass
+                AnimatedVisibility(
+                    visible = currentTheme == "glass",
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(subCardBg)
+                            .border(1.dp, borderCol, RoundedCornerShape(14.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "TONALIDAD DE CRISTAL TRANSLÚCIDO (APPLE)",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            color = textSecondary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf(
+                                Pair("system", "📱 Sistema"),
+                                Pair("dark", "🌑 Oscuro"),
+                                Pair("light", "☀️ Claro")
+                            ).forEach { (variant, label) ->
+                                val isVarSelected = currentGlassVariant == variant
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isVarSelected) activePillBg else cardBg)
+                                        .border(1.dp, if (isVarSelected) Color.Transparent else borderCol, RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            currentGlassVariant = variant
+                                            sonoraPrefs.setGlassVariant(variant)
+                                            onThemeChanged("glass")
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isVarSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isVarSelected) activePillText else textPrimary
+                                    )
+                                }
+                            }
                         }
                     }
                 }

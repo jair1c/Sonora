@@ -65,10 +65,12 @@ fun ArtistDetailScreen(
     onSongOptions: (Song) -> Unit,
     onOpenPlayer: () -> Unit = {}
 ) {
-    val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
-    val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
-    val textColor = if (isDark) Color.White else Color(0xFF121212)
-    val subtextColor = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val bgColor = if (isGlass) Color.Transparent else themeColors.bg
+    val cardBg = themeColors.cardBg
+    val textColor = themeColors.textPrimary
+    val subtextColor = themeColors.textSecondary
 
     val artistSongs = remember(artistName, allSongs) {
         allSongs.filter { it.artist.equals(artistName, ignoreCase = true) }

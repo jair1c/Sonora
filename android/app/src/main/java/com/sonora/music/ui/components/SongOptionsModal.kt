@@ -70,11 +70,13 @@ fun SongOptionsModal(
     onNavigateToAlbum: (String) -> Unit,
     onBlacklistFolder: (String) -> Unit
 ) {
-    val bgCard = if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA)
-    val cardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFEAE5DA)
-    val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
-    val textColor = if (isDark) Color(0xFFF5F2EA) else Color(0xFF121212)
-    val subtextColor = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val bgCard = if (isGlass) (if (isDark) Color(0x351E293B) else Color(0xCCFFFFFF)) else (if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA))
+    val cardBg = themeColors.subCardBg
+    val borderCol = themeColors.borderCol
+    val textColor = themeColors.textPrimary
+    val subtextColor = themeColors.textSecondary
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showDetailsDialog by remember { mutableStateOf(false) }

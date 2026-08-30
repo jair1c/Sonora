@@ -43,6 +43,9 @@ import com.sonora.music.ui.screens.NativePlayerScreen
 import com.sonora.music.ui.screens.SettingsScreen
 import com.sonora.music.ui.screens.WelcomeScreen
 import com.sonora.music.ui.theme.SonoraTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.collectAsState
+import com.sonora.music.ui.theme.LiquidGlassBackdrop
 import kotlinx.coroutines.launch
 
 class SonoraNativeActivity : ComponentActivity() {
@@ -121,14 +124,31 @@ class SonoraNativeActivity : ComponentActivity() {
         pendingShortcutAction = intent?.action
 
         setContent {
+            val prefsRevision by sonoraPrefs.prefsRevision.collectAsState()
             var currentThemeMode by remember { mutableStateOf(sonoraPrefs.getThemeMode()) }
-            val isDark = when (currentThemeMode) {
-                "dark" -> true
-                "light" -> false
-                else -> isSystemInDarkTheme()
+            var currentGlassVariant by remember { mutableStateOf(sonoraPrefs.getGlassVariant()) }
+
+            LaunchedEffect(prefsRevision) {
+                currentThemeMode = sonoraPrefs.getThemeMode()
+                currentGlassVariant = sonoraPrefs.getGlassVariant()
             }
 
-            SonoraTheme(darkTheme = isDark) {
+            val isGlass = currentThemeMode == "glass"
+            val isDark = if (isGlass) {
+                when (currentGlassVariant) {
+                    "dark" -> true
+                    "light" -> false
+                    else -> isSystemInDarkTheme()
+                }
+            } else {
+                when (currentThemeMode) {
+                    "dark" -> true
+                    "light" -> false
+                    else -> isSystemInDarkTheme()
+                }
+            }
+
+            SonoraTheme(darkTheme = isDark, isGlass = isGlass) {
                 val scope = rememberCoroutineScope()
                 val cachedInitial = remember { sonoraPrefs.getCachedSongs() }
                 var songList by remember { mutableStateOf(cachedInitial) }
@@ -183,9 +203,14 @@ class SonoraNativeActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
-                        .navigationBarsPadding()
+                        .navigationBarsPadding(),
+                    color = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else androidx.compose.material3.MaterialTheme.colorScheme.background
                 ) {
-                    if (!hasSeenWelcome) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (isGlass) {
+                            LiquidGlassBackdrop(isDark = isDark)
+                        }
+                        if (!hasSeenWelcome) {
                         WelcomeScreen(
                             isDark = isDark,
                             onStart = {
@@ -261,7 +286,7 @@ class SonoraNativeActivity : ComponentActivity() {
                                 onBack = { isSettingsOpen = false },
                                 onOpenEqualizer = { isEqualizerOpen = true },
                                 onRescanLibrary = { loadSongs() },
-                                onThemeChanged = { mode -> currentThemeMode = mode }
+                                onThemeChanged = { mode -> currentThemeMode = mode; currentGlassVariant = sonoraPrefs.getGlassVariant() }
                             )
                         }
 
@@ -313,6 +338,7 @@ class SonoraNativeActivity : ComponentActivity() {
                                 }
                             )
                         }
+                    }
                     }
                 }
             }

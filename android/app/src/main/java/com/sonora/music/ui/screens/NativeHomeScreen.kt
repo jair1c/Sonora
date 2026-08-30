@@ -77,14 +77,16 @@ fun NativeHomeScreen(
 ) {
     val context = LocalContext.current
 
-    val bgColor = if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA)
-    val cardBg = if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA)
-    val subCardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFECE7DC)
-    val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
-    val textPrimary = if (isDark) Color(0xFFF5F2EA) else Color(0xFF121212)
-    val textSecondary = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
-    val activePillBg = if (isDark) Color.White else Color(0xFF121212)
-    val activePillText = if (isDark) Color.Black else Color.White
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val bgColor = if (isGlass) Color.Transparent else themeColors.bg
+    val cardBg = themeColors.cardBg
+    val subCardBg = themeColors.subCardBg
+    val borderCol = themeColors.borderCol
+    val textPrimary = themeColors.textPrimary
+    val textSecondary = themeColors.textSecondary
+    val activePillBg = themeColors.activePillBg
+    val activePillText = themeColors.activePillText
 
     var currentTab by remember { mutableStateOf(LibraryTab.CANCIONES) }
     var searchQuery by remember { mutableStateOf("") }
@@ -982,12 +984,12 @@ fun NativeHomeScreen(
 
         // 6. FLOATING MINIPLAYER (At bottom above nav bar)
         if (currentSong != null) {
-            val miniPlayerBg = if (isDark) Color(0xFF1A1917) else Color(0xFFFAF7F0)
-            val miniPlayerBorder = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
-            val miniPlayerTitle = if (isDark) Color.White else Color(0xFF121212)
-            val miniPlayerSub = if (isDark) Color(0xFFA19C93) else Color(0xFF75726B)
-            val miniPlayBtnBg = if (isDark) Color.White else Color(0xFF121212)
-            val miniPlayBtnIcon = if (isDark) Color.Black else Color.White
+            val miniPlayerBg = if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x95FFFFFF)) else (if (isDark) Color(0xFF1A1917) else Color(0xFFFAF7F0))
+            val miniPlayerBorder = if (isGlass) (if (isDark) Color(0x50FFFFFF) else Color(0xCCFFFFFF)) else (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD))
+            val miniPlayerTitle = textPrimary
+            val miniPlayerSub = textSecondary
+            val miniPlayBtnBg = activePillBg
+            val miniPlayBtnIcon = activePillText
 
             Box(
                 modifier = Modifier
@@ -1069,13 +1071,14 @@ fun NativeHomeScreen(
 
         // 7. BOTTOM NAVIGATION BAR (Fixed)
         val navLabelMode = remember(sonoraPrefs) { sonoraPrefs.getNavLabelMode() }
+        val navBarBg = if (isGlass) (if (isDark) Color(0x28FFFFFF) else Color(0x90FFFFFF)) else bgColor
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(64.dp)
-                .background(bgColor)
-                .border(1.dp, borderCol.copy(alpha = 0.5f))
+                .background(navBarBg)
+                .border(1.dp, borderCol.copy(alpha = if (isGlass) 0.8f else 0.5f))
                 .clickable(enabled = false) {} // Intercept taps to prevent triggering underlying song items
                 .padding(horizontal = 4.dp),
             contentAlignment = Alignment.Center

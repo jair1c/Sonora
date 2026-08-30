@@ -35,7 +35,8 @@ class SonoraPreferences(private val context: Context) {
         private const val KEY_LAST_SONG_ID = "sonora_last_song_id"
         private const val KEY_LAST_POSITION_MS = "sonora_last_position_ms"
         private const val KEY_LAST_QUEUE_IDS = "sonora_last_queue_ids"
-        private const val KEY_THEME_MODE = "sonora_theme_mode" // "system", "dark", "light"
+        private const val KEY_THEME_MODE = "sonora_theme_mode" // "system", "dark", "light", "glass"
+        private const val KEY_GLASS_VARIANT = "sonora_glass_variant" // "system", "dark", "light"
         private const val KEY_SORT_MODE = "sonora_sort_mode"
         private const val KEY_EQ_PRESET = "sonora_eq_preset"
         private const val KEY_BASS_BOOST = "sonora_bass_boost_level"
@@ -332,7 +333,10 @@ class SonoraPreferences(private val context: Context) {
 
     // --- SETTINGS (Theme, Equalizer, Welcome) ---
     fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "system") ?: "system"
-    fun setThemeMode(mode: String) = prefs.edit().putString(KEY_THEME_MODE, mode).apply()
+    fun setThemeMode(mode: String) { prefs.edit().putString(KEY_THEME_MODE, mode).apply(); notifyPrefsChanged() }
+
+    fun getGlassVariant(): String = prefs.getString(KEY_GLASS_VARIANT, "dark") ?: "dark"
+    fun setGlassVariant(variant: String) { prefs.edit().putString(KEY_GLASS_VARIANT, variant).apply(); notifyPrefsChanged() }
 
     fun getEqualizerPreset(): Int = prefs.getInt(KEY_EQ_PRESET, 0)
     fun setEqualizerPreset(preset: Int) = prefs.edit().putInt(KEY_EQ_PRESET, preset).apply()
@@ -350,6 +354,7 @@ class SonoraPreferences(private val context: Context) {
         root.put("exportedAt", System.currentTimeMillis())
         // Appearance
         root.put("themeMode", getThemeMode())
+        root.put("glassVariant", getGlassVariant())
         root.put("petalRoundness", getPetalRoundness())
         // Playback
         root.put("crossfadeSeconds", getCrossfadeSeconds())
@@ -407,6 +412,7 @@ class SonoraPreferences(private val context: Context) {
 
             // Appearance
             if (root.has("themeMode")) editor.putString(KEY_THEME_MODE, root.getString("themeMode"))
+            if (root.has("glassVariant")) editor.putString(KEY_GLASS_VARIANT, root.getString("glassVariant"))
             if (root.has("petalRoundness")) editor.putInt(KEY_PETAL_ROUNDNESS, root.getInt("petalRoundness"))
             // Playback
             if (root.has("crossfadeSeconds")) editor.putInt(KEY_CROSSFADE_SECONDS, root.getInt("crossfadeSeconds"))

@@ -39,14 +39,16 @@ fun PlaylistsScreen(
 ) {
     val context = LocalContext.current
 
-    val bgColor = if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA)
-    val cardBg = if (isDark) Color(0xFF161513) else Color(0xFFEAE5DA)
-    val subCardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFECE7DC)
-    val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
-    val textPrimary = if (isDark) Color(0xFFF5F2EA) else Color(0xFF121212)
-    val textSecondary = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
-    val activePillBg = if (isDark) Color.White else Color(0xFF121212)
-    val activePillText = if (isDark) Color.Black else Color.White
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val bgColor = if (isGlass) Color.Transparent else themeColors.bg
+    val cardBg = themeColors.cardBg
+    val subCardBg = themeColors.subCardBg
+    val borderCol = themeColors.borderCol
+    val textPrimary = themeColors.textPrimary
+    val textSecondary = themeColors.textSecondary
+    val activePillBg = themeColors.activePillBg
+    val activePillText = themeColors.activePillText
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }

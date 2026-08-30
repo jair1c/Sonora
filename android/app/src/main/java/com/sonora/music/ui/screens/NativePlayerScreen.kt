@@ -98,9 +98,13 @@ fun NativePlayerScreen(
     },
     onDismiss: () -> Unit
 ) {
-    val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
-    val textColor = if (isDark) Color.White else Color(0xFF121212)
-    val subtextColor = if (isDark) Color(0xFFA19C93) else Color(0xFF6B6760)
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val bgColor = if (isGlass) Color.Transparent else themeColors.bg
+    val cardBg = themeColors.cardBg
+    val borderCol = themeColors.borderCol
+    val textColor = themeColors.textPrimary
+    val subtextColor = themeColors.textSecondary
 
     val currentSong by audioPlayer.currentSong.collectAsState()
     val isPlaying by audioPlayer.isPlaying.collectAsState()
@@ -670,6 +674,11 @@ private fun PlaybackControlsDock(
     bgColor: Color,
     audioPlayer: com.sonora.music.service.SonoraAudioPlayer
 ) {
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val cardBg = themeColors.cardBg
+    val borderCol = themeColors.borderCol
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -765,6 +774,11 @@ private fun PlaybackControlsCircles(
     bgColor: Color,
     audioPlayer: com.sonora.music.service.SonoraAudioPlayer
 ) {
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val cardBg = themeColors.cardBg
+    val borderCol = themeColors.borderCol
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -797,8 +811,8 @@ private fun PlaybackControlsCircles(
             modifier = Modifier
                 .size(62.dp)
                 .clip(CircleShape)
-                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
+                .background(cardBg)
+                .border(1.dp, borderCol, CircleShape)
                 .clickable { audioPlayer.prevTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -814,14 +828,14 @@ private fun PlaybackControlsCircles(
             modifier = Modifier
                 .size(86.dp)
                 .clip(CircleShape)
-                .background(textColor)
+                .background(if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else textColor)
                 .clickable { audioPlayer.togglePlay() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                tint = bgColor,
+                tint = if (isGlass) (if (isDark) Color(0xFF0A0C10) else Color.White) else (if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA)),
                 modifier = Modifier.size(46.dp)
             )
         }
@@ -830,8 +844,8 @@ private fun PlaybackControlsCircles(
             modifier = Modifier
                 .size(62.dp)
                 .clip(CircleShape)
-                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
+                .background(cardBg)
+                .border(1.dp, borderCol, CircleShape)
                 .clickable { audioPlayer.nextTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -878,6 +892,11 @@ private fun PlaybackControlsOrganic(
     bgColor: Color,
     audioPlayer: com.sonora.music.service.SonoraAudioPlayer
 ) {
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val cardBg = themeColors.cardBg
+    val borderCol = themeColors.borderCol
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -979,6 +998,11 @@ private fun PlaybackControlsSquircle(
     bgColor: Color,
     audioPlayer: com.sonora.music.service.SonoraAudioPlayer
 ) {
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val cardBg = themeColors.cardBg
+    val borderCol = themeColors.borderCol
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1084,6 +1108,11 @@ private fun PlaybackControlsWaveform(
     bgColor: Color,
     audioPlayer: com.sonora.music.service.SonoraAudioPlayer
 ) {
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val cardBg = themeColors.cardBg
+    val borderCol = themeColors.borderCol
+
     Row(
         modifier = Modifier
             .fillMaxWidth()

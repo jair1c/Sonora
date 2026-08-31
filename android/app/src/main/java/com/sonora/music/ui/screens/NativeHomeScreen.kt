@@ -1476,7 +1476,7 @@ fun NativeHomeScreen(
 
             Column(
                 modifier = Modifier
-                    .padding(top = 276.dp, end = 20.dp)
+                    .padding(top = 268.dp, end = 20.dp)
                     .width(225.dp)
                     .clip(sortModalShape)
                     .then(

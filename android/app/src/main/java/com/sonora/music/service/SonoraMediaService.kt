@@ -83,6 +83,19 @@ class SonoraMediaService : MediaSessionService() {
         override fun getCurrentPosition(): Long = audioPlayer.currentPositionMs.value
         override fun getDuration(): Long = audioPlayer.durationMs.value
 
+        override fun getMediaMetadata(): androidx.media3.common.MediaMetadata {
+            val song = audioPlayer.currentSong.value
+            if (song != null) {
+                return androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(song.title)
+                    .setArtist(song.artist)
+                    .setAlbumTitle(song.album)
+                    .setArtworkUri(song.coverUri)
+                    .build()
+            }
+            return super.getMediaMetadata()
+        }
+
         override fun seekToNext() {
             audioPlayer.nextTrack(isManualSkip = true)
         }
@@ -361,6 +374,7 @@ class SonoraMediaService : MediaSessionService() {
         val notification = builder.build()
 
         try {
+            val notificationManager = NotificationManagerCompat.from(this)
             if (isPlaying) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     startForeground(
@@ -372,10 +386,6 @@ class SonoraMediaService : MediaSessionService() {
                     startForeground(NOTIFICATION_ID, notification)
                 }
             } else {
-                val notificationManager = NotificationManagerCompat.from(this)
-                if (notificationManager.areNotificationsEnabled()) {
-                    notificationManager.notify(NOTIFICATION_ID, notification)
-                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     stopForeground(STOP_FOREGROUND_DETACH)
                 } else {
@@ -383,7 +393,6 @@ class SonoraMediaService : MediaSessionService() {
                     stopForeground(false)
                 }
             }
-            val notificationManager = NotificationManagerCompat.from(this)
             if (notificationManager.areNotificationsEnabled()) {
                 notificationManager.notify(NOTIFICATION_ID, notification)
             }

@@ -8,6 +8,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.AudioAttributes as AndroidAudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Build
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -158,6 +160,90 @@ class SonoraAudioPlayer(private val context: Context) {
 
     private val _playlist = MutableStateFlow<List<Song>>(emptyList())
     val playlist = _playlist.asStateFlow()
+
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private var audioFocusRequest: AudioFocusRequest? = null
+    private var resumeOnFocusGain = false
+    private var isDucked = false
+
+    private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                resumeOnFocusGain = false
+                isDucked = false
+                pause(abandonFocus = true)
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                if (_isPlaying.value) {
+                    resumeOnFocusGain = true
+                    pause(abandonFocus = false)
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                if (_isPlaying.value) {
+                    isDucked = true
+                    try {
+                        activePlayer.volume = 0.2f
+                        if (isCrossfading) {
+                            standbyPlayer.volume = 0.2f
+                        }
+                    } catch (_: Exception) {}
+                }
+            }
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                if (isDucked) {
+                    isDucked = false
+                    try {
+                        activePlayer.volume = 1.0f
+                        if (isCrossfading) {
+                            standbyPlayer.volume = 1.0f
+                        }
+                    } catch (_: Exception) {}
+                }
+                if (resumeOnFocusGain) {
+                    resumeOnFocusGain = false
+                    resume()
+                }
+            }
+        }
+    }
+
+    private fun requestAudioFocus(): Boolean {
+        val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val playbackAttributes = AndroidAudioAttributes.Builder()
+                .setUsage(AndroidAudioAttributes.USAGE_MEDIA)
+                .setContentType(AndroidAudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(playbackAttributes)
+                .setAcceptsDelayedFocusGain(false)
+                .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                .build()
+            audioFocusRequest = request
+            audioManager.requestAudioFocus(request)
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                audioFocusChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN
+            )
+        }
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    fun abandonAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let {
+                audioManager.abandonAudioFocusRequest(it)
+                audioFocusRequest = null
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.abandonAudioFocus(audioFocusChangeListener)
+        }
+    }
+
 
     private val _isShuffle = MutableStateFlow(false)
     val isShuffle = _isShuffle.asStateFlow()
@@ -400,7 +486,8 @@ class SonoraAudioPlayer(private val context: Context) {
             }
         }
 
-                activePlayer.playWhenReady = true
+                requestAudioFocus()
+        activePlayer.playWhenReady = true
         activePlayer.prepare()
         activePlayer.play()
         startPositionTracking()
@@ -455,7 +542,8 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun resume() {
-                if (activePlayer.playbackState == Player.STATE_IDLE) {
+        requestAudioFocus()
+        if (activePlayer.playbackState == Player.STATE_IDLE) {
             activePlayer.prepare()
         } else if (activePlayer.playbackState == Player.STATE_ENDED) {
             activePlayer.seekTo(0L)
@@ -464,13 +552,22 @@ class SonoraAudioPlayer(private val context: Context) {
         activePlayer.playWhenReady = true
         activePlayer.play()
         _isPlaying.value = true
+        onStateInvalidated?.invoke()
         startPositionTracking()
     }
 
-    fun pause() {
+    fun pause(abandonFocus: Boolean = true) {
+        if (abandonFocus) {
+            resumeOnFocusGain = false
+            abandonAudioFocus()
+        }
         activePlayer.pause()
+        if (isCrossfading) {
+            standbyPlayer.pause()
+        }
         _isPlaying.value = false
-                savePlaybackState()
+        savePlaybackState()
+        onStateInvalidated?.invoke()
     }
 
     fun togglePlay() {
@@ -629,8 +726,9 @@ class SonoraAudioPlayer(private val context: Context) {
                 val t = step.toDouble() / steps.toDouble()
                 // Constant power equal-energy curve: cos(t * pi/2) for out, sin(t * pi/2) for in
                 val angle = t * (Math.PI / 2.0)
-                val volOut = Math.cos(angle).toFloat().coerceIn(0f, 1f)
-                val volIn = Math.sin(angle).toFloat().coerceIn(0f, 1f)
+                val mult = if (isDucked) 0.2f else 1.0f
+                val volOut = Math.cos(angle).toFloat().coerceIn(0f, 1f) * mult
+                val volIn = Math.sin(angle).toFloat().coerceIn(0f, 1f) * mult
                 try { fadingOutPlayer.volume = volOut } catch (_: Exception) {}
                 try { fadingInPlayer.volume = volIn } catch (_: Exception) {}
 
@@ -654,7 +752,7 @@ class SonoraAudioPlayer(private val context: Context) {
             }
 
             // 1. Promote fadingInPlayer to activePlayer FIRST
-            fadingInPlayer.volume = 1.0f
+            fadingInPlayer.volume = if (isDucked) 0.2f else 1.0f
             activePlayer = fadingInPlayer
             standbyPlayer = fadingOutPlayer
             _activePlayerFlow.value = activePlayer
@@ -849,12 +947,13 @@ class SonoraAudioPlayer(private val context: Context) {
     }
 
     fun release() {
+        abandonAudioFocus()
         crossfadeJob?.cancel()
         preloadJob?.cancel()
         preloadedSong = null
         cancelSleepTimer()
         stopPositionTracking()
-                visualizerManager.release()
+        visualizerManager.release()
         equalizerManager.release()
         try {
             player1.release()

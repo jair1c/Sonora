@@ -759,26 +759,49 @@ fun NativeHomeScreen(
                 }
         }
 
-        // 2. FLOATING TOP HEADER (DISTINCT GLASS CAPSULES & COMPACT HIERARCHY)
-        val topBtnBg = if (isDark) Color(0x351E293B) else Color(0x75FFFFFF)
+        // 2. FLOATING TOP HEADER (FULL-COVERAGE REAL-TIME HAZE BLUR PANEL)
+        val topHeaderGlassStyle = HazeStyle(
+            blurRadius = 26.dp,
+            tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.15f),
+            noiseFactor = 0.05f
+        )
+        val topHeaderBg = if (isDark) Color(0x351E293B) else Color(0x75FFFFFF)
+        val topBtnBg = if (isDark) Color(0x401E293B) else Color(0x80FFFFFF)
         val topBtnBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8)))
-        val headerFadeColor = if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg
 
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            headerFadeColor.copy(alpha = 0.96f),
-                            headerFadeColor.copy(alpha = 0.88f),
-                            headerFadeColor.copy(alpha = 0.60f),
-                            Color.Transparent
-                        )
-                    )
+                .then(
+                    if (isGlass) {
+                        Modifier
+                            .hazeChild(state = hazeState, shape = androidx.compose.ui.graphics.RectangleShape, style = topHeaderGlassStyle)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        topHeaderBg,
+                                        topHeaderBg.copy(alpha = if (isDark) 0.30f else 0.70f)
+                                    )
+                                )
+                            )
+                            .border(
+                                width = 1.dp,
+                                brush = Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.35f),
+                                        Color.White.copy(alpha = 0.08f)
+                                    )
+                                ),
+                                shape = androidx.compose.ui.graphics.RectangleShape
+                            )
+                    } else {
+                        Modifier
+                            .background(themeColors.bg)
+                            .border(1.dp, borderCol, androidx.compose.ui.graphics.RectangleShape)
+                    }
                 )
-                .padding(bottom = 8.dp)
+                .padding(bottom = 12.dp)
         ) {
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -790,7 +813,7 @@ fun NativeHomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left Brand / Back Circle Button (Distinct Glass Blur Capsule)
+                // Left Brand / Back Circle Button
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -798,7 +821,6 @@ fun NativeHomeScreen(
                         .then(
                             if (isGlass) {
                                 Modifier
-                                    .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
                                     .background(topBtnBg)
                                     .border(1.2.dp, topBtnBorder, CircleShape)
                             } else {
@@ -831,7 +853,7 @@ fun NativeHomeScreen(
                     color = textPrimary
                 )
 
-                // Right Circular Action Buttons (Distinct Glass Blur Capsules)
+                // Right Circular Action Buttons
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -844,7 +866,6 @@ fun NativeHomeScreen(
                             .then(
                                 if (isGlass) {
                                     Modifier
-                                        .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
                                         .background(topBtnBg)
                                         .border(1.2.dp, topBtnBorder, CircleShape)
                                 } else {
@@ -872,7 +893,6 @@ fun NativeHomeScreen(
                             .then(
                                 if (isGlass) {
                                     Modifier
-                                        .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
                                         .background(topBtnBg)
                                         .border(1.2.dp, if (sleepTimerSeconds != null) SolidColor(Color(0xFF10B981)) else topBtnBorder, CircleShape)
                                 } else {
@@ -900,7 +920,6 @@ fun NativeHomeScreen(
                             .then(
                                 if (isGlass) {
                                     Modifier
-                                        .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
                                         .background(topBtnBg)
                                         .border(1.2.dp, topBtnBorder, CircleShape)
                                 } else {
@@ -929,7 +948,6 @@ fun NativeHomeScreen(
                                 .then(
                                     if (isGlass) {
                                         Modifier
-                                            .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
                                             .background(topBtnBg)
                                             .border(1.2.dp, topBtnBorder, CircleShape)
                                     } else {
@@ -959,7 +977,6 @@ fun NativeHomeScreen(
                                 .then(
                                     if (isGlass) {
                                         Modifier
-                                            .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
                                             .background(topBtnBg)
                                             .border(1.2.dp, topBtnBorder, CircleShape)
                                     } else {
@@ -1016,7 +1033,6 @@ fun NativeHomeScreen(
                         .then(
                             if (isGlass) {
                                 Modifier
-                                    .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
                                     .background(topBtnBg)
                                     .border(1.2.dp, topBtnBorder, RoundedCornerShape(100.dp))
                             } else {
@@ -1054,7 +1070,7 @@ fun NativeHomeScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // 3. SEARCH BAR (Distinct Glass Capsule)
+            // 3. SEARCH BAR (Embedded Glass Pill)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1064,7 +1080,6 @@ fun NativeHomeScreen(
                     .then(
                         if (isGlass) {
                             Modifier
-                                .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
                                 .background(topBtnBg)
                                 .border(1.2.dp, topBtnBorder, RoundedCornerShape(100.dp))
                         } else {
@@ -1148,7 +1163,6 @@ fun NativeHomeScreen(
                                             .border(1.2.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.7f), Color.White.copy(alpha = 0.2f))), RoundedCornerShape(100.dp))
                                     } else {
                                         Modifier
-                                            .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
                                             .background(topBtnBg)
                                             .border(1.2.dp, topBtnBorder, RoundedCornerShape(100.dp))
                                     }

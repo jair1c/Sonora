@@ -1,4 +1,4 @@
-# 🌸 Sonora Music Player (v4.1.1)
+# 🌸 Sonora Music Player (v4.1.2)
 ### *Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android*
 
 ---
@@ -314,7 +314,7 @@ La transición entre canciones A → B ahora es completamente fluida, sin cortes
 
 ---
 
-## 🚀 Fase 16 — Backup/Restore por Archivo + Indicador de Batería Reactivo (v4.1.1)
+## 🚀 Fase 16 — Backup/Restore por Archivo + Indicador de Batería Reactivo (v4.1.2)
 
 ### Cambios
 
@@ -379,7 +379,7 @@ Ahora el indicador "Ilimitado" aparece automáticamente al volver desde los ajus
 
 ---
 
-## 🚀 Fase 17 — Crossfade sin Corte en Song B + Notificación en Tiempo Real (v4.1.1)
+## 🚀 Fase 17 — Crossfade sin Corte en Song B + Notificación en Tiempo Real (v4.1.2)
 
 ### Problema Detectado
 Después de la v3.5.1 (preloading de Song B), el corte se movió del inicio al final:
@@ -430,7 +430,7 @@ El guard `if (!isCrossfading) { player.volume = 1.0f }` previene que el listener
 
 ---
 
-## 🚀 Fase 18 — Crossfade Simétrico de Doble Reproductor + Fotos Reales de Artistas (v4.1.1)
+## 🚀 Fase 18 — Crossfade Simétrico de Doble Reproductor + Fotos Reales de Artistas (v4.1.2)
 
 ### 1. Crossfade Simétrico Sin Cortes (Symmetric Player Swapping)
 - **Problema anterior:** Al intentar mover Canción A entre reproductores o llamar `seekTo(nextIndex)` en el reproductor principal, ExoPlayer cortaba el buffer de Canción A provocando un micro-corte.

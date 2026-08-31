@@ -1471,12 +1471,12 @@ fun NativeHomeScreen(
             contentAlignment = Alignment.TopEnd
         ) {
             val sortModalShape = RoundedCornerShape(22.dp)
-            val sortGlassGlareBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x9094A3B8)))
-            val sortGlassBg = if (isDark) Color(0xF51E293B) else Color(0xF8FFFFFF)
+            val sortGlassGlareBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.35f)))
+            val sortGlassBg = if (isDark) Color(0x501E293B) else Color(0x75FFFFFF)
 
             Column(
                 modifier = Modifier
-                    .padding(top = 286.dp, end = 20.dp)
+                    .padding(top = 276.dp, end = 20.dp)
                     .width(225.dp)
                     .clip(sortModalShape)
                     .then(

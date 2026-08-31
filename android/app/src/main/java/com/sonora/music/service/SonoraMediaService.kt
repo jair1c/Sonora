@@ -77,12 +77,18 @@ class SonoraMediaService : MediaSessionService() {
             }
         }
 
+        override fun getPlayWhenReady(): Boolean = audioPlayer.isPlaying.value
+        override fun isPlaying(): Boolean = audioPlayer.isPlaying.value
+        override fun getPlaybackState(): Int = if (audioPlayer.currentSong.value != null) Player.STATE_READY else Player.STATE_IDLE
+        override fun getCurrentPosition(): Long = audioPlayer.currentPositionMs.value
+        override fun getDuration(): Long = audioPlayer.durationMs.value
+
         override fun seekToNext() {
-            audioPlayer.nextTrack()
+            audioPlayer.nextTrack(isManualSkip = true)
         }
 
         override fun seekToNextMediaItem() {
-            audioPlayer.nextTrack()
+            audioPlayer.nextTrack(isManualSkip = true)
         }
 
         override fun seekToPrevious() {
@@ -99,6 +105,10 @@ class SonoraMediaService : MediaSessionService() {
 
         override fun pause() {
             audioPlayer.pause()
+        }
+
+        override fun seekTo(positionMs: Long) {
+            audioPlayer.seekTo(positionMs)
         }
     }
 

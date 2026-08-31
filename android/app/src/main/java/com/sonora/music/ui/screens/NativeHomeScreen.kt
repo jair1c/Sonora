@@ -33,7 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -301,10 +303,30 @@ fun NativeHomeScreen(
                                             }
                                         }
 
+                                        val sortModalShape = RoundedCornerShape(20.dp)
+                                        val sortGlassGlareBorder = Brush.verticalGradient(
+                                            listOf(
+                                                Color.White.copy(alpha = 0.45f),
+                                                Color.White.copy(alpha = 0.10f)
+                                            )
+                                        )
+
                                         DropdownMenu(
                                             expanded = showSortDropdown,
                                             onDismissRequest = { showSortDropdown = false },
-                                            modifier = Modifier.background(cardBg)
+                                            modifier = Modifier
+                                                .clip(sortModalShape)
+                                                .then(
+                                                    if (isGlass) {
+                                                        Modifier
+                                                            .background(if (isDark) Color(0xF0141D2B) else Color(0xF6FFFFFF))
+                                                            .border(1.2.dp, sortGlassGlareBorder, sortModalShape)
+                                                    } else {
+                                                        Modifier
+                                                            .background(cardBg)
+                                                            .border(1.dp, borderCol, sortModalShape)
+                                                    }
+                                                )
                                         ) {
                                             listOf(
                                                 Pair(SortMode.TITLE_AZ, "Nombre (A → Z)"),
@@ -313,13 +335,38 @@ fun NativeHomeScreen(
                                                 Pair(SortMode.DATE_ADDED_DESC, "Fecha Más Reciente"),
                                                 Pair(SortMode.DURATION_DESC, "Mayor Duración")
                                             ).forEach { (mode, label) ->
+                                                val isSelected = sortMode == mode
                                                 DropdownMenuItem(
-                                                    text = { Text(label, color = textPrimary, fontSize = 12.sp) },
+                                                    text = {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = label,
+                                                                color = if (isSelected) (if (isDark) Color(0xFF38BDF8) else Color(0xFF2563EB)) else textPrimary,
+                                                                fontSize = 12.sp,
+                                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                            )
+                                                            if (isSelected) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Check,
+                                                                    contentDescription = null,
+                                                                    tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF2563EB),
+                                                                    modifier = Modifier.size(15.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                    },
                                                     onClick = {
                                                         sortMode = mode
                                                         sonoraPrefs.setSortMode(mode.name)
                                                         showSortDropdown = false
-                                                    }
+                                                    },
+                                                    modifier = if (isSelected) {
+                                                        Modifier.background(if (isDark) Color(0x2538BDF8) else Color(0x182563EB))
+                                                    } else Modifier
                                                 )
                                             }
                                         }
@@ -759,14 +806,14 @@ fun NativeHomeScreen(
                 }
         }
 
-        // 2. FLOATING TOP HEADER (FULL-COVERAGE REAL-TIME HAZE BLUR PANEL)
+        // 2. FLOATING TOP HEADER (ADAPTIVE TINTED GLASS & BOTTOM GLARE LINE ONLY)
         val topHeaderGlassStyle = HazeStyle(
             blurRadius = 26.dp,
-            tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.15f),
-            noiseFactor = 0.05f
+            tint = if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg.copy(alpha = 0.35f) else com.sonora.music.ui.theme.SonoraGlassLightBg.copy(alpha = 0.20f),
+            noiseFactor = 0.04f
         )
-        val topHeaderBg = if (isDark) Color(0x351E293B) else Color(0x75FFFFFF)
-        val topBtnBg = if (isDark) Color(0x401E293B) else Color(0x80FFFFFF)
+        val topHeaderBg = if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg.copy(alpha = 0.30f) else com.sonora.music.ui.theme.SonoraGlassLightBg.copy(alpha = 0.22f)
+        val topBtnBg = if (isDark) Color(0x351E293B) else Color(0x75FFFFFF)
         val topBtnBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8)))
 
         Column(
@@ -781,24 +828,41 @@ fun NativeHomeScreen(
                                 Brush.verticalGradient(
                                     listOf(
                                         topHeaderBg,
-                                        topHeaderBg.copy(alpha = if (isDark) 0.30f else 0.70f)
+                                        topHeaderBg.copy(alpha = if (isDark) 0.35f else 0.65f)
                                     )
                                 )
                             )
-                            .border(
-                                width = 1.dp,
-                                brush = Brush.verticalGradient(
-                                    listOf(
-                                        Color.White.copy(alpha = 0.35f),
-                                        Color.White.copy(alpha = 0.08f)
-                                    )
-                                ),
-                                shape = androidx.compose.ui.graphics.RectangleShape
-                            )
+                            .drawBehind {
+                                val strokeWidth = 1.dp.toPx()
+                                val y = size.height - strokeWidth / 2
+                                drawLine(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            (if (isDark) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.60f)),
+                                            (if (isDark) Color.White.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.80f)),
+                                            (if (isDark) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.60f)),
+                                            Color.Transparent
+                                        )
+                                    ),
+                                    start = Offset(0f, y),
+                                    end = Offset(size.width, y),
+                                    strokeWidth = strokeWidth
+                                )
+                            }
                     } else {
                         Modifier
                             .background(themeColors.bg)
-                            .border(1.dp, borderCol, androidx.compose.ui.graphics.RectangleShape)
+                            .drawBehind {
+                                val strokeWidth = 1.dp.toPx()
+                                val y = size.height - strokeWidth / 2
+                                drawLine(
+                                    color = borderCol,
+                                    start = Offset(0f, y),
+                                    end = Offset(size.width, y),
+                                    strokeWidth = strokeWidth
+                                )
+                            }
                     }
                 )
                 .padding(bottom = 12.dp)
@@ -1159,8 +1223,23 @@ fun NativeHomeScreen(
                                 if (isGlass) {
                                     if (isSelected) {
                                         Modifier
-                                            .background(if (isDark) Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF2563EB))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B))))
-                                            .border(1.2.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.7f), Color.White.copy(alpha = 0.2f))), RoundedCornerShape(100.dp))
+                                            .background(
+                                                if (isDark) {
+                                                    Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))
+                                                } else {
+                                                    Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+                                                }
+                                            )
+                                            .border(
+                                                1.2.dp,
+                                                Brush.verticalGradient(
+                                                    listOf(
+                                                        Color.White,
+                                                        Color.White.copy(alpha = if (isDark) 0.85f else 0.25f)
+                                                    )
+                                                ),
+                                                RoundedCornerShape(100.dp)
+                                            )
                                     } else {
                                         Modifier
                                             .background(topBtnBg)
@@ -1180,17 +1259,18 @@ fun NativeHomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            val pillActiveColor = if (isGlass && isSelected) (if (isDark) Color(0xFF0F172A) else Color.White) else (if (isSelected) activePillText else textPrimary)
                             Icon(
                                 imageVector = tab.icon,
                                 contentDescription = null,
-                                tint = if (isGlass && isSelected) Color.White else (if (isSelected) activePillText else textPrimary),
+                                tint = pillActiveColor,
                                 modifier = Modifier.size(15.dp)
                             )
                             Text(
                                 text = tab.label,
                                 fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isGlass && isSelected) Color.White else (if (isSelected) activePillText else textPrimary)
+                                color = pillActiveColor
                             )
                         }
                     }

@@ -71,12 +71,12 @@ fun AlbumDetailScreen(
     val textColor = themeColors.textPrimary
     val subtextColor = themeColors.textSecondary
     val backBtnBrush = if (isGlass) {
-        if (isDark) Brush.linearGradient(listOf(Color(0x3540567A), Color(0x181F2C40))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+        if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
     } else {
         SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
     }
     val backBtnBorderBrush = if (isGlass) {
-        if (isDark) Brush.verticalGradient(listOf(Color(0x75FFFFFF), Color(0x18FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+        if (isDark) Brush.verticalGradient(listOf(Color(0xB5FFFFFF), Color(0x30FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
     } else {
         SolidColor(themeColors.borderCol)
     }

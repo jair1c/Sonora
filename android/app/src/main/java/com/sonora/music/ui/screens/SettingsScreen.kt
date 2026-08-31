@@ -203,12 +203,12 @@ fun SettingsScreen(
 
     val baseSettingsBg = if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg
     val backBtnBrush = if (isGlass) {
-        if (isDark) Brush.linearGradient(listOf(Color(0x3540567A), Color(0x181F2C40))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+        if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
     } else {
         SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
     }
     val backBtnBorderBrush = if (isGlass) {
-        if (isDark) Brush.verticalGradient(listOf(Color(0x75FFFFFF), Color(0x18FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+        if (isDark) Brush.verticalGradient(listOf(Color(0xB5FFFFFF), Color(0x30FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
     } else {
         SolidColor(borderCol)
     }
@@ -251,18 +251,29 @@ fun SettingsScreen(
                     )
                 }
 
+                val versionBadgeBrush = if (isGlass) {
+                    if (isDark) Brush.linearGradient(listOf(Color(0x556080A8), Color(0x30385070))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+                } else {
+                    SolidColor(if (isDark) Color(0xFF1F1D1A) else Color(0xFFEAE5DA))
+                }
+                val versionBadgeBorder = if (isGlass) {
+                    if (isDark) Brush.verticalGradient(listOf(Color(0x95FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+                } else {
+                    SolidColor(borderCol)
+                }
+
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
-                        .background(if (isDark) Color(0xFF1F1D1A) else Color(0xFFEAE5DA))
-                        .border(1.dp, borderCol, RoundedCornerShape(100.dp))
+                        .background(versionBadgeBrush)
+                        .border(if (isGlass) 1.2.dp else 1.dp, versionBadgeBorder, RoundedCornerShape(100.dp))
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = "Sonora v$appVersionName • Offline",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = textSecondary
+                        color = textPrimary
                     )
                 }
             }
@@ -1523,11 +1534,23 @@ fun QuickActionCard(
 ) {
     val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
     val isGlass = themeColors.isGlass
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme() // or based on textPrimary brightness
-    val iconBg = if (isGlass) (if (textPrimary == Color.White) Color(0x35FFFFFF) else Color(0x200F172A)) else (if (textPrimary == Color.White) Color.White else Color.Black)
-    val iconTint = if (isGlass) (if (textPrimary == Color.White) Color.White else Color(0xFF0F172A)) else (if (textPrimary == Color.White) Color.Black else Color.White)
-    val badgeBg = if (isGlass) (if (textPrimary == Color.White) Color(0x35FFFFFF) else Color(0x200F172A)) else Color.Gray.copy(alpha = 0.2f)
-    val badgeText = if (isGlass) (if (textPrimary == Color.White) Color(0xFFF1F5F9) else Color(0xFF0F172A)) else textSecondary
+    val isDark = themeColors.isDark
+    
+    val iconBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))
+    } else {
+        SolidColor(if (isDark) Color.White else Color.Black)
+    }
+    val iconBorderBrush = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0x95FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))
+    } else {
+        SolidColor(Color.Transparent)
+    }
+    val iconTint = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) Color.Black else Color.White)
+    val badgeBg = if (isGlass) (if (isDark) Color(0x45FFFFFF) else Color(0x250F172A)) else Color.Gray.copy(alpha = 0.2f)
+    val badgeText = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else textSecondary
+    val cardTitle = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else textPrimary
+    val cardSub = if (isGlass) (if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)) else textSecondary
 
     Column(
         modifier = modifier
@@ -1547,8 +1570,8 @@ fun QuickActionCard(
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
-                    .background(iconBg)
-                    .border(if (isGlass) 1.dp else 0.dp, if (isGlass) borderCol else Color.Transparent, CircleShape),
+                    .background(iconBrush)
+                    .border(if (isGlass) 1.2.dp else 0.dp, iconBorderBrush, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -1564,7 +1587,7 @@ fun QuickActionCard(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
                         .background(badgeBg)
-                        .border(if (isGlass) 1.dp else 0.dp, if (isGlass) borderCol else Color.Transparent, RoundedCornerShape(100.dp))
+                        .border(if (isGlass) 1.dp else 0.dp, if (isGlass) Brush.verticalGradient(listOf(Color(0x70FFFFFF), Color(0x15FFFFFF))) else SolidColor(Color.Transparent), RoundedCornerShape(100.dp))
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
@@ -1584,14 +1607,14 @@ fun QuickActionCard(
                 text = title,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = textPrimary,
+                color = cardTitle,
                 maxLines = 1
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 fontSize = 10.sp,
-                color = textSecondary,
+                color = cardSub,
                 maxLines = 1
             )
         }

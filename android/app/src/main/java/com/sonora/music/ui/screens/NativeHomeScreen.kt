@@ -94,8 +94,8 @@ fun NativeHomeScreen(
         if (isDark) {
             Brush.linearGradient(
                 listOf(
-                    Color(0x3540567A),
-                    Color(0x181F2C40)
+                    Color(0x606080A8),
+                    Color(0x35385070)
                 )
             )
         } else {
@@ -114,8 +114,8 @@ fun NativeHomeScreen(
         if (isDark) {
             Brush.verticalGradient(
                 listOf(
-                    Color(0x75FFFFFF),
-                    Color(0x18FFFFFF)
+                    Color(0xB5FFFFFF),
+                    Color(0x30FFFFFF)
                 )
             )
         } else {
@@ -1037,15 +1037,15 @@ fun NativeHomeScreen(
                 if (isDark) {
                     Brush.linearGradient(
                         listOf(
-                            Color(0xFF1D2C40),
-                            Color(0xFF101826)
+                            Color(0xFF283C56),
+                            Color(0xFF1D2C40)
                         )
                     )
                 } else {
                     Brush.linearGradient(
                         listOf(
                             Color(0xFFFFFFFF),
-                            Color(0xFFE6EDF5)
+                            Color(0xFFE8EEF6)
                         )
                     )
                 }
@@ -1078,7 +1078,7 @@ fun NativeHomeScreen(
             val miniPlayerSub = if (isGlass) (if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)) else textSecondary
             val miniPlayBtnBrush = if (isGlass) {
                 if (isDark) {
-                    Brush.linearGradient(listOf(Color(0x55FFFFFF), Color(0x25FFFFFF)))
+                    Brush.linearGradient(listOf(Color(0x75FFFFFF), Color(0x40FFFFFF)))
                 } else {
                     Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))
                 }
@@ -1177,15 +1177,15 @@ fun NativeHomeScreen(
             if (isDark) {
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF1B283A),
-                        Color(0xFF0F1624)
+                        Color(0xFF263A52),
+                        Color(0xFF1B2A3E)
                     )
                 )
             } else {
                 Brush.verticalGradient(
                     listOf(
                         Color(0xFFFFFFFF),
-                        Color(0xFFE2E8F0)
+                        Color(0xFFE5ECF4)
                     )
                 )
             }

@@ -36,7 +36,7 @@ class SonoraMediaService : MediaSessionService() {
     private var playerObserverJob: Job? = null
 
     companion object {
-        const val NOTIFICATION_CHANNEL_ID = "sonora_music_playback"
+        const val NOTIFICATION_CHANNEL_ID = "sonora_playback_live_v4"
         const val NOTIFICATION_ID = 1001
 
         const val ACTION_PLAY = "com.sonora.app.ACTION_PLAY"
@@ -210,7 +210,7 @@ class SonoraMediaService : MediaSessionService() {
             val channel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID,
                 "Sonora Reproducción",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Controles de reproducción multimedia de Sonora"
                 setShowBadge(false)
@@ -313,7 +313,7 @@ class SonoraMediaService : MediaSessionService() {
             .setOngoing(isPlaying)
             .setShowWhen(false)
             .setSilent(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .addAction(R.drawable.ic_widget_prev, "Anterior", prevIntent)
             .addAction(
                 if (isPlaying) R.drawable.ic_widget_pause else R.drawable.ic_widget_play,

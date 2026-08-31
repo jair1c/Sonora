@@ -1422,8 +1422,8 @@ fun NativeHomeScreen(
                     if (isGlass) {
                         Modifier
                             .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
-                            .background(if (isDark) Color(0xD01E293B) else Color(0xF5FFFFFF))
-                            .border(1.2.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                            .background(if (isDark) Color(0x501E293B) else Color(0x75FFFFFF))
+                            .border(1.3.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
                     } else {
                         Modifier
                             .background(if (isDark) Color(0xFF1E293B) else Color(0xFFFFFFFF))
@@ -1476,7 +1476,7 @@ fun NativeHomeScreen(
 
             Column(
                 modifier = Modifier
-                    .padding(top = 222.dp, end = 20.dp)
+                    .padding(top = 286.dp, end = 20.dp)
                     .width(225.dp)
                     .clip(sortModalShape)
                     .then(

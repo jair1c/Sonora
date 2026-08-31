@@ -139,6 +139,8 @@ class SonoraAudioPlayer(private val context: Context) {
     private val _realAudioFormat = MutableStateFlow<AudioFormatDetails?>(null)
     val realAudioFormat = _realAudioFormat.asStateFlow()
 
+    var onStateInvalidated: (() -> Unit)? = null
+
     private val _playbackSpeed = MutableStateFlow(1.0f)
     val playbackSpeed = _playbackSpeed.asStateFlow()
 
@@ -639,6 +641,8 @@ class SonoraAudioPlayer(private val context: Context) {
                     sonoraPrefs.saveLastPlayback(nextSong.id, 0L, queue.map { it.id })
                     trackSongPlay(nextSong)
                     ensureMediaServiceStarted()
+                    onStateInvalidated?.invoke()
+                    onStateInvalidated?.invoke()
                     scope.launch(Dispatchers.IO) {
                         _realAudioFormat.value = AudioMetadataHelper.getAudioDetails(nextSong, context)
                         val lyrics = mediaRepo.getLyricsForSong(nextSong)
@@ -675,6 +679,7 @@ class SonoraAudioPlayer(private val context: Context) {
             preloadedSong = null
             isCrossfading = false
             _isPlaying.value = true
+            onStateInvalidated?.invoke()
             startPositionTracking()
         }
     }

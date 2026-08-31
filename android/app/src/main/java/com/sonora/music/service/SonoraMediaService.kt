@@ -10,15 +10,20 @@ import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.media.app.NotificationCompat.MediaStyle
-import androidx.media3.common.ForwardingPlayer
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.SimpleBasePlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionResult
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import com.sonora.app.R
 import com.sonora.music.SonoraNativeActivity
 import com.sonora.music.data.model.Song
@@ -31,9 +36,9 @@ import kotlinx.coroutines.launch
 class SonoraMediaService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
+    private var customPlayer: SonoraCustomPlayer? = null
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
     private var observerJob: Job? = null
-    private var playerObserverJob: Job? = null
 
     companion object {
         const val NOTIFICATION_CHANNEL_ID = "sonora_playback_live_v4"
@@ -47,81 +52,106 @@ class SonoraMediaService : MediaSessionService() {
         const val ACTION_STOP = "com.sonora.app.ACTION_STOP"
     }
 
-    private class SonoraForwardingPlayer(
-        private val delegatePlayer: Player,
+    class SonoraCustomPlayer(
         private val audioPlayer: SonoraAudioPlayer
-    ) : ForwardingPlayer(delegatePlayer) {
+    ) : SimpleBasePlayer(Looper.getMainLooper()) {
 
-        override fun getAvailableCommands(): Player.Commands {
-            return super.getAvailableCommands().buildUpon()
+        fun notifyStateChanged() {
+            invalidateState()
+        }
+
+        override fun getState(): State {
+            val currentSong = audioPlayer.currentSong.value
+            val isPlaying = audioPlayer.isPlaying.value
+            val pos = audioPlayer.currentPositionMs.value
+            val dur = audioPlayer.durationMs.value
+
+            val availableCommands = Player.Commands.Builder()
+                .add(Player.COMMAND_PLAY_PAUSE)
                 .add(Player.COMMAND_SEEK_TO_NEXT)
                 .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
                 .add(Player.COMMAND_SEEK_TO_PREVIOUS)
                 .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
-                .add(Player.COMMAND_PLAY_PAUSE)
-                .add(Player.COMMAND_STOP)
                 .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                .add(Player.COMMAND_STOP)
+                .add(Player.COMMAND_GET_CURRENT_MEDIA_ITEM)
+                .add(Player.COMMAND_GET_METADATA)
+                .add(Player.COMMAND_GET_TIMELINE)
                 .build()
-        }
 
-        override fun isCommandAvailable(command: Int): Boolean {
-            return when (command) {
-                Player.COMMAND_SEEK_TO_NEXT,
-                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
-                Player.COMMAND_SEEK_TO_PREVIOUS,
-                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
-                Player.COMMAND_PLAY_PAUSE,
-                Player.COMMAND_STOP,
-                Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM -> true
-                else -> super.isCommandAvailable(command)
-            }
-        }
+            val stateBuilder = State.Builder()
+                .setAvailableCommands(availableCommands)
+                .setPlayWhenReady(isPlaying, Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+                .setPlaybackState(if (currentSong != null) Player.STATE_READY else Player.STATE_IDLE)
 
-        override fun getPlayWhenReady(): Boolean = audioPlayer.isPlaying.value
-        override fun isPlaying(): Boolean = audioPlayer.isPlaying.value
-        override fun getPlaybackState(): Int = if (audioPlayer.currentSong.value != null) Player.STATE_READY else Player.STATE_IDLE
-        override fun getCurrentPosition(): Long = audioPlayer.currentPositionMs.value
-        override fun getDuration(): Long = audioPlayer.durationMs.value
-
-        override fun getMediaMetadata(): androidx.media3.common.MediaMetadata {
-            val song = audioPlayer.currentSong.value
-            if (song != null) {
-                return androidx.media3.common.MediaMetadata.Builder()
-                    .setTitle(song.title)
-                    .setArtist(song.artist)
-                    .setAlbumTitle(song.album)
-                    .setArtworkUri(song.coverUri)
+            if (currentSong != null) {
+                val mediaMetadata = MediaMetadata.Builder()
+                    .setTitle(currentSong.title)
+                    .setArtist(currentSong.artist)
+                    .setAlbumTitle(currentSong.album)
+                    .setArtworkUri(currentSong.coverUri)
                     .build()
+
+                val mediaItem = MediaItem.Builder()
+                    .setMediaId(currentSong.id.toString())
+                    .setUri(currentSong.contentUri)
+                    .setMediaMetadata(mediaMetadata)
+                    .build()
+
+                val mediaItemData = MediaItemData.Builder(mediaItem.mediaId)
+                    .setMediaItem(mediaItem)
+                    .setMediaMetadata(mediaMetadata)
+                    .setDurationUs(if (dur > 0) dur * 1000L else androidx.media3.common.C.TIME_UNSET)
+                    .build()
+
+                stateBuilder
+                    .setPlaylist(listOf(mediaItemData))
+                    .setCurrentMediaItemIndex(0)
+                    .setContentPositionMs(pos)
+                    .setPlaylistMetadata(mediaMetadata)
             }
-            return super.getMediaMetadata()
+
+            return stateBuilder.build()
         }
 
-        override fun seekToNext() {
-            audioPlayer.nextTrack(isManualSkip = true)
+        override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
+            if (playWhenReady) {
+                audioPlayer.resume()
+            } else {
+                audioPlayer.pause()
+            }
+            invalidateState()
+            return Futures.immediateVoidFuture()
         }
 
-        override fun seekToNextMediaItem() {
-            audioPlayer.nextTrack(isManualSkip = true)
+        override fun handleSeek(
+            mediaItemIndex: Int,
+            positionMs: Long,
+            seekCommand: Int
+        ): ListenableFuture<*> {
+            when (seekCommand) {
+                Player.COMMAND_SEEK_TO_NEXT,
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> {
+                    audioPlayer.nextTrack(isManualSkip = true)
+                }
+                Player.COMMAND_SEEK_TO_PREVIOUS,
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> {
+                    audioPlayer.prevTrack()
+                }
+                else -> {
+                    if (positionMs != androidx.media3.common.C.TIME_UNSET) {
+                        audioPlayer.seekTo(positionMs)
+                    }
+                }
+            }
+            invalidateState()
+            return Futures.immediateVoidFuture()
         }
 
-        override fun seekToPrevious() {
-            audioPlayer.prevTrack()
-        }
-
-        override fun seekToPreviousMediaItem() {
-            audioPlayer.prevTrack()
-        }
-
-        override fun play() {
-            audioPlayer.resume()
-        }
-
-        override fun pause() {
+        override fun handleStop(): ListenableFuture<*> {
             audioPlayer.pause()
-        }
-
-        override fun seekTo(positionMs: Long) {
-            audioPlayer.seekTo(positionMs)
+            invalidateState()
+            return Futures.immediateVoidFuture()
         }
     }
 
@@ -130,6 +160,11 @@ class SonoraMediaService : MediaSessionService() {
         createNotificationChannel()
 
         val audioPlayer = SonoraAudioPlayer.getInstance(applicationContext)
+        val player = SonoraCustomPlayer(audioPlayer)
+        customPlayer = player
+        audioPlayer.onStateInvalidated = {
+            customPlayer?.notifyStateChanged()
+        }
 
         val sessionActivityPendingIntent = PendingIntent.getActivity(
             this,
@@ -168,11 +203,13 @@ class SonoraMediaService : MediaSessionService() {
                     Player.COMMAND_SEEK_TO_NEXT,
                     Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> {
                         audioPlayer.nextTrack(isManualSkip = true)
+                        customPlayer?.notifyStateChanged()
                         return SessionResult.RESULT_SUCCESS
                     }
                     Player.COMMAND_SEEK_TO_PREVIOUS,
                     Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> {
                         audioPlayer.prevTrack()
+                        customPlayer?.notifyStateChanged()
                         return SessionResult.RESULT_SUCCESS
                     }
                 }
@@ -191,36 +228,27 @@ class SonoraMediaService : MediaSessionService() {
                         android.view.KeyEvent.KEYCODE_MEDIA_PAUSE -> audioPlayer.pause()
                         android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
                         android.view.KeyEvent.KEYCODE_HEADSETHOOK -> audioPlayer.togglePlay()
-                        android.view.KeyEvent.KEYCODE_MEDIA_NEXT -> audioPlayer.nextTrack()
+                        android.view.KeyEvent.KEYCODE_MEDIA_NEXT -> audioPlayer.nextTrack(isManualSkip = true)
                         android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS -> audioPlayer.prevTrack()
                     }
+                    customPlayer?.notifyStateChanged()
                     return true
                 }
                 return super.onMediaButtonEvent(session, controllerInfo, intent)
             }
         }
 
-        val initialForwardingPlayer = SonoraForwardingPlayer(audioPlayer.exoPlayer, audioPlayer)
-
-        mediaSession = MediaSession.Builder(this, initialForwardingPlayer)
+        mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivityPendingIntent)
             .setCallback(callback)
             .setId("SonoraMediaSession")
             .build()
 
-        playerObserverJob = serviceScope.launch {
-            audioPlayer.activePlayerFlow.collect { activeExo ->
-                try {
-                    val wrapped = SonoraForwardingPlayer(activeExo, audioPlayer)
-                    mediaSession?.setPlayer(wrapped)
-                } catch (_: Throwable) {}
-            }
-        }
-
         observerJob = serviceScope.launch {
             combine(audioPlayer.currentSong, audioPlayer.isPlaying) { song, isPlaying ->
                 Pair(song, isPlaying)
             }.collect { (song, isPlaying) ->
+                customPlayer?.notifyStateChanged()
                 updateNotification(song, isPlaying)
             }
         }
@@ -254,7 +282,7 @@ class SonoraMediaService : MediaSessionService() {
             ACTION_PLAY -> audioPlayer.resume()
             ACTION_PAUSE -> audioPlayer.pause()
             ACTION_TOGGLE -> audioPlayer.togglePlay()
-            ACTION_NEXT -> audioPlayer.nextTrack()
+            ACTION_NEXT -> audioPlayer.nextTrack(isManualSkip = true)
             ACTION_PREV -> audioPlayer.prevTrack()
             ACTION_STOP -> {
                 audioPlayer.pause()
@@ -269,6 +297,7 @@ class SonoraMediaService : MediaSessionService() {
             }
         }
 
+        customPlayer?.notifyStateChanged()
         updateNotification(audioPlayer.currentSong.value, audioPlayer.isPlaying.value)
         return START_STICKY
     }
@@ -407,9 +436,12 @@ class SonoraMediaService : MediaSessionService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        playerObserverJob?.cancel()
+        val audioPlayer = SonoraAudioPlayer.getInstance(applicationContext)
+        audioPlayer.onStateInvalidated = null
         observerJob?.cancel()
         mediaSession?.release()
         mediaSession = null
+        customPlayer?.release()
+        customPlayer = null
     }
 }

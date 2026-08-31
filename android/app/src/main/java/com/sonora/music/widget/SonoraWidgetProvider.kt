@@ -44,12 +44,28 @@ class SonoraWidgetProvider : AppWidgetProvider() {
                 val playPauseIcon = if (isPlaying) R.drawable.ic_widget_pause else R.drawable.ic_widget_play
                 views.setImageViewResource(R.id.widget_btn_play_pause, playPauseIcon)
 
-                // Load artwork if available
+                // Load downsampled artwork (target 256x256 max) to prevent memory bloat and TransactionTooLargeException
                 var artBitmap: Bitmap? = null
                 song?.coverUri?.let { uri ->
                     try {
+                        val boundsOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                         context.contentResolver.openInputStream(uri)?.use { stream ->
-                            artBitmap = BitmapFactory.decodeStream(stream)
+                            BitmapFactory.decodeStream(stream, null, boundsOpts)
+                        }
+                        if (boundsOpts.outWidth > 0 && boundsOpts.outHeight > 0) {
+                            var sampleSize = 1
+                            val halfHeight = boundsOpts.outHeight / 2
+                            val halfWidth = boundsOpts.outWidth / 2
+                            while ((halfHeight / sampleSize) >= 256 && (halfWidth / sampleSize) >= 256) {
+                                sampleSize *= 2
+                            }
+                            val decodeOpts = BitmapFactory.Options().apply {
+                                inSampleSize = sampleSize
+                                inPreferredConfig = Bitmap.Config.ARGB_8888
+                            }
+                            context.contentResolver.openInputStream(uri)?.use { stream ->
+                                artBitmap = BitmapFactory.decodeStream(stream, null, decodeOpts)
+                            }
                         }
                     } catch (_: Exception) {}
                 }

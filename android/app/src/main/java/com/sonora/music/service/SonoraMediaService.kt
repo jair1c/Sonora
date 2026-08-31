@@ -27,6 +27,8 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.sonora.app.R
 import com.sonora.music.SonoraNativeActivity
 import com.sonora.music.data.model.Song
+import com.sonora.music.widget.SonoraWidgetProvider
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -250,10 +252,14 @@ class SonoraMediaService : MediaSessionService() {
             }.collect { (song, isPlaying) ->
                 customPlayer?.notifyStateChanged()
                 updateNotification(song, isPlaying)
+                SonoraWidgetProvider.updateAllWidgets(applicationContext, song, isPlaying)
             }
         }
 
-        updateNotification(audioPlayer.currentSong.value, audioPlayer.isPlaying.value)
+        serviceScope.launch {
+            updateNotification(audioPlayer.currentSong.value, audioPlayer.isPlaying.value)
+            SonoraWidgetProvider.updateAllWidgets(applicationContext, audioPlayer.currentSong.value, audioPlayer.isPlaying.value)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -298,11 +304,44 @@ class SonoraMediaService : MediaSessionService() {
         }
 
         customPlayer?.notifyStateChanged()
-        updateNotification(audioPlayer.currentSong.value, audioPlayer.isPlaying.value)
+        serviceScope.launch {
+            updateNotification(audioPlayer.currentSong.value, audioPlayer.isPlaying.value)
+            SonoraWidgetProvider.updateAllWidgets(applicationContext, audioPlayer.currentSong.value, audioPlayer.isPlaying.value)
+        }
         return START_STICKY
     }
 
-    private fun updateNotification(song: Song?, isPlaying: Boolean) {
+    private suspend fun loadDownsampledArtwork(uri: android.net.Uri?, targetSize: Int = 256): Bitmap? {
+        if (uri == null) return null
+        return withContext(Dispatchers.IO) {
+            try {
+                val boundsOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    BitmapFactory.decodeStream(stream, null, boundsOpts)
+                }
+                if (boundsOpts.outWidth <= 0 || boundsOpts.outHeight <= 0) return@withContext null
+
+                var sampleSize = 1
+                val halfHeight = boundsOpts.outHeight / 2
+                val halfWidth = boundsOpts.outWidth / 2
+                while ((halfHeight / sampleSize) >= targetSize && (halfWidth / sampleSize) >= targetSize) {
+                    sampleSize *= 2
+                }
+
+                val decodeOpts = BitmapFactory.Options().apply {
+                    inSampleSize = sampleSize
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                }
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    BitmapFactory.decodeStream(stream, null, decodeOpts)
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
+    private suspend fun updateNotification(song: Song?, isPlaying: Boolean) {
         val title = song?.title ?: "Sonora Music"
         val artist = song?.artist ?: "Reproductor de Música"
         val album = song?.album ?: ""
@@ -344,14 +383,9 @@ class SonoraMediaService : MediaSessionService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        var coverBitmap: Bitmap? = null
-        if (song != null && song.coverUri != null) {
-            try {
-                contentResolver.openInputStream(song.coverUri)?.use { stream ->
-                    coverBitmap = BitmapFactory.decodeStream(stream)
-                }
-            } catch (_: Exception) {}
-        }
+        val coverBitmap: Bitmap? = if (song != null && song.coverUri != null) {
+            loadDownsampledArtwork(song.coverUri, targetSize = 256)
+        } else null
 
         val builder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_sonora)

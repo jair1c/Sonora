@@ -104,13 +104,14 @@ fun SongOptionsModal(
         )
     )
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = Color.Transparent,
-        contentColor = textColor,
-        scrimColor = Color.Black.copy(alpha = 0.65f),
-        dragHandle = null
+    androidx.activity.compose.BackHandler(onBack = onDismiss)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.55f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.BottomCenter
     ) {
         Column(
             modifier = Modifier

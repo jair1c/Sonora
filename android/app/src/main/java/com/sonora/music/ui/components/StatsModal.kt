@@ -25,8 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+
 import coil.compose.AsyncImage
 import com.sonora.music.data.local.SonoraPreferences
 import com.sonora.music.data.model.Song
@@ -70,10 +69,7 @@ fun StatsModal(
     val minutes: Int = totalMinutes % 60
     val topTracks: List<Song> = songsWithPlays.filter { it.playCount > 0 }.sortedByDescending { it.playCount }.take(5)
 
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    androidx.activity.compose.BackHandler(onBack = onClose)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -308,4 +304,3 @@ fun StatsModal(
             }
         }
     }
-}

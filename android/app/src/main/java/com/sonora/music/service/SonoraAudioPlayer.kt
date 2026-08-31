@@ -66,7 +66,7 @@ class SonoraAudioPlayer(private val context: Context) {
 
         return ExoPlayer.Builder(context, renderersFactory)
             .setMediaSourceFactory(mediaSourceFactory)
-            .setAudioAttributes(audioAttributes, true)
+            .setAudioAttributes(audioAttributes, false)
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .build().apply {
@@ -705,7 +705,7 @@ class SonoraAudioPlayer(private val context: Context) {
         progressJob = scope.launch {
             var lastTickTime = System.currentTimeMillis()
             while (isActive) {
-                val currentPlayer = if (isCrossfading) standbyPlayer else activePlayer
+                val currentPlayer = if (isCrossfading && _currentSong.value?.id == preloadedSong?.id) standbyPlayer else activePlayer
                 val pos = currentPlayer.currentPosition.coerceAtLeast(0L)
                 val dur = currentPlayer.duration.coerceAtLeast(0L)
                 _currentPositionMs.value = pos

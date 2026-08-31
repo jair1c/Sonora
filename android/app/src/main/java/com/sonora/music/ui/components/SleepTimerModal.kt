@@ -24,8 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,10 +66,7 @@ fun SleepTimerModal(
         Pair("Al terminar canción actual", -1)
     )
 
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    androidx.activity.compose.BackHandler(onBack = onClose)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -263,4 +259,3 @@ fun SleepTimerModal(
             }
         }
     }
-}

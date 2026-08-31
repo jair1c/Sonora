@@ -17,13 +17,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeChild
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+
 
 @Composable
 fun PlaybackSpeedModal(
@@ -39,20 +42,32 @@ fun PlaybackSpeedModal(
     var speedState by remember(isOpen, currentSpeed) { mutableStateOf(currentSpeed) }
     var pitchState by remember(isOpen, currentPitch) { mutableStateOf(currentPitch) }
 
-    val bgCard = if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA)
-    val borderCol = if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)
-    val textPrimary = if (isDark) Color(0xFFF5F2EA) else Color(0xFF121212)
-    val textSecondary = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
-    val subCardBg = if (isDark) Color(0xFF1F1D1A) else Color(0xFFEAE5DA)
-    val activePillBg = if (isDark) Color.White else Color(0xFF121212)
-    val activePillText = if (isDark) Color.Black else Color.White
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { dev.chrisbanes.haze.HazeState() }
+    val modalShape = RoundedCornerShape(28.dp)
+    val modalGlassStyle = dev.chrisbanes.haze.HazeStyle(
+        blurRadius = 28.dp,
+        tint = if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg.copy(alpha = 0.35f) else com.sonora.music.ui.theme.SonoraGlassLightBg.copy(alpha = 0.20f),
+        noiseFactor = 0.05f
+    )
+    val modalGlareBorder = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = if (isDark) 0.50f else 0.90f),
+            Color.White.copy(alpha = 0.10f)
+        )
+    )
+    val bgCard = themeColors.cardBg
+    val borderCol = themeColors.borderCol
+    val textPrimary = themeColors.textPrimary
+    val textSecondary = themeColors.textSecondary
+    val subCardBg = themeColors.subCardBg
+    val activePillBg = themeColors.activePillBg
+    val activePillText = themeColors.activePillText
 
     val speedPresets = listOf(0.5f, 0.75f, 0.9f, 1.0f, 1.1f, 1.25f, 1.5f, 2.0f)
 
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    androidx.activity.compose.BackHandler(onBack = onClose)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -63,9 +78,19 @@ fun PlaybackSpeedModal(
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(bgCard)
-                    .border(1.dp, borderCol, RoundedCornerShape(28.dp))
+                    .clip(modalShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = modalShape, style = modalGlassStyle)
+                                .background(if (isDark) Color(0xDC141D2B) else Color(0xEAFFFFFF))
+                                .border(1.2.dp, modalGlareBorder, modalShape)
+                        } else {
+                            Modifier
+                                .background(bgCard)
+                                .border(1.dp, borderCol, modalShape)
+                        }
+                    )
                     .clickable(enabled = false) {}
                     .padding(24.dp)
             ) {
@@ -334,4 +359,3 @@ fun PlaybackSpeedModal(
             }
         }
     }
-}

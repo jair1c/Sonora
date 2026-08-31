@@ -303,67 +303,90 @@ fun NativeHomeScreen(
                                             }
                                         }
 
-                                        val sortModalShape = RoundedCornerShape(22.dp)
-                                        val sortGlassGlareBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8)))
-
-                                        DropdownMenu(
-                                            expanded = showSortDropdown,
-                                            onDismissRequest = { showSortDropdown = false },
-                                            modifier = Modifier
-                                                .clip(sortModalShape)
-                                                .then(
-                                                    if (isGlass) {
-                                                        Modifier
-                                                            .background(if (isDark) Color(0xEB1E293B) else Color(0xF2FFFFFF))
-                                                            .border(1.2.dp, sortGlassGlareBorder, sortModalShape)
-                                                    } else {
-                                                        Modifier
-                                                            .background(cardBg)
-                                                            .border(1.dp, borderCol, sortModalShape)
-                                                    }
-                                                )
-                                                .padding(vertical = 4.dp)
+                                        androidx.compose.animation.AnimatedVisibility(
+                                            visible = showSortDropdown,
+                                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(expandFrom = Alignment.Top),
+                                            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(shrinkTowards = Alignment.Top)
                                         ) {
-                                            listOf(
-                                                Pair(SortMode.TITLE_AZ, "Nombre (A → Z)"),
-                                                Pair(SortMode.TITLE_ZA, "Nombre (Z → A)"),
-                                                Pair(SortMode.ARTIST_AZ, "Artista (A → Z)"),
-                                                Pair(SortMode.DATE_ADDED_DESC, "Fecha Más Reciente"),
-                                                Pair(SortMode.DURATION_DESC, "Mayor Duración")
-                                            ).forEach { (mode, label) ->
-                                                val isSelected = sortMode == mode
-                                                DropdownMenuItem(
-                                                    text = {
-                                                        Row(
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                                            verticalAlignment = Alignment.CenterVertically
-                                                        ) {
-                                                            Text(
-                                                                text = label,
-                                                                color = if (isSelected) (if (isDark) Color(0xFF38BDF8) else Color(0xFF2563EB)) else textPrimary,
-                                                                fontSize = 12.sp,
-                                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                                            )
-                                                            if (isSelected) {
-                                                                Icon(
-                                                                    imageVector = Icons.Default.Check,
-                                                                    contentDescription = null,
-                                                                    tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF2563EB),
-                                                                    modifier = Modifier.size(15.dp)
-                                                                )
-                                                            }
+                                            val sortModalShape = RoundedCornerShape(22.dp)
+                                            val sortGlassGlareBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x9094A3B8)))
+                                            val sortGlassBg = if (isDark) Color(0xDC141D2B) else Color(0xEAFFFFFF)
+
+                                            Column(
+                                                modifier = Modifier
+                                                    .padding(top = 34.dp)
+                                                    .width(220.dp)
+                                                    .clip(sortModalShape)
+                                                    .then(
+                                                        if (isGlass) {
+                                                            Modifier
+                                                                .hazeChild(state = hazeState, shape = sortModalShape, style = topGlassStyle)
+                                                                .background(sortGlassBg)
+                                                                .border(1.2.dp, sortGlassGlareBorder, sortModalShape)
+                                                        } else {
+                                                            Modifier
+                                                                .background(cardBg)
+                                                                .border(1.dp, borderCol, sortModalShape)
                                                         }
-                                                    },
-                                                    onClick = {
-                                                        sortMode = mode
-                                                        sonoraPrefs.setSortMode(mode.name)
-                                                        showSortDropdown = false
-                                                    },
-                                                    modifier = if (isSelected) {
-                                                        Modifier.background(if (isDark) Color(0x2538BDF8) else Color(0x182563EB))
-                                                    } else Modifier
-                                                )
+                                                    )
+                                                    .padding(vertical = 6.dp, horizontal = 6.dp)
+                                            ) {
+                                                listOf(
+                                                    Pair(SortMode.TITLE_AZ, "Nombre (A → Z)"),
+                                                    Pair(SortMode.TITLE_ZA, "Nombre (Z → A)"),
+                                                    Pair(SortMode.ARTIST_AZ, "Artista (A → Z)"),
+                                                    Pair(SortMode.DATE_ADDED_DESC, "Fecha Más Reciente"),
+                                                    Pair(SortMode.DURATION_DESC, "Mayor Duración")
+                                                ).forEach { (mode, label) ->
+                                                    val isSelected = sortMode == mode
+                                                    val itemShape = RoundedCornerShape(14.dp)
+                                                    val itemBg = if (isSelected) {
+                                                        if (isGlass) {
+                                                            if (isDark) Brush.linearGradient(listOf(Color.White, Color(0xFFE2E8F0))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+                                                        } else {
+                                                            SolidColor(activePillBg)
+                                                        }
+                                                    } else SolidColor(Color.Transparent)
+
+                                                    val itemTextColor = if (isSelected) {
+                                                        if (isGlass) (if (isDark) Color(0xFF0F172A) else Color.White) else activePillText
+                                                    } else textPrimary
+
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .clip(itemShape)
+                                                            .background(itemBg)
+                                                            .then(
+                                                                if (isSelected && isGlass) {
+                                                                    Modifier.border(1.dp, Brush.verticalGradient(listOf(Color.White, Color.White.copy(alpha = 0.3f))), itemShape)
+                                                                } else Modifier
+                                                            )
+                                                            .clickable {
+                                                                sortMode = mode
+                                                                sonoraPrefs.setSortMode(mode.name)
+                                                                showSortDropdown = false
+                                                            }
+                                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            text = label,
+                                                            color = itemTextColor,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                        )
+                                                        if (isSelected) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Check,
+                                                                contentDescription = null,
+                                                                tint = itemTextColor,
+                                                                modifier = Modifier.size(15.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }

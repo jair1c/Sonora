@@ -88,24 +88,32 @@ class SonoraVisualizerManager {
                             val n = fft.size / 2
                             var totalEnergy = 0f
 
+                            // Logarithmic / Octave band frequency mapping across the 16 bars
                             for (i in 0 until bandCount) {
-                                val idx = (i * (n / bandCount)).coerceIn(0, n - 1)
-                                val real = fft[idx * 2].toFloat()
-                                val imag = fft[idx * 2 + 1].toFloat()
-                                val magnitude = hypot(real, imag) / 128f
-                                val clamped = magnitude.coerceIn(0f, 1f)
+                                val startFrac = Math.pow(i.toDouble() / bandCount.toDouble(), 2.0)
+                                val endFrac = Math.pow((i + 1).toDouble() / bandCount.toDouble(), 2.0)
+                                val startIdx = (startFrac * (n - 1)).toInt().coerceIn(0, n - 1)
+                                val endIdx = (endFrac * (n - 1)).toInt().coerceIn(startIdx, n - 1)
+
+                                var sumMag = 0f
+                                var count = 0
+                                for (k in startIdx..endIdx) {
+                                    val real = fft[k * 2].toFloat()
+                                    val imag = fft[k * 2 + 1].toFloat()
+                                    sumMag += hypot(real, imag)
+                                    count++
+                                }
+                                val avgMag = if (count > 0) sumMag / count else 0f
+                                val presenceBoost = (1.0f + (i * 0.12f)).coerceIn(1.0f, 2.8f)
+                                val normalized = ((avgMag / 36f) * presenceBoost)
+                                val clamped = kotlin.math.sqrt(normalized.coerceAtLeast(0f)).coerceIn(0.08f, 1f)
                                 magnitudes[i] = clamped
                                 totalEnergy += clamped
                             }
 
-                            if (totalEnergy > 0.005f) {
+                            if (totalEnergy > 0.02f) {
                                 lastHardwareFftTime = System.currentTimeMillis()
-                                // Apply dynamic logarithmic amplification so quiet passages stay responsive
-                                val enhanced = FloatArray(bandCount)
-                                for (k in 0 until bandCount) {
-                                    enhanced[k] = kotlin.math.sqrt(magnitudes[k] * 1.5f).coerceIn(0.08f, 1f)
-                                }
-                                _fftData.value = enhanced
+                                _fftData.value = magnitudes
                             }
                         } catch (_: Throwable) {}
                     }

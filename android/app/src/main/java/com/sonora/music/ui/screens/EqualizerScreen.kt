@@ -28,8 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+
 import com.sonora.music.data.local.SonoraPreferences
 import com.sonora.music.service.SonoraAudioPlayer
 
@@ -75,10 +74,7 @@ fun EqualizerModal(
     val activePillBg = if (isDark) Color.White else Color(0xFF121212)
     val activePillText = if (isDark) Color.Black else Color.White
 
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    androidx.activity.compose.BackHandler(onBack = onClose)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -391,7 +387,6 @@ fun EqualizerModal(
             }
         }
     }
-}
 
 // Backward-compatible alias
 @Composable
@@ -408,5 +403,5 @@ fun EqualizerScreen(
         sonoraPrefs = sonoraPrefs,
         isDark = isDark
     )
-}
 
+}

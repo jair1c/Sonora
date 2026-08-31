@@ -759,71 +759,66 @@ fun NativeHomeScreen(
                 }
         }
 
-        // 2. FLOATING TOP HEADER (UNIFIED REAL-TIME FROSTED GLASS SURFACE)
-        val topHeaderShape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
-        val topHeaderGlassStyle = HazeStyle(
-            blurRadius = 28.dp,
-            tint = if (isDark) Color.Black.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.65f),
-            noiseFactor = 0.04f
-        )
-        val topHeaderGlareBorder = Brush.verticalGradient(
-            listOf(
-                Color.White.copy(alpha = 0.40f),
-                Color.White.copy(alpha = 0.08f)
-            )
-        )
+        // 2. FLOATING TOP HEADER (DISTINCT GLASS CAPSULES & COMPACT HIERARCHY)
+        val topBtnBg = if (isDark) Color(0x351E293B) else Color(0x75FFFFFF)
+        val topBtnBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8)))
+        val headerFadeColor = if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg
 
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .clip(topHeaderShape)
-                .then(
-                    if (isGlass) {
-                        Modifier
-                            .hazeChild(state = hazeState, shape = topHeaderShape, style = topHeaderGlassStyle)
-                            .background(if (isDark) Color.Black.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.60f))
-                            .border(1.dp, topHeaderGlareBorder, topHeaderShape)
-                    } else {
-                        Modifier
-                            .background(bgColor.copy(alpha = 0.96f))
-                            .border(1.dp, borderCol, topHeaderShape)
-                    }
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            headerFadeColor.copy(alpha = 0.96f),
+                            headerFadeColor.copy(alpha = 0.88f),
+                            headerFadeColor.copy(alpha = 0.60f),
+                            Color.Transparent
+                        )
+                    )
                 )
-                .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 14.dp)
+                .padding(bottom = 8.dp)
         ) {
-            Spacer(modifier = Modifier.height(14.dp))
-// 1. TOP APP BAR with (←), TU BIBLIOTECA LOCAL, and 4 Right Circle Action Buttons
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 1. TOP APP BAR with (Music/Back), TU BIBLIOTECA LOCAL, and Right Action Buttons
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Back Circle Button (Real-time Glass Backdrop Blur)
+                // Left Brand / Back Circle Button (Distinct Glass Blur Capsule)
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
                         .then(
                             if (isGlass) {
                                 Modifier
                                     .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
-                                    .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
-                                    .border(1.2.dp, topGlassGlareBorder, CircleShape)
+                                    .background(topBtnBg)
+                                    .border(1.2.dp, topBtnBorder, CircleShape)
                             } else {
                                 Modifier
                                     .background(headerBtnBrush)
                                     .border(1.dp, headerBtnBorderBrush, CircleShape)
                             }
                         )
-                        .clickable { currentTab = LibraryTab.CANCIONES },
+                        .clickable {
+                            if (currentTab != LibraryTab.CANCIONES) {
+                                currentTab = LibraryTab.CANCIONES
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Regresar",
+                        imageVector = if (currentTab != LibraryTab.CANCIONES) Icons.Default.ArrowBack else Icons.Default.MusicNote,
+                        contentDescription = if (currentTab != LibraryTab.CANCIONES) "Regresar" else "Sonora",
                         tint = textPrimary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
@@ -836,22 +831,22 @@ fun NativeHomeScreen(
                     color = textPrimary
                 )
 
-                // Right Circular Action Buttons (Intelligent Detection)
+                // Right Circular Action Buttons (Distinct Glass Blur Capsules)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 1. Equalizer Button (Real-time Glass Backdrop Blur)
+                    // 1. Equalizer Button
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .then(
                                 if (isGlass) {
                                     Modifier
                                         .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
-                                        .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
-                                        .border(1.2.dp, topGlassGlareBorder, CircleShape)
+                                        .background(topBtnBg)
+                                        .border(1.2.dp, topBtnBorder, CircleShape)
                                 } else {
                                     Modifier
                                         .background(headerBtnBrush)
@@ -865,21 +860,21 @@ fun NativeHomeScreen(
                             imageVector = Icons.Default.Tune,
                             contentDescription = "Ecualizador",
                             tint = textPrimary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
-                    // 2. Sleep Timer Button (Real-time Glass Backdrop Blur)
+                    // 2. Sleep Timer Button
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .then(
                                 if (isGlass) {
                                     Modifier
                                         .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
-                                        .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
-                                        .border(1.2.dp, if (sleepTimerSeconds != null) SolidColor(Color(0xFF10B981)) else topGlassGlareBorder, CircleShape)
+                                        .background(topBtnBg)
+                                        .border(1.2.dp, if (sleepTimerSeconds != null) SolidColor(Color(0xFF10B981)) else topBtnBorder, CircleShape)
                                 } else {
                                     Modifier
                                         .background(headerBtnBrush)
@@ -893,21 +888,21 @@ fun NativeHomeScreen(
                             imageVector = Icons.Default.NightlightRound,
                             contentDescription = "Temporizador",
                             tint = if (sleepTimerSeconds != null) Color(0xFF10B981) else textPrimary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
-                    // 3. Stats Button (Real-time Glass Backdrop Blur)
+                    // 3. Stats Button
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .then(
                                 if (isGlass) {
                                     Modifier
                                         .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
-                                        .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
-                                        .border(1.2.dp, topGlassGlareBorder, CircleShape)
+                                        .background(topBtnBg)
+                                        .border(1.2.dp, topBtnBorder, CircleShape)
                                 } else {
                                     Modifier
                                         .background(headerBtnBrush)
@@ -921,7 +916,7 @@ fun NativeHomeScreen(
                             imageVector = Icons.Default.BarChart,
                             contentDescription = "Estadísticas",
                             tint = textPrimary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
@@ -929,10 +924,20 @@ fun NativeHomeScreen(
                     if (!navTabs.contains("listas")) {
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(40.dp)
                                 .clip(CircleShape)
-                                .background(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
-                                .border(1.dp, borderCol, CircleShape)
+                                .then(
+                                    if (isGlass) {
+                                        Modifier
+                                            .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
+                                            .background(topBtnBg)
+                                            .border(1.2.dp, topBtnBorder, CircleShape)
+                                    } else {
+                                        Modifier
+                                            .background(headerBtnBrush)
+                                            .border(1.dp, headerBtnBorderBrush, CircleShape)
+                                    }
+                                )
                                 .clickable { currentTab = LibraryTab.LISTAS },
                             contentAlignment = Alignment.Center
                         ) {
@@ -940,7 +945,7 @@ fun NativeHomeScreen(
                                 imageVector = Icons.Default.Favorite,
                                 contentDescription = "Listas",
                                 tint = textPrimary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -949,10 +954,20 @@ fun NativeHomeScreen(
                     if (!navTabs.contains("ajustes")) {
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(40.dp)
                                 .clip(CircleShape)
-                                .background(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
-                                .border(1.dp, borderCol, CircleShape)
+                                .then(
+                                    if (isGlass) {
+                                        Modifier
+                                            .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
+                                            .background(topBtnBg)
+                                            .border(1.2.dp, topBtnBorder, CircleShape)
+                                    } else {
+                                        Modifier
+                                            .background(headerBtnBrush)
+                                            .border(1.dp, headerBtnBorderBrush, CircleShape)
+                                    }
+                                )
                                 .clickable { onOpenSettings() },
                             contentAlignment = Alignment.Center
                         ) {
@@ -960,25 +975,27 @@ fun NativeHomeScreen(
                                 imageVector = Icons.Default.Settings,
                                 contentDescription = "Ajustes",
                                 tint = textPrimary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // 2. HERO TITLE & RE-SCAN BUTTON
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = headerTitle,
-                        fontSize = 24.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Black,
                         color = textPrimary,
                         letterSpacing = (-0.5).sp
@@ -994,13 +1011,14 @@ fun NativeHomeScreen(
 
                 Box(
                     modifier = Modifier
+                        .height(34.dp)
                         .clip(RoundedCornerShape(100.dp))
                         .then(
                             if (isGlass) {
                                 Modifier
                                     .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
-                                    .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
-                                    .border(1.2.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                                    .background(topBtnBg)
+                                    .border(1.2.dp, topBtnBorder, RoundedCornerShape(100.dp))
                             } else {
                                 Modifier
                                     .background(headerBtnBrush)
@@ -1011,17 +1029,18 @@ fun NativeHomeScreen(
                             onRescanLibrary()
                             Toast.makeText(context, "Biblioteca actualizada", Toast.LENGTH_SHORT).show()
                         }
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = null,
                             tint = textPrimary,
-                            modifier = Modifier.size(13.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = "Escanear",
@@ -1033,20 +1052,21 @@ fun NativeHomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // 3. SEARCH BAR (Real-time Glass Backdrop Blur & Glare Border)
+            // 3. SEARCH BAR (Distinct Glass Capsule)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp)
+                    .padding(horizontal = 20.dp)
+                    .height(42.dp)
                     .clip(RoundedCornerShape(100.dp))
                     .then(
                         if (isGlass) {
                             Modifier
                                 .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
-                                .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
-                                .border(1.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                                .background(topBtnBg)
+                                .border(1.2.dp, topBtnBorder, RoundedCornerShape(100.dp))
                         } else {
                             Modifier
                                 .background(searchBarBg)
@@ -1106,32 +1126,31 @@ fun NativeHomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // 4. CATEGORY HORIZONTAL PILLS
+            // 4. CATEGORY HORIZONTAL PILLS (Edge-to-Edge with full right clearance)
             LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clipToBounds(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 2.dp)
+                contentPadding = PaddingValues(start = 20.dp, end = 28.dp)
             ) {
                 items(LibraryTab.values()) { tab ->
                     val isSelected = currentTab == tab
                     Box(
                         modifier = Modifier
+                            .height(36.dp)
                             .clip(RoundedCornerShape(100.dp))
                             .then(
                                 if (isGlass) {
                                     if (isSelected) {
                                         Modifier
                                             .background(if (isDark) Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF2563EB))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B))))
-                                            .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0.2f))), RoundedCornerShape(100.dp))
+                                            .border(1.2.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.7f), Color.White.copy(alpha = 0.2f))), RoundedCornerShape(100.dp))
                                     } else {
                                         Modifier
                                             .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
-                                            .background(if (isDark) Color(0x281E293B) else Color(0x65FFFFFF))
-                                            .border(1.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                                            .background(topBtnBg)
+                                            .border(1.2.dp, topBtnBorder, RoundedCornerShape(100.dp))
                                     }
                                 } else {
                                     Modifier
@@ -1140,7 +1159,8 @@ fun NativeHomeScreen(
                                 }
                             )
                             .clickable { currentTab = tab }
-                            .padding(horizontal = 14.dp, vertical = 7.dp)
+                            .padding(horizontal = 14.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -1149,14 +1169,14 @@ fun NativeHomeScreen(
                             Icon(
                                 imageVector = tab.icon,
                                 contentDescription = null,
-                                tint = if (isSelected) (if (isGlass) Color.White else activePillText) else textPrimary,
-                                modifier = Modifier.size(14.dp)
+                                tint = if (isGlass && isSelected) Color.White else (if (isSelected) activePillText else textPrimary),
+                                modifier = Modifier.size(15.dp)
                             )
                             Text(
                                 text = tab.label,
-                                fontSize = 12.sp,
+                                fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) (if (isGlass) Color.White else activePillText) else textPrimary
+                                color = if (isGlass && isSelected) Color.White else (if (isSelected) activePillText else textPrimary)
                             )
                         }
                     }

@@ -1,4 +1,4 @@
-# 🌸 Sonora Music (v4.1.0)
+# 🌸 Sonora Music (v4.1.1)
 > **Reproductor de Música Nativo Audiófilo con Identidad Obsidiana & Oro Champaña, Arquitectura Jetpack Compose y Motor de Audio Media3 para Android**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)

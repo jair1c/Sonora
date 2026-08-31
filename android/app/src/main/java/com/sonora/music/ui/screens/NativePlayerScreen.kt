@@ -258,8 +258,8 @@ fun NativePlayerScreen(
                             if (isGlass) {
                                 Modifier
                                     .hazeChild(state = hazeState, shape = CircleShape, style = playerGlassStyle)
-                                    .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.12f))
-                                    .border(1.2.dp, playerGlassGlareBorder, CircleShape)
+                                    .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                    .border(1.2.dp, if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), CircleShape)
                             } else {
                                 Modifier
                                     .background(playerBtnBrush)
@@ -367,10 +367,11 @@ fun NativePlayerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val isHiRes = formatDetails?.isHiRes == true
-                    val hiResTextColor = if (isHiRes) (if (isDark) Color(0xFFFBBF24) else Color(0xFF92400E)) else textColor
-                    val hiResBgColor = if (isHiRes) (if (isDark) Color(0x35D97706) else Color(0x40FDE68A)) else (if (isDark) Color(0x351E293B) else Color(0x60FFFFFF))
-                    val hiResBorderBrush = if (isHiRes) SolidColor(if (isDark) Color(0xFFFBBF24).copy(alpha = 0.6f) else Color(0xFFD97706).copy(alpha = 0.7f)) else playerGlassGlareBorder
+                    val badgeText = formatDetails?.formattedString ?: currentSong?.audioQualityBadge ?: "Hi-Fi Audio"
+                    val isHiRes = formatDetails?.isHiRes == true || badgeText.contains("FLAC", ignoreCase = true) || badgeText.contains("Hi-Res", ignoreCase = true) || badgeText.contains("24-bit", ignoreCase = true) || badgeText.contains("DSD", ignoreCase = true)
+                    val hiResTextColor = if (isHiRes) (if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706)) else textColor
+                    val hiResBgColor = if (isHiRes) (if (isDark) Color(0x35D97706) else Color(0x30F59E0B)) else (if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                    val hiResBorderBrush = if (isHiRes) SolidColor(if (isDark) Color(0xFFFBBF24).copy(alpha = 0.6f) else Color(0xFFF59E0B).copy(alpha = 0.7f)) else (if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))))
 
                     Box(
                         modifier = Modifier
@@ -381,7 +382,7 @@ fun NativePlayerScreen(
                                     Modifier
                                         .hazeChild(state = hazeState, shape = RoundedCornerShape(10.dp), style = playerGlassStyle)
                                         .background(hiResBgColor)
-                                        .border(1.dp, hiResBorderBrush, RoundedCornerShape(10.dp))
+                                        .border(1.2.dp, hiResBorderBrush, RoundedCornerShape(10.dp))
                                 } else {
                                     Modifier
                                         .background(if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.22f)) else badgeBrush)
@@ -392,19 +393,20 @@ fun NativePlayerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = formatDetails?.formattedString ?: currentSong?.audioQualityBadge ?: "Hi-Fi Audio",
+                            text = badgeText,
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = FontFamily.Default,
+                            letterSpacing = 0.4.sp,
                             color = hiResTextColor
                         )
                     }
 
                     // Speed Pill Button
                     val isCustomSpeed = currentSpeed != 1.0f || currentPitch != 1.0f
-                    val speedTextColor = if (isCustomSpeed) (if (isDark) Color(0xFF34D399) else Color(0xFF065F46)) else subtextColor
-                    val speedBgColor = if (isCustomSpeed) (if (isDark) Color(0x35059669) else Color(0x40A7F3D0)) else (if (isDark) Color(0x351E293B) else Color(0x60FFFFFF))
-                    val speedBorderBrush = if (isCustomSpeed) SolidColor(if (isDark) Color(0xFF34D399).copy(alpha = 0.6f) else Color(0xFF059669).copy(alpha = 0.7f)) else playerGlassGlareBorder
+                    val speedTextColor = if (isCustomSpeed) (if (isDark) Color(0xFF34D399) else Color(0xFF059669)) else subtextColor
+                    val speedBgColor = if (isCustomSpeed) (if (isDark) Color(0x35059669) else Color(0x3010B981)) else (if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                    val speedBorderBrush = if (isCustomSpeed) SolidColor(if (isDark) Color(0xFF34D399).copy(alpha = 0.6f) else Color(0xFF10B981).copy(alpha = 0.7f)) else (if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))))
 
                     Box(
                         modifier = Modifier
@@ -415,7 +417,7 @@ fun NativePlayerScreen(
                                     Modifier
                                         .hazeChild(state = hazeState, shape = RoundedCornerShape(10.dp), style = playerGlassStyle)
                                         .background(speedBgColor)
-                                        .border(1.dp, speedBorderBrush, RoundedCornerShape(10.dp))
+                                        .border(1.2.dp, speedBorderBrush, RoundedCornerShape(10.dp))
                                 } else {
                                     Modifier
                                         .background(if (isCustomSpeed) SolidColor(Color(0xFF10B981).copy(alpha = 0.22f)) else badgeBrush)
@@ -429,14 +431,15 @@ fun NativePlayerScreen(
                         Text(
                             text = if (currentSpeed != 1.0f || currentPitch != 1.0f) "⚡ ${String.format(java.util.Locale.US, "%.2fx", currentSpeed)}" else "1.0x",
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            color = if (currentSpeed != 1.0f || currentPitch != 1.0f) Color(0xFF10B981) else subtextColor
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = FontFamily.Default,
+                            letterSpacing = 0.4.sp,
+                            color = speedTextColor
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Live Audio Spectrum Visualizer
                 LiveAudioSpectrum(

@@ -14,6 +14,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import com.sonora.music.ui.theme.SonoraGold
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -158,6 +160,39 @@ fun NativePlayerScreen(
     )
 
     val basePlayerBg = if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg
+    val playerBtnBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+    }
+    val playerBtnBorder = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0xB5FFFFFF), Color(0x30FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+    } else {
+        SolidColor(borderCol)
+    }
+
+    val badgeBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x456080A8), Color(0x25385070))) else Brush.linearGradient(listOf(Color(0xDDFFFFFF), Color(0xB5E2E8F0)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+    }
+    val badgeBorder = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0x80FFFFFF), Color(0x20FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x80CBD5E1)))
+    } else {
+        SolidColor(borderCol)
+    }
+
+    val lyricsPillBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x55283C56), Color(0x381D2C40))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC8E8EEF6)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+    }
+    val lyricsPillBorder = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0x95FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x80CBD5E1)))
+    } else {
+        SolidColor(borderCol)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -180,6 +215,9 @@ fun NativePlayerScreen(
             }
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
+        if (isGlass) {
+            com.sonora.music.ui.theme.LiquidGlassBackdrop(isDark = isDark)
+        }
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -198,7 +236,8 @@ fun NativePlayerScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                        .background(playerBtnBrush)
+                        .border(if (isGlass) 1.2.dp else 1.dp, playerBtnBorder, CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
@@ -222,7 +261,8 @@ fun NativePlayerScreen(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                            .background(playerBtnBrush)
+                            .border(if (isGlass) 1.2.dp else 1.dp, playerBtnBorder, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.QueueMusic,
@@ -242,7 +282,8 @@ fun NativePlayerScreen(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                            .background(playerBtnBrush)
+                            .border(if (isGlass) 1.2.dp else 1.dp, playerBtnBorder, CircleShape)
                     ) {
                         Icon(
                             imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -282,8 +323,8 @@ fun NativePlayerScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isHiRes) Color(0xFFD97706).copy(alpha = 0.22f) else if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                            .border(1.dp, if (isHiRes) Color(0xFFD97706).copy(alpha = 0.6f) else Color.Transparent, RoundedCornerShape(12.dp))
+                            .background(if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.22f)) else badgeBrush)
+                            .border(1.dp, if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(12.dp))
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
@@ -299,8 +340,8 @@ fun NativePlayerScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (currentSpeed != 1.0f || currentPitch != 1.0f) Color(0xFF10B981).copy(alpha = 0.22f) else if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                            .border(1.dp, if (currentSpeed != 1.0f || currentPitch != 1.0f) Color(0xFF10B981).copy(alpha = 0.6f) else Color.Transparent, RoundedCornerShape(12.dp))
+                            .background(if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.22f)) else badgeBrush)
+                            .border(1.dp, if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(12.dp))
                             .clickable { showSpeedModal = true }
                             .padding(horizontal = 9.dp, vertical = 4.dp)
                     ) {
@@ -513,7 +554,8 @@ fun NativePlayerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                    .background(lyricsPillBrush)
+                    .border(if (isGlass) 1.2.dp else 1.dp, lyricsPillBorder, RoundedCornerShape(20.dp))
                     .clickable { showExpandedLyrics = true }
                     .padding(horizontal = 20.dp, vertical = 14.dp)
             ) {
@@ -680,12 +722,23 @@ private fun PlaybackControlsDock(
     val cardBg = themeColors.cardBg
     val borderCol = themeColors.borderCol
 
+    val dockContainerBrush = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0xFF263A52), Color(0xFF1B2A3E))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE5ECF4)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF161513) else Color(0xFFEAE5DA))
+    }
+    val dockContainerBorder = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0xB5FFFFFF), Color(0x35FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD))
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(40.dp))
-            .background(if (isDark) Color(0xFF161513) else Color(0xFFEAE5DA))
-            .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(40.dp))
+            .background(dockContainerBrush)
+            .border(if (isGlass) 1.5.dp else 1.dp, dockContainerBorder, RoundedCornerShape(40.dp))
             .padding(horizontal = 14.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -745,11 +798,17 @@ private fun PlaybackControlsDock(
             }
         }
 
+        val dockPlayBrush = if (isGlass) {
+            if (isDark) Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFD8E4F0))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+        } else {
+            SolidColor(textColor)
+        }
+
         Box(
             modifier = Modifier
                 .size(78.dp)
                 .clip(CircleShape)
-                .background(textColor)
+                .background(dockPlayBrush)
                 .clickable { audioPlayer.togglePlay() },
             contentAlignment = Alignment.Center
         ) {
@@ -780,6 +839,17 @@ private fun PlaybackControlsCircles(
     val cardBg = themeColors.cardBg
     val borderCol = themeColors.borderCol
 
+    val circleBtnBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+    }
+    val circleBtnBorder = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0xB5FFFFFF), Color(0x30FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD))
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -791,10 +861,10 @@ private fun PlaybackControlsCircles(
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)
-                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .background(circleBtnBrush)
                 .border(
-                    if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) 2.dp else 1.dp,
-                    if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)),
+                    if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) 2.dp else (if (isGlass) 1.2.dp else 1.dp),
+                    if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SolidColor(SonoraGold) else circleBtnBorder,
                     CircleShape
                 )
                 .clickable { audioPlayer.toggleRepeat() },
@@ -812,8 +882,8 @@ private fun PlaybackControlsCircles(
             modifier = Modifier
                 .size(62.dp)
                 .clip(CircleShape)
-                .background(cardBg)
-                .border(1.dp, borderCol, CircleShape)
+                .background(circleBtnBrush)
+                .border(if (isGlass) 1.2.dp else 1.dp, circleBtnBorder, CircleShape)
                 .clickable { audioPlayer.prevTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -825,11 +895,17 @@ private fun PlaybackControlsCircles(
             )
         }
 
+        val circlePlayBrush = if (isGlass) {
+            if (isDark) Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFD8E4F0))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+        } else {
+            SolidColor(textColor)
+        }
+
         Box(
             modifier = Modifier
                 .size(86.dp)
                 .clip(CircleShape)
-                .background(if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else textColor)
+                .background(circlePlayBrush)
                 .clickable { audioPlayer.togglePlay() },
             contentAlignment = Alignment.Center
         ) {
@@ -845,8 +921,8 @@ private fun PlaybackControlsCircles(
             modifier = Modifier
                 .size(62.dp)
                 .clip(CircleShape)
-                .background(cardBg)
-                .border(1.dp, borderCol, CircleShape)
+                .background(circleBtnBrush)
+                .border(if (isGlass) 1.2.dp else 1.dp, circleBtnBorder, CircleShape)
                 .clickable { audioPlayer.nextTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -862,10 +938,10 @@ private fun PlaybackControlsCircles(
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)
-                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                .background(circleBtnBrush)
                 .border(
-                    if (isShuffle) 2.dp else 1.dp,
-                    if (isShuffle) SonoraGold else (if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD)),
+                    if (isShuffle) 2.dp else (if (isGlass) 1.2.dp else 1.dp),
+                    if (isShuffle) SolidColor(SonoraGold) else circleBtnBorder,
                     CircleShape
                 )
                 .clickable { audioPlayer.toggleShuffle() },
@@ -1004,6 +1080,17 @@ private fun PlaybackControlsSquircle(
     val cardBg = themeColors.cardBg
     val borderCol = themeColors.borderCol
 
+    val squircleBtnBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+    }
+    val squircleBtnBorder = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0xB5FFFFFF), Color(0x30FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD))
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1015,8 +1102,8 @@ private fun PlaybackControlsSquircle(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SonoraGold else (if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA)))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(14.dp))
+                .background(if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) SolidColor(SonoraGold) else squircleBtnBrush)
+                .border(if (isGlass) 1.2.dp else 1.dp, squircleBtnBorder, RoundedCornerShape(14.dp))
                 .clickable { audioPlayer.toggleRepeat() },
             contentAlignment = Alignment.Center
         ) {
@@ -1032,8 +1119,8 @@ private fun PlaybackControlsSquircle(
             modifier = Modifier
                 .size(60.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(18.dp))
+                .background(squircleBtnBrush)
+                .border(if (isGlass) 1.2.dp else 1.dp, squircleBtnBorder, RoundedCornerShape(18.dp))
                 .clickable { audioPlayer.prevTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -1045,18 +1132,24 @@ private fun PlaybackControlsSquircle(
             )
         }
 
+        val squirclePlayBrush = if (isGlass) {
+            if (isDark) Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFD8E4F0))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+        } else {
+            SolidColor(textColor)
+        }
+
         Box(
             modifier = Modifier
                 .size(78.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .background(textColor)
+                .background(squirclePlayBrush)
                 .clickable { audioPlayer.togglePlay() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                tint = bgColor,
+                tint = if (isGlass) (if (isDark) Color(0xFF0A0C10) else Color.White) else (if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA)),
                 modifier = Modifier.size(42.dp)
             )
         }
@@ -1065,8 +1158,8 @@ private fun PlaybackControlsSquircle(
             modifier = Modifier
                 .size(60.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(18.dp))
+                .background(squircleBtnBrush)
+                .border(if (isGlass) 1.2.dp else 1.dp, squircleBtnBorder, RoundedCornerShape(18.dp))
                 .clickable { audioPlayer.nextTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -1082,8 +1175,8 @@ private fun PlaybackControlsSquircle(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(if (isShuffle) SonoraGold else (if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA)))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), RoundedCornerShape(14.dp))
+                .background(if (isShuffle) SolidColor(SonoraGold) else squircleBtnBrush)
+                .border(if (isGlass) 1.2.dp else 1.dp, squircleBtnBorder, RoundedCornerShape(14.dp))
                 .clickable { audioPlayer.toggleShuffle() },
             contentAlignment = Alignment.Center
         ) {
@@ -1114,6 +1207,17 @@ private fun PlaybackControlsWaveform(
     val cardBg = themeColors.cardBg
     val borderCol = themeColors.borderCol
 
+    val waveBtnBrush = if (isGlass) {
+        if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+    }
+    val waveBtnBorder = if (isGlass) {
+        if (isDark) Brush.verticalGradient(listOf(Color(0xB5FFFFFF), Color(0x30FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
+    } else {
+        SolidColor(if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD))
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1137,8 +1241,8 @@ private fun PlaybackControlsWaveform(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
+                .background(waveBtnBrush)
+                .border(if (isGlass) 1.2.dp else 1.dp, waveBtnBorder, CircleShape)
                 .clickable { audioPlayer.prevTrack() },
             contentAlignment = Alignment.Center
         ) {
@@ -1150,12 +1254,19 @@ private fun PlaybackControlsWaveform(
             )
         }
 
+        val wavePlayBrush = if (isGlass) {
+            if (isDark) Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFD8E4F0))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+        } else {
+            SolidColor(textColor)
+        }
+        val wavePlayContentTint = if (isGlass) (if (isDark) Color(0xFF0A0C10) else Color.White) else bgColor
+
         Box(
             modifier = Modifier
                 .height(66.dp)
                 .width(146.dp)
                 .clip(RoundedCornerShape(33.dp))
-                .background(textColor)
+                .background(wavePlayBrush)
                 .clickable { audioPlayer.togglePlay() }
                 .padding(horizontal = 18.dp),
             contentAlignment = Alignment.Center
@@ -1167,7 +1278,7 @@ private fun PlaybackControlsWaveform(
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                     contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                    tint = bgColor,
+                    tint = wavePlayContentTint,
                     modifier = Modifier.size(36.dp)
                 )
 
@@ -1183,7 +1294,7 @@ private fun PlaybackControlsWaveform(
                                 .width(4.dp)
                                 .height(h)
                                 .clip(RoundedCornerShape(2.dp))
-                                .background(bgColor)
+                                .background(wavePlayContentTint)
                         )
                     }
                 }
@@ -1194,8 +1305,8 @@ private fun PlaybackControlsWaveform(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
-                .border(1.dp, if (isDark) Color(0xFF2A2824) else Color(0xFFDED8CD), CircleShape)
+                .background(waveBtnBrush)
+                .border(if (isGlass) 1.2.dp else 1.dp, waveBtnBorder, CircleShape)
                 .clickable { audioPlayer.nextTrack() },
             contentAlignment = Alignment.Center
         ) {

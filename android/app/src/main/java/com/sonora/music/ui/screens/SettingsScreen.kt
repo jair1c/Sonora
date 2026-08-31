@@ -1312,13 +1312,24 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                val cacheBtnBrush = if (isGlass) {
+                    if (isDark) Brush.linearGradient(listOf(Color(0x556080A8), Color(0x30385070))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))
+                } else {
+                    SolidColor(if (isDark) Color(0xFF1E1D1A) else Color.White)
+                }
+                val cacheBtnBorder = if (isGlass) {
+                    if (isDark) Brush.verticalGradient(listOf(Color(0x95FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))
+                } else {
+                    SolidColor(borderCol)
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(44.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isDark) Color(0xFF1E1D1A) else Color.White)
-                        .border(1.dp, borderCol, RoundedCornerShape(12.dp))
+                        .background(cacheBtnBrush)
+                        .border(if (isGlass) 1.2.dp else 1.dp, cacheBtnBorder, RoundedCornerShape(12.dp))
                         .clickable {
                             Toast.makeText(context, "Caché de carátulas liberada con éxito", Toast.LENGTH_SHORT).show()
                         },

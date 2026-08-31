@@ -60,10 +60,12 @@ fun QueueBottomSheet(
     isDark: Boolean,
     onDismiss: () -> Unit
 ) {
-    val bgColor = if (isDark) SonoraObsidianDark else SonoraPaperBeige
-    val cardBg = if (isDark) SonoraObsidianCard else SonoraPaperCard
-    val textColor = if (isDark) Color.White else Color(0xFF121212)
-    val subtextColor = if (isDark) Color(0xFF8A857B) else Color(0xFF75726B)
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val bgColor = if (isGlass) (if (isDark) Color(0xF4131E2C) else Color(0xF4F0F4F9)) else (if (isDark) SonoraObsidianDark else SonoraPaperBeige)
+    val cardBg = if (isGlass) (if (isDark) Color(0x355A7EAA) else Color(0x70FFFFFF)) else (if (isDark) SonoraObsidianCard else SonoraPaperCard)
+    val textColor = themeColors.textPrimary
+    val subtextColor = themeColors.textSecondary
 
     val currentSong by audioPlayer.currentSong.collectAsState()
     val playlist by audioPlayer.playlist.collectAsState()

@@ -69,6 +69,7 @@ fun AlbumDetailScreen(
 ) {
     val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
     val isGlass = themeColors.isGlass
+    val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { HazeState() }
     val bgColor = if (isGlass) Color.Transparent else themeColors.bg
     val cardBg = themeColors.cardBg
     val textColor = themeColors.textPrimary
@@ -124,8 +125,18 @@ fun AlbumDetailScreen(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
-                    .background(backBtnBrush)
-                    .border(if (isGlass) 1.2.dp else 1.dp, backBtnBorderBrush, CircleShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = CircleShape, style = detailGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                .border(1.2.dp, detailGlassGlareBorder, CircleShape)
+                        } else {
+                            Modifier
+                                .background(backBtnBrush)
+                                .border(1.dp, backBtnBorderBrush, CircleShape)
+                        }
+                    )
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center
             ) {

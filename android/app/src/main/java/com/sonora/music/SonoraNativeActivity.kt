@@ -213,12 +213,16 @@ class SonoraNativeActivity : ComponentActivity() {
                         com.sonora.music.ui.theme.LocalHazeState provides rootHazeState
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                
+                            modifier = Modifier.fillMaxSize()
                         ) {
                             if (isGlass) {
-                                LiquidGlassBackdrop(isDark = isDark)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .haze(state = rootHazeState)
+                                ) {
+                                    LiquidGlassBackdrop(isDark = isDark)
+                                }
                             }
                             if (!hasSeenWelcome) {
                                 WelcomeScreen(

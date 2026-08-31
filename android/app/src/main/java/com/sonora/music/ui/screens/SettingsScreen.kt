@@ -71,6 +71,18 @@ fun SettingsScreen(
 
     val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
     val isGlass = themeColors.isGlass
+    val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { HazeState() }
+    val settingsGlassStyle = HazeStyle(
+        blurRadius = 20.dp,
+        tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.12f),
+        noiseFactor = 0.05f
+    )
+    val settingsGlassGlareBorder = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = 0.28f),
+            Color.White.copy(alpha = 0.06f)
+        )
+    )
     val bgColor = if (isGlass) Color.Transparent else themeColors.bg
     val cardBg = themeColors.cardBg
     val subCardBg = themeColors.subCardBg
@@ -238,13 +250,24 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onBack,
+                Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(backBtnBrush)
-                        .border(if (isGlass) 1.2.dp else 1.dp, backBtnBorderBrush, CircleShape)
+                        .then(
+                            if (isGlass) {
+                                Modifier
+                                    .hazeChild(state = hazeState, shape = CircleShape, style = settingsGlassStyle)
+                                    .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                    .border(1.2.dp, settingsGlassGlareBorder, CircleShape)
+                            } else {
+                                Modifier
+                                    .background(backBtnBrush)
+                                    .border(1.dp, backBtnBorderBrush, CircleShape)
+                            }
+                        )
+                        .clickable(onClick = onBack),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
@@ -268,8 +291,18 @@ fun SettingsScreen(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
-                        .background(versionBadgeBrush)
-                        .border(if (isGlass) 1.2.dp else 1.dp, versionBadgeBorder, RoundedCornerShape(100.dp))
+                        .then(
+                            if (isGlass) {
+                                Modifier
+                                    .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = settingsGlassStyle)
+                                    .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                    .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(100.dp))
+                            } else {
+                                Modifier
+                                    .background(versionBadgeBrush)
+                                    .border(1.dp, versionBadgeBorder, RoundedCornerShape(100.dp))
+                            }
+                        )
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
@@ -1549,6 +1582,18 @@ fun QuickActionCard(
     val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
     val isGlass = themeColors.isGlass
     val isDark = themeColors.isDark
+    val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { HazeState() }
+    val settingsGlassStyle = HazeStyle(
+        blurRadius = 20.dp,
+        tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.12f),
+        noiseFactor = 0.05f
+    )
+    val settingsGlassGlareBorder = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = 0.28f),
+            Color.White.copy(alpha = 0.06f)
+        )
+    )
     
     val iconBrush = if (isGlass) {
         if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))
@@ -1569,8 +1614,18 @@ fun QuickActionCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(18.dp))
-            .background(cardBg)
-            .border(1.dp, borderCol, RoundedCornerShape(18.dp))
+            .then(
+                if (isGlass) {
+                    Modifier
+                        .hazeChild(state = hazeState, shape = RoundedCornerShape(18.dp), style = settingsGlassStyle)
+                        .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.08f))
+                        .border(1.dp, settingsGlassGlareBorder, RoundedCornerShape(18.dp))
+                } else {
+                    Modifier
+                        .background(cardBg)
+                        .border(1.dp, borderCol, RoundedCornerShape(18.dp))
+                }
+            )
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalArrangement = Arrangement.SpaceBetween

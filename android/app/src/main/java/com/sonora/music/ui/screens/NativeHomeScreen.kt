@@ -231,7 +231,7 @@ fun NativeHomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .then(if (isGlass) Modifier.haze(state = hazeState) else Modifier)
+                
                 .padding(horizontal = 20.dp)
         ) {
             Spacer(modifier = Modifier.height(14.dp))
@@ -242,13 +242,23 @@ fun NativeHomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Back Circle Button
+                // Back Circle Button (Real-time Glass Backdrop Blur)
                 Box(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(headerBtnBrush)
-                        .border(if (isGlass) 1.2.dp else 1.dp, headerBtnBorderBrush, CircleShape)
+                        .then(
+                            if (isGlass) {
+                                Modifier
+                                    .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
+                                    .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                    .border(1.2.dp, topGlassGlareBorder, CircleShape)
+                            } else {
+                                Modifier
+                                    .background(headerBtnBrush)
+                                    .border(1.dp, headerBtnBorderBrush, CircleShape)
+                            }
+                        )
                         .clickable { currentTab = LibraryTab.CANCIONES },
                     contentAlignment = Alignment.Center
                 ) {
@@ -274,13 +284,23 @@ fun NativeHomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 1. Equalizer Button
+                    // 1. Equalizer Button (Real-time Glass Backdrop Blur)
                     Box(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(headerBtnBrush)
-                            .border(if (isGlass) 1.2.dp else 1.dp, headerBtnBorderBrush, CircleShape)
+                            .then(
+                                if (isGlass) {
+                                    Modifier
+                                        .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
+                                        .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                        .border(1.2.dp, topGlassGlareBorder, CircleShape)
+                                } else {
+                                    Modifier
+                                        .background(headerBtnBrush)
+                                        .border(1.dp, headerBtnBorderBrush, CircleShape)
+                                }
+                            )
                             .clickable { onOpenEqualizer() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -292,13 +312,23 @@ fun NativeHomeScreen(
                         )
                     }
 
-                    // 2. Sleep Timer Button (Moon)
+                    // 2. Sleep Timer Button (Real-time Glass Backdrop Blur)
                     Box(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(headerBtnBrush)
-                            .border(if (isGlass) 1.2.dp else 1.dp, if (sleepTimerSeconds != null) SolidColor(Color(0xFF10B981)) else headerBtnBorderBrush, CircleShape)
+                            .then(
+                                if (isGlass) {
+                                    Modifier
+                                        .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
+                                        .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                        .border(1.2.dp, if (sleepTimerSeconds != null) SolidColor(Color(0xFF10B981)) else topGlassGlareBorder, CircleShape)
+                                } else {
+                                    Modifier
+                                        .background(headerBtnBrush)
+                                        .border(1.dp, if (sleepTimerSeconds != null) SolidColor(Color(0xFF10B981)) else headerBtnBorderBrush, CircleShape)
+                                }
+                            )
                             .clickable { showSleepModal = true },
                         contentAlignment = Alignment.Center
                     ) {
@@ -310,13 +340,23 @@ fun NativeHomeScreen(
                         )
                     }
 
-                    // 3. Stats Button (BarChart)
+                    // 3. Stats Button (Real-time Glass Backdrop Blur)
                     Box(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(headerBtnBrush)
-                            .border(if (isGlass) 1.2.dp else 1.dp, headerBtnBorderBrush, CircleShape)
+                            .then(
+                                if (isGlass) {
+                                    Modifier
+                                        .hazeChild(state = hazeState, shape = CircleShape, style = topGlassStyle)
+                                        .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                        .border(1.2.dp, topGlassGlareBorder, CircleShape)
+                                } else {
+                                    Modifier
+                                        .background(headerBtnBrush)
+                                        .border(1.dp, headerBtnBorderBrush, CircleShape)
+                                }
+                            )
                             .clickable { showStatsModal = true },
                         contentAlignment = Alignment.Center
                     ) {
@@ -398,8 +438,18 @@ fun NativeHomeScreen(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
-                        .background(headerBtnBrush)
-                        .border(if (isGlass) 1.2.dp else 1.dp, headerBtnBorderBrush, RoundedCornerShape(100.dp))
+                        .then(
+                            if (isGlass) {
+                                Modifier
+                                    .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
+                                    .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                    .border(1.2.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                            } else {
+                                Modifier
+                                    .background(headerBtnBrush)
+                                    .border(1.dp, headerBtnBorderBrush, RoundedCornerShape(100.dp))
+                            }
+                        )
                         .clickable {
                             onRescanLibrary()
                             Toast.makeText(context, "Biblioteca actualizada", Toast.LENGTH_SHORT).show()
@@ -434,8 +484,18 @@ fun NativeHomeScreen(
                     .fillMaxWidth()
                     .height(44.dp)
                     .clip(RoundedCornerShape(100.dp))
-                    .background(if (isGlass) (if (isDark) Color(0x351E293B) else Color(0x75FFFFFF)) else searchBarBg)
-                    .border(1.dp, if (isGlass) topGlassGlareBorder else SolidColor(borderCol), RoundedCornerShape(100.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                .border(1.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                        } else {
+                            Modifier
+                                .background(searchBarBg)
+                                .border(1.dp, searchBarBorder, RoundedCornerShape(100.dp))
+                        }
+                    )
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
@@ -509,6 +569,7 @@ fun NativeHomeScreen(
                                             .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0.2f))), RoundedCornerShape(100.dp))
                                     } else {
                                         Modifier
+                                            .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
                                             .background(if (isDark) Color(0x281E293B) else Color(0x65FFFFFF))
                                             .border(1.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
                                     }

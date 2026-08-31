@@ -1,4 +1,7 @@
 package com.sonora.music.ui.screens
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeChild
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Brush
 

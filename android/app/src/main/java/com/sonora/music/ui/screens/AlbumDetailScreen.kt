@@ -1,4 +1,7 @@
 package com.sonora.music.ui.screens
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeChild
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.SolidColor
@@ -75,11 +78,18 @@ fun AlbumDetailScreen(
     } else {
         SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFF5F2EA))
     }
-    val backBtnBorderBrush = if (isGlass) {
-        if (isDark) Brush.verticalGradient(listOf(Color(0xB5FFFFFF), Color(0x30FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x8094A3B8)))
-    } else {
-        SolidColor(themeColors.borderCol)
-    }
+    val detailGlassStyle = HazeStyle(
+        blurRadius = 20.dp,
+        tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.12f),
+        noiseFactor = 0.05f
+    )
+    val detailGlassGlareBorder = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = 0.28f),
+            Color.White.copy(alpha = 0.06f)
+        )
+    )
+    val backBtnBorderBrush = if (isGlass) detailGlassGlareBorder else SolidColor(themeColors.borderCol)
 
     val albumSongs = remember(albumTitle, allSongs) {
         allSongs.filter { it.album.equals(albumTitle, ignoreCase = true) }

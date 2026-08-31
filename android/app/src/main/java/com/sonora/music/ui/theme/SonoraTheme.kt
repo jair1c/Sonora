@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
@@ -80,6 +82,8 @@ data class SonoraThemeColors(
     val glassBorderBrush: Brush = SolidColor(borderCol),
     val glassSpecularHighlight: Color = Color.Transparent
 )
+
+val LocalHazeState = compositionLocalOf<dev.chrisbanes.haze.HazeState?> { null }
 
 val LocalSonoraColors = staticCompositionLocalOf {
     SonoraThemeColors(
@@ -205,8 +209,10 @@ fun SonoraTheme(
         colorScheme = colorScheme,
         typography = SonoraTypography
     ) {
+        val themeHazeState = remember { dev.chrisbanes.haze.HazeState() }
         CompositionLocalProvider(
             LocalSonoraColors provides themeColors,
+            LocalHazeState provides themeHazeState,
             LocalTextStyle provides TextStyle(
                 fontFamily = PlusJakartaSansFamily,
                 color = themeColors.textPrimary

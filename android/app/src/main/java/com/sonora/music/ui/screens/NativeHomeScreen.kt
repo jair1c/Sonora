@@ -172,7 +172,18 @@ fun NativeHomeScreen(
         navTabs = sonoraPrefs.getNavTabs()
     }
 
-    val hazeState = remember { HazeState() }
+    val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { HazeState() }
+    val topGlassStyle = HazeStyle(
+        blurRadius = 20.dp,
+        tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.08f),
+        noiseFactor = 0.05f
+    )
+    val topGlassGlareBorder = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = 0.25f),
+            Color.White.copy(alpha = 0.05f)
+        )
+    )
     val currentSong by audioPlayer.currentSong.collectAsState()
     val isPlaying by audioPlayer.isPlaying.collectAsState()
     val sleepTimerSeconds by audioPlayer.sleepTimerSecondsLeft.collectAsState()
@@ -220,7 +231,7 @@ fun NativeHomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .haze(state = hazeState)
+                .then(if (isGlass) Modifier.haze(state = hazeState) else Modifier)
                 .padding(horizontal = 20.dp)
         ) {
             Spacer(modifier = Modifier.height(14.dp))
@@ -417,14 +428,14 @@ fun NativeHomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 3. SEARCH BAR
+            // 3. SEARCH BAR (Real-time Glass Backdrop Blur & Glare Border)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(44.dp)
                     .clip(RoundedCornerShape(100.dp))
-                    .background(searchBarBg)
-                    .border(1.dp, searchBarBorder, RoundedCornerShape(100.dp))
+                    .background(if (isGlass) (if (isDark) Color(0x351E293B) else Color(0x75FFFFFF)) else searchBarBg)
+                    .border(1.dp, if (isGlass) topGlassGlareBorder else SolidColor(borderCol), RoundedCornerShape(100.dp))
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
@@ -490,8 +501,23 @@ fun NativeHomeScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(100.dp))
-                            .background(if (isSelected) activePillBg else subCardBg)
-                            .border(1.dp, if (isSelected) Color.Transparent else borderCol, RoundedCornerShape(100.dp))
+                            .then(
+                                if (isGlass) {
+                                    if (isSelected) {
+                                        Modifier
+                                            .background(if (isDark) Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF2563EB))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B))))
+                                            .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0.2f))), RoundedCornerShape(100.dp))
+                                    } else {
+                                        Modifier
+                                            .background(if (isDark) Color(0x281E293B) else Color(0x65FFFFFF))
+                                            .border(1.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                                    }
+                                } else {
+                                    Modifier
+                                        .background(if (isSelected) activePillBg else subCardBg)
+                                        .border(1.dp, if (isSelected) Color.Transparent else borderCol, RoundedCornerShape(100.dp))
+                                }
+                            )
                             .clickable { currentTab = tab }
                             .padding(horizontal = 14.dp, vertical = 7.dp)
                     ) {
@@ -502,14 +528,14 @@ fun NativeHomeScreen(
                             Icon(
                                 imageVector = tab.icon,
                                 contentDescription = null,
-                                tint = if (isSelected) activePillText else textPrimary,
+                                tint = if (isSelected) (if (isGlass) Color.White else activePillText) else textPrimary,
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
                                 text = tab.label,
                                 fontSize = 12.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) activePillText else textPrimary
+                                color = if (isSelected) (if (isGlass) Color.White else activePillText) else textPrimary
                             )
                         }
                     }
@@ -1074,7 +1100,7 @@ fun NativeHomeScreen(
                     .padding(start = 16.dp, end = 16.dp, bottom = 86.dp)
                     .fillMaxWidth()
                     .height(60.dp)
-                    .shadow(if (isGlass) 14.dp else 6.dp, RoundedCornerShape(22.dp), spotColor = if (isDark) Color(0x90000000) else Color(0x40000000))
+                    .shadow(if (isGlass) 0.dp else 6.dp, RoundedCornerShape(22.dp), spotColor = if (isDark) Color(0x90000000) else Color(0x40000000))
                     .clip(RoundedCornerShape(22.dp))
                     .then(
                         if (isGlass) {
@@ -1179,7 +1205,7 @@ fun NativeHomeScreen(
                 .padding(start = 20.dp, end = 20.dp, bottom = 12.dp)
                 .fillMaxWidth()
                 .height(62.dp)
-                .shadow(if (isGlass) 18.dp else 8.dp, RoundedCornerShape(32.dp), spotColor = if (isDark) Color(0x99000000) else Color(0x45000000))
+                .shadow(if (isGlass) 0.dp else 8.dp, RoundedCornerShape(32.dp), spotColor = if (isDark) Color(0x99000000) else Color(0x45000000))
                 .clip(RoundedCornerShape(32.dp))
                 .then(
                     if (isGlass) {

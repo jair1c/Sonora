@@ -1,4 +1,6 @@
 package com.sonora.music
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -199,6 +201,7 @@ class SonoraNativeActivity : ComponentActivity() {
                     }
                 }
 
+                                val rootHazeState = remember { HazeState() }
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
@@ -206,139 +209,147 @@ class SonoraNativeActivity : ComponentActivity() {
                         .navigationBarsPadding(),
                     color = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else androidx.compose.material3.MaterialTheme.colorScheme.background
                 ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        if (isGlass) {
-                            LiquidGlassBackdrop(isDark = isDark)
-                        }
-                        if (!hasSeenWelcome) {
-                        WelcomeScreen(
-                            isDark = isDark,
-                            onStart = {
-                                sonoraPrefs.setHasSeenWelcome(true)
-                                hasSeenWelcome = true
-                            }
-                        )
-                    } else {
-                        // 1. Home Screen (5 tabs)
-                        NativeHomeScreen(
-                            allSongs = songList,
-                            audioPlayer = audioPlayer,
-                            sonoraPrefs = sonoraPrefs,
-                            isDark = isDark,
-                            onOpenPlayer = { isPlayerOpen = true },
-                            onOpenSettings = { isSettingsOpen = true },
-                            onOpenEqualizer = { isEqualizerOpen = true },
-                            onOpenArtistDetail = { artist -> selectedArtistName = artist },
-                            onOpenAlbumDetail = { album -> selectedAlbumTitle = album },
-                            onSongOptions = { song -> selectedSongForOptions = song },
-                            onRescanLibrary = { loadSongs() }
-                        )
-
-                        // 2. Artist Detail Screen
-                        AnimatedVisibility(
-                            visible = selectedArtistName != null,
-                            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-                            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.sonora.music.ui.theme.LocalHazeState provides rootHazeState
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                
                         ) {
-                            selectedArtistName?.let { artist ->
-                                ArtistDetailScreen(
-                                    artistName = artist,
+                            if (isGlass) {
+                                LiquidGlassBackdrop(isDark = isDark)
+                            }
+                            if (!hasSeenWelcome) {
+                                WelcomeScreen(
+                                    isDark = isDark,
+                                    onStart = {
+                                        sonoraPrefs.setHasSeenWelcome(true)
+                                        hasSeenWelcome = true
+                                    }
+                                )
+                            } else {
+                                // 1. Home Screen (5 tabs)
+                                NativeHomeScreen(
                                     allSongs = songList,
                                     audioPlayer = audioPlayer,
+                                    sonoraPrefs = sonoraPrefs,
                                     isDark = isDark,
-                                    onBack = { selectedArtistName = null },
+                                    onOpenPlayer = { isPlayerOpen = true },
+                                    onOpenSettings = { isSettingsOpen = true },
+                                    onOpenEqualizer = { isEqualizerOpen = true },
+                                    onOpenArtistDetail = { artist -> selectedArtistName = artist },
+                                    onOpenAlbumDetail = { album -> selectedAlbumTitle = album },
                                     onSongOptions = { song -> selectedSongForOptions = song },
-                                    onOpenPlayer = { isPlayerOpen = true }
+                                    onRescanLibrary = { loadSongs() }
                                 )
-                            }
-                        }
 
-                        // 3. Album Detail Screen
-                        AnimatedVisibility(
-                            visible = selectedAlbumTitle != null,
-                            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-                            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-                        ) {
-                            selectedAlbumTitle?.let { album ->
-                                AlbumDetailScreen(
-                                    albumTitle = album,
-                                    allSongs = songList,
-                                    audioPlayer = audioPlayer,
-                                    isDark = isDark,
-                                    onBack = { selectedAlbumTitle = null },
-                                    onSongOptions = { song -> selectedSongForOptions = song },
-                                    onOpenPlayer = { isPlayerOpen = true }
-                                )
-                            }
-                        }
-
-                        // 4. Settings Screen
-                        AnimatedVisibility(
-                            visible = isSettingsOpen,
-                            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-                            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-                        ) {
-                            SettingsScreen(
-                                sonoraPrefs = sonoraPrefs,
-                                audioPlayer = audioPlayer,
-                                songs = songList,
-                                isDark = isDark,
-                                onBack = { isSettingsOpen = false },
-                                onOpenEqualizer = { isEqualizerOpen = true },
-                                onRescanLibrary = { loadSongs() },
-                                onThemeChanged = { mode -> currentThemeMode = mode; currentGlassVariant = sonoraPrefs.getGlassVariant() }
-                            )
-                        }
-
-                        // 5. Equalizer Modal
-                        EqualizerModal(
-                            isOpen = isEqualizerOpen,
-                            onClose = { isEqualizerOpen = false },
-                            audioPlayer = audioPlayer,
-                            sonoraPrefs = sonoraPrefs,
-                            isDark = isDark
-                        )
-
-                        // 6. Fullscreen Luxury Player
-                        AnimatedVisibility(
-                            visible = isPlayerOpen,
-                            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
-                        ) {
-                            NativePlayerScreen(
-                                audioPlayer = audioPlayer,
-                                sonoraPrefs = sonoraPrefs,
-                                isDark = isDark,
-                                onDismiss = { isPlayerOpen = false }
-                            )
-                        }
-
-                        // 7. Song Options Modal (3-dots)
-                        if (selectedSongForOptions != null) {
-                            SongOptionsModal(
-                                song = selectedSongForOptions!!,
-                                playlists = sonoraPrefs.getCustomPlaylists(),
-                                isDark = isDark,
-                                onDismiss = { selectedSongForOptions = null },
-                                onPlayNext = {
-                                    audioPlayer.playSong(selectedSongForOptions!!, listOf(selectedSongForOptions!!) + audioPlayer.playlist.value)
-                                },
-                                onAddToPlaylist = { playlistId ->
-                                    sonoraPrefs.addSongToPlaylist(playlistId, selectedSongForOptions!!.id)
-                                },
-                                onNavigateToArtist = { artist ->
-                                    selectedArtistName = artist
-                                },
-                                onNavigateToAlbum = { album ->
-                                    selectedAlbumTitle = album
-                                },
-                                onBlacklistFolder = { folder ->
-                                    sonoraPrefs.toggleBlacklistFolder(folder)
-                                    loadSongs()
+                                // 2. Artist Detail Screen
+                                AnimatedVisibility(
+                                    visible = selectedArtistName != null,
+                                    enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+                                    exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                                ) {
+                                    selectedArtistName?.let { artist ->
+                                        ArtistDetailScreen(
+                                            artistName = artist,
+                                            allSongs = songList,
+                                            audioPlayer = audioPlayer,
+                                            isDark = isDark,
+                                            onBack = { selectedArtistName = null },
+                                            onSongOptions = { song -> selectedSongForOptions = song },
+                                            onOpenPlayer = { isPlayerOpen = true }
+                                        )
+                                    }
                                 }
-                            )
+
+                                // 3. Album Detail Screen
+                                AnimatedVisibility(
+                                    visible = selectedAlbumTitle != null,
+                                    enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+                                    exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                                ) {
+                                    selectedAlbumTitle?.let { album ->
+                                        AlbumDetailScreen(
+                                            albumTitle = album,
+                                            allSongs = songList,
+                                            audioPlayer = audioPlayer,
+                                            isDark = isDark,
+                                            onBack = { selectedAlbumTitle = null },
+                                            onSongOptions = { song -> selectedSongForOptions = song },
+                                            onOpenPlayer = { isPlayerOpen = true }
+                                        )
+                                    }
+                                }
+
+                                // 4. Settings Screen
+                                AnimatedVisibility(
+                                    visible = isSettingsOpen,
+                                    enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+                                    exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                                ) {
+                                    SettingsScreen(
+                                        sonoraPrefs = sonoraPrefs,
+                                        audioPlayer = audioPlayer,
+                                        songs = songList,
+                                        isDark = isDark,
+                                        onBack = { isSettingsOpen = false },
+                                        onOpenEqualizer = { isEqualizerOpen = true },
+                                        onRescanLibrary = { loadSongs() },
+                                        onThemeChanged = { mode -> currentThemeMode = mode; currentGlassVariant = sonoraPrefs.getGlassVariant() }
+                                    )
+                                }
+
+                                // 5. Equalizer Modal
+                                EqualizerModal(
+                                    isOpen = isEqualizerOpen,
+                                    onClose = { isEqualizerOpen = false },
+                                    audioPlayer = audioPlayer,
+                                    sonoraPrefs = sonoraPrefs,
+                                    isDark = isDark
+                                )
+
+                                // 6. Fullscreen Luxury Player
+                                AnimatedVisibility(
+                                    visible = isPlayerOpen,
+                                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                                ) {
+                                    NativePlayerScreen(
+                                        audioPlayer = audioPlayer,
+                                        sonoraPrefs = sonoraPrefs,
+                                        isDark = isDark,
+                                        onDismiss = { isPlayerOpen = false }
+                                    )
+                                }
+
+                                // 7. Song Options Modal (3-dots)
+                                if (selectedSongForOptions != null) {
+                                    SongOptionsModal(
+                                        song = selectedSongForOptions!!,
+                                        playlists = sonoraPrefs.getCustomPlaylists(),
+                                        isDark = isDark,
+                                        onDismiss = { selectedSongForOptions = null },
+                                        onPlayNext = {
+                                            audioPlayer.playSong(selectedSongForOptions!!, listOf(selectedSongForOptions!!) + audioPlayer.playlist.value)
+                                        },
+                                        onAddToPlaylist = { playlistId ->
+                                            sonoraPrefs.addSongToPlaylist(playlistId, selectedSongForOptions!!.id)
+                                        },
+                                        onNavigateToArtist = { artist ->
+                                            selectedArtistName = artist
+                                        },
+                                        onNavigateToAlbum = { album ->
+                                            selectedAlbumTitle = album
+                                        },
+                                        onBlacklistFolder = { folder ->
+                                            sonoraPrefs.toggleBlacklistFolder(folder)
+                                            loadSongs()
+                                        }
+                                    )
+                                }
+                            }
                         }
-                    }
                     }
                 }
             }

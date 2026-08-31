@@ -237,7 +237,6 @@ fun NativePlayerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .haze(state = hazeState)
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
@@ -255,8 +254,18 @@ fun NativePlayerScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(playerBtnBrush)
-                        .border(if (isGlass) 1.2.dp else 1.dp, playerBtnBorder, CircleShape)
+                        .then(
+                            if (isGlass) {
+                                Modifier
+                                    .hazeChild(state = hazeState, shape = CircleShape, style = playerGlassStyle)
+                                    .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.12f))
+                                    .border(1.2.dp, playerGlassGlareBorder, CircleShape)
+                            } else {
+                                Modifier
+                                    .background(playerBtnBrush)
+                                    .border(1.dp, playerBtnBorder, CircleShape)
+                            }
+                        )
                 ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
@@ -280,8 +289,18 @@ fun NativePlayerScreen(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(playerBtnBrush)
-                            .border(if (isGlass) 1.2.dp else 1.dp, playerBtnBorder, CircleShape)
+                            .then(
+                                if (isGlass) {
+                                    Modifier
+                                        .hazeChild(state = hazeState, shape = CircleShape, style = playerGlassStyle)
+                                        .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.12f))
+                                        .border(1.2.dp, playerGlassGlareBorder, CircleShape)
+                                } else {
+                                    Modifier
+                                        .background(playerBtnBrush)
+                                        .border(1.dp, playerBtnBorder, CircleShape)
+                                }
+                            )
                     ) {
                         Icon(
                             imageVector = Icons.Default.QueueMusic,
@@ -301,8 +320,18 @@ fun NativePlayerScreen(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(playerBtnBrush)
-                            .border(if (isGlass) 1.2.dp else 1.dp, playerBtnBorder, CircleShape)
+                            .then(
+                                if (isGlass) {
+                                    Modifier
+                                        .hazeChild(state = hazeState, shape = CircleShape, style = playerGlassStyle)
+                                        .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.12f))
+                                        .border(1.2.dp, playerGlassGlareBorder, CircleShape)
+                                } else {
+                                    Modifier
+                                        .background(playerBtnBrush)
+                                        .border(1.dp, playerBtnBorder, CircleShape)
+                                }
+                            )
                     ) {
                         Icon(
                             imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -342,8 +371,18 @@ fun NativePlayerScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.22f)) else badgeBrush)
-                            .border(1.dp, if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(12.dp))
+                            .then(
+                                if (isGlass) {
+                                    Modifier
+                                        .hazeChild(state = hazeState, shape = RoundedCornerShape(12.dp), style = playerGlassStyle)
+                                        .background(if (isHiRes) Color(0xFFD97706).copy(alpha = 0.25f) else (if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.15f)))
+                                        .border(1.dp, if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.6f)) else playerGlassGlareBorder, RoundedCornerShape(12.dp))
+                                } else {
+                                    Modifier
+                                        .background(if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.22f)) else badgeBrush)
+                                        .border(1.dp, if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(12.dp))
+                                }
+                            )
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
@@ -359,8 +398,18 @@ fun NativePlayerScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.22f)) else badgeBrush)
-                            .border(1.dp, if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(12.dp))
+                            .then(
+                                if (isGlass) {
+                                    Modifier
+                                        .hazeChild(state = hazeState, shape = RoundedCornerShape(12.dp), style = playerGlassStyle)
+                                        .background(if (currentSpeed != 1.0f || currentPitch != 1.0f) Color(0xFF10B981).copy(alpha = 0.25f) else (if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.15f)))
+                                        .border(1.dp, if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.6f)) else playerGlassGlareBorder, RoundedCornerShape(12.dp))
+                                } else {
+                                    Modifier
+                                        .background(if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.22f)) else badgeBrush)
+                                        .border(1.dp, if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(12.dp))
+                                }
+                            )
                             .clickable { showSpeedModal = true }
                             .padding(horizontal = 9.dp, vertical = 4.dp)
                     ) {

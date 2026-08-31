@@ -237,94 +237,94 @@ fun NativeHomeScreen(
         ) {
                 when (currentTab) {
                     LibraryTab.CANCIONES -> {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            // Subheader: X CANCIONES & SORT BUTTON
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 224.dp, bottom = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "${availableSongs.size} CANCIONES",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Black,
-                                    letterSpacing = 1.sp,
-                                    color = textSecondary
-                                )
+                        // Songs List with Instant Scroll-to-Top on Sort Change
+                        val songsListState = rememberLazyListState()
+                        LaunchedEffect(sortMode) {
+                            songsListState.scrollToItem(0)
+                        }
 
-                                Box {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(100.dp))
-                                            .background(subCardBg)
-                                            .border(1.dp, borderCol, RoundedCornerShape(100.dp))
-                                            .clickable { showSortDropdown = !showSortDropdown }
-                                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        LazyColumn(
+                            state = songsListState,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(top = 224.dp, bottom = if (currentSong != null) 210.dp else 140.dp)
+                        ) {
+                            // Subheader: X CANCIONES & SORT BUTTON (Scrolls smoothly with content)
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${availableSongs.size} CANCIONES",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 1.sp,
+                                        color = textSecondary
+                                    )
+
+                                    Box {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(100.dp))
+                                                .background(subCardBg)
+                                                .border(1.dp, borderCol, RoundedCornerShape(100.dp))
+                                                .clickable { showSortDropdown = !showSortDropdown }
+                                                .padding(horizontal = 10.dp, vertical = 4.dp)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Sort,
-                                                contentDescription = null,
-                                                tint = textPrimary,
-                                                modifier = Modifier.size(12.dp)
-                                            )
-                                            Text(
-                                                text = when (sortMode) {
-                                                    SortMode.TITLE_AZ -> "Nombre (A → Z)"
-                                                    SortMode.TITLE_ZA -> "Nombre (Z → A)"
-                                                    SortMode.ARTIST_AZ -> "Artista (A → Z)"
-                                                    SortMode.DATE_ADDED_DESC -> "Fecha Más Reciente"
-                                                    SortMode.DURATION_DESC -> "Mayor Duración"
-                                                },
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = textPrimary
-                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Sort,
+                                                    contentDescription = null,
+                                                    tint = textPrimary,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Text(
+                                                    text = when (sortMode) {
+                                                        SortMode.TITLE_AZ -> "Nombre (A → Z)"
+                                                        SortMode.TITLE_ZA -> "Nombre (Z → A)"
+                                                        SortMode.ARTIST_AZ -> "Artista (A → Z)"
+                                                        SortMode.DATE_ADDED_DESC -> "Fecha Más Reciente"
+                                                        SortMode.DURATION_DESC -> "Mayor Duración"
+                                                    },
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = textPrimary
+                                                )
+                                            }
                                         }
-                                    }
 
-                                    DropdownMenu(
-                                        expanded = showSortDropdown,
-                                        onDismissRequest = { showSortDropdown = false },
-                                        modifier = Modifier.background(cardBg)
-                                    ) {
-                                        listOf(
-                                            Pair(SortMode.TITLE_AZ, "Nombre (A → Z)"),
-                                            Pair(SortMode.TITLE_ZA, "Nombre (Z → A)"),
-                                            Pair(SortMode.ARTIST_AZ, "Artista (A → Z)"),
-                                            Pair(SortMode.DATE_ADDED_DESC, "Fecha Más Reciente"),
-                                            Pair(SortMode.DURATION_DESC, "Mayor Duración")
-                                        ).forEach { (mode, label) ->
-                                            DropdownMenuItem(
-                                                text = { Text(label, color = textPrimary, fontSize = 12.sp) },
-                                                onClick = {
-                                                    sortMode = mode
-                                                    sonoraPrefs.setSortMode(mode.name)
-                                                    showSortDropdown = false
-                                                }
-                                            )
+                                        DropdownMenu(
+                                            expanded = showSortDropdown,
+                                            onDismissRequest = { showSortDropdown = false },
+                                            modifier = Modifier.background(cardBg)
+                                        ) {
+                                            listOf(
+                                                Pair(SortMode.TITLE_AZ, "Nombre (A → Z)"),
+                                                Pair(SortMode.TITLE_ZA, "Nombre (Z → A)"),
+                                                Pair(SortMode.ARTIST_AZ, "Artista (A → Z)"),
+                                                Pair(SortMode.DATE_ADDED_DESC, "Fecha Más Reciente"),
+                                                Pair(SortMode.DURATION_DESC, "Mayor Duración")
+                                            ).forEach { (mode, label) ->
+                                                DropdownMenuItem(
+                                                    text = { Text(label, color = textPrimary, fontSize = 12.sp) },
+                                                    onClick = {
+                                                        sortMode = mode
+                                                        sonoraPrefs.setSortMode(mode.name)
+                                                        showSortDropdown = false
+                                                    }
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
-
-                            // Songs List with Instant Scroll-to-Top on Sort Change
-                            val songsListState = rememberLazyListState()
-                            LaunchedEffect(sortMode) {
-                                songsListState.scrollToItem(0)
-                            }
-
-                            LazyColumn(
-                                state = songsListState,
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(top = 4.dp, bottom = if (currentSong != null) 210.dp else 140.dp)
-                            ) {
                                 items(availableSongs, key = { it.id }) { song ->
                                     val isCurrent = currentSong?.id == song.id
                                     val isLiked = likedSongIds.contains(song.id)
@@ -467,7 +467,6 @@ fun NativeHomeScreen(
                                     }
                                 }
                             }
-                        }
                     }
 
                     LibraryTab.ARTISTAS -> {
@@ -575,15 +574,25 @@ fun NativeHomeScreen(
                                 }
                             }
 
-                            // Floating Mix Button
+                            // Floating Mix Button (Real-time Glass Backdrop Blur & Glare Border)
                             if (selectedArtistMix.isNotEmpty()) {
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
                                         .padding(bottom = 135.dp)
                                         .clip(RoundedCornerShape(100.dp))
-                                        .background(if (isDark) Color.White else Color(0xFF121212))
-                                        .border(1.dp, if (isDark) Color.Transparent else Color(0xFF333333), RoundedCornerShape(100.dp))
+                                        .then(
+                                            if (isGlass) {
+                                                Modifier
+                                                    .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
+                                                    .background(if (isDark) Color(0x401E293B) else Color(0x80FFFFFF))
+                                                    .border(1.2.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                                            } else {
+                                                Modifier
+                                                    .background(if (isDark) Color.White else Color(0xFF121212))
+                                                    .border(1.dp, if (isDark) Color.Transparent else Color(0xFF333333), RoundedCornerShape(100.dp))
+                                            }
+                                        )
                                         .clickable {
                                             val mixSongs = availableSongs.filter { selectedArtistMix.contains(it.artist) }.shuffled()
                                             if (mixSongs.isNotEmpty()) {
@@ -754,7 +763,17 @@ fun NativeHomeScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            bgColor,
+                            bgColor.copy(alpha = 0.92f),
+                            bgColor.copy(alpha = 0.75f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .padding(start = 20.dp, end = 20.dp, bottom = 12.dp)
         ) {
             Spacer(modifier = Modifier.height(14.dp))
 // 1. TOP APP BAR with (←), TU BIBLIOTECA LOCAL, and 4 Right Circle Action Buttons

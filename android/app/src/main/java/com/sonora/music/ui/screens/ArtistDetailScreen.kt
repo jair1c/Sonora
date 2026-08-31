@@ -1,6 +1,7 @@
 package com.sonora.music.ui.screens
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.SolidColor
@@ -171,6 +172,7 @@ fun ArtistDetailScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .then(if (isGlass) Modifier.haze(state = hazeState) else Modifier)
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -214,46 +216,69 @@ fun ArtistDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Play All & Shuffle Buttons
+                    // Play All & Shuffle Buttons (Real-time Glass Backdrop Blur & Glare Border)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Button(
-                            onClick = {
-                                if (artistSongs.isNotEmpty()) {
-                                    audioPlayer.playSong(artistSongs[0], artistSongs)
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = textColor,
-                                contentColor = bgColor
-                            )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .then(
+                                    if (isGlass) {
+                                        Modifier
+                                            .background(if (isDark) Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF2563EB))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B))))
+                                            .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0.2f))), RoundedCornerShape(16.dp))
+                                    } else {
+                                        Modifier.background(textColor)
+                                    }
+                                )
+                                .clickable {
+                                    if (artistSongs.isNotEmpty()) {
+                                        audioPlayer.playSong(artistSongs[0], artistSongs)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Reproducir", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = if (isGlass) Color.White else bgColor, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Reproducir", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (isGlass) Color.White else bgColor)
+                            }
                         }
 
-                        Button(
-                            onClick = {
-                                if (artistSongs.isNotEmpty()) {
-                                    val shuffled = artistSongs.shuffled()
-                                    audioPlayer.playSong(shuffled[0], shuffled)
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = cardBg,
-                                contentColor = textColor
-                            )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .then(
+                                    if (isGlass) {
+                                        Modifier
+                                            .hazeChild(state = hazeState, shape = RoundedCornerShape(16.dp), style = detailGlassStyle)
+                                            .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
+                                            .border(1.2.dp, detailGlassGlareBorder, RoundedCornerShape(16.dp))
+                                    } else {
+                                        Modifier
+                                            .background(cardBg)
+                                            .border(1.dp, themeColors.borderCol, RoundedCornerShape(16.dp))
+                                    }
+                                )
+                                .clickable {
+                                    if (artistSongs.isNotEmpty()) {
+                                        val shuffled = artistSongs.shuffled()
+                                        audioPlayer.playSong(shuffled[0], shuffled)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Aleatorio", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Shuffle, contentDescription = null, tint = textColor, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Aleatorio", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = textColor)
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))

@@ -418,8 +418,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp)
             ) {
                 Row(
@@ -552,8 +562,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp)
             ) {
                 Row(
@@ -650,8 +670,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp)
             ) {
                 Row(
@@ -733,8 +763,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp)
             ) {
                 Row(
@@ -903,8 +943,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp)
             ) {
                 Row(
@@ -1099,8 +1149,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp)
             ) {
                 Row(
@@ -1332,8 +1392,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp)
             ) {
                 Row(
@@ -1388,8 +1458,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp)
             ) {
                 Row(
@@ -1499,8 +1579,18 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(22.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = settingsGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
+                                .border(1.2.dp, settingsGlassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, RoundedCornerShape(22.dp))
+                        }
+                    )
                     .padding(18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

@@ -1,6 +1,12 @@
 package com.sonora.music.ui.components
 
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeChild
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +63,8 @@ import com.sonora.music.ui.theme.SonoraObsidianDark
 import com.sonora.music.ui.theme.SonoraPaperBeige
 import com.sonora.music.ui.theme.SonoraPaperCard
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SongOptionsModal(
@@ -82,27 +90,45 @@ fun SongOptionsModal(
     var showDetailsDialog by remember { mutableStateOf(false) }
     var showPlaylistPicker by remember { mutableStateOf(false) }
 
+    val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { dev.chrisbanes.haze.HazeState() }
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetGlassStyle = dev.chrisbanes.haze.HazeStyle(
+        blurRadius = 26.dp,
+        tint = if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg.copy(alpha = 0.40f) else com.sonora.music.ui.theme.SonoraGlassLightBg.copy(alpha = 0.25f),
+        noiseFactor = 0.04f
+    )
+    val sheetGlareBorder = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = if (isDark) 0.40f else 0.85f),
+            Color.White.copy(alpha = 0.08f)
+        )
+    )
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = bgCard,
+        containerColor = Color.Transparent,
         contentColor = textColor,
-        scrimColor = Color.Black.copy(alpha = 0.72f),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 10.dp)
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(if (isDark) Color(0xFF3E3B35) else Color(0xFFC0BAB0))
-            )
-        }
+        scrimColor = Color.Black.copy(alpha = 0.65f),
+        dragHandle = null
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .clip(sheetShape)
+                .then(
+                    if (isGlass) {
+                        Modifier
+                            .hazeChild(state = hazeState, shape = sheetShape, style = sheetGlassStyle)
+                            .background(if (isDark) Color(0xEB141D2B) else Color(0xF2FFFFFF))
+                            .border(1.2.dp, sheetGlareBorder, sheetShape)
+                    } else {
+                        Modifier
+                            .background(bgCard)
+                            .border(1.dp, borderCol, sheetShape)
+                    }
+                )
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             // Header with song info
             Row(

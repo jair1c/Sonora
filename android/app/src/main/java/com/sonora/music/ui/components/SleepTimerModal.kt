@@ -1,5 +1,9 @@
 package com.sonora.music.ui.components
 
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeChild
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,12 +26,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+
+
+
 
 @Composable
 fun SleepTimerModal(
@@ -72,12 +78,36 @@ fun SleepTimerModal(
                 .clickable(onClick = onClose),
             contentAlignment = Alignment.Center
         ) {
+            val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { dev.chrisbanes.haze.HazeState() }
+            val modalShape = RoundedCornerShape(28.dp)
+            val modalGlassStyle = dev.chrisbanes.haze.HazeStyle(
+                blurRadius = 26.dp,
+                tint = if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg.copy(alpha = 0.40f) else com.sonora.music.ui.theme.SonoraGlassLightBg.copy(alpha = 0.25f),
+                noiseFactor = 0.04f
+            )
+            val modalGlareBorder = Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = if (isDark) 0.45f else 0.85f),
+                    Color.White.copy(alpha = 0.10f)
+                )
+            )
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(bgCard)
-                    .border(1.dp, borderCol, RoundedCornerShape(28.dp))
+                    .clip(modalShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = modalShape, style = modalGlassStyle)
+                                .background(if (isDark) Color(0xEB141D2B) else Color(0xF2FFFFFF))
+                                .border(1.2.dp, modalGlareBorder, modalShape)
+                        } else {
+                            Modifier
+                                .background(bgCard)
+                                .border(1.dp, borderCol, modalShape)
+                        }
+                    )
                     .clickable(enabled = false) {}
                     .padding(24.dp)
             ) {

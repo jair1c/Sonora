@@ -594,7 +594,7 @@ class SonoraAudioPlayer(private val context: Context) {
         preloadJob?.cancel()
 
         val durationMs = crossfadeSeconds * 1000L
-        val steps = (crossfadeSeconds * 50).coerceAtLeast(25)
+        val steps = (crossfadeSeconds * 40).coerceAtLeast(25)
         val stepDelay = (durationMs / steps).coerceAtLeast(16L)
 
         val useFile = nextSong.filePath.isNotEmpty() && File(nextSong.filePath).exists() && File(nextSong.filePath).canRead()
@@ -603,6 +603,7 @@ class SonoraAudioPlayer(private val context: Context) {
                 standbyPlayer.stop()
                 standbyPlayer.clearMediaItems()
                 standbyPlayer.setMediaItem(buildMediaItem(nextSong, useFileFallback = useFile))
+                standbyPlayer.prepare()
             } catch (e: Exception) {
                 android.util.Log.e("SonoraAudioPlayer", "Error preparing standbyPlayer for crossfade", e)
             }
@@ -611,39 +612,41 @@ class SonoraAudioPlayer(private val context: Context) {
         try {
             standbyPlayer.volume = 0f
             standbyPlayer.playWhenReady = true
-            standbyPlayer.prepare()
             standbyPlayer.play()
         } catch (e: Exception) {
             android.util.Log.e("SonoraAudioPlayer", "Error starting standbyPlayer", e)
         }
 
-        // Update metadata and UI immediately at t=0 of crossfade
-        _currentSong.value = nextSong
-        _isPlaying.value = true
-        sonoraPrefs.saveLastPlayback(nextSong.id, 0L, queue.map { it.id })
-        trackSongPlay(nextSong)
-        ensureMediaServiceStarted()
-        scope.launch(Dispatchers.IO) {
-            _realAudioFormat.value = AudioMetadataHelper.getAudioDetails(nextSong, context)
-            val lyrics = mediaRepo.getLyricsForSong(nextSong)
-            if (lyrics.isNotEmpty() && _currentSong.value?.id == nextSong.id) {
-                _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
-            }
-        }
-
         val fadingOutPlayer = activePlayer
         val fadingInPlayer = standbyPlayer
+        var metadataSwitched = false
 
         crossfadeJob = scope.launch {
             for (step in 1..steps) {
                 delay(stepDelay)
                 val t = step.toDouble() / steps.toDouble()
-                // Constant power crossfade curve: cos(t * pi/2) for fade out, sin(t * pi/2) for fade in
+                // Constant power equal-energy curve: cos(t * pi/2) for out, sin(t * pi/2) for in
                 val angle = t * (Math.PI / 2.0)
                 val volOut = Math.cos(angle).toFloat().coerceIn(0f, 1f)
                 val volIn = Math.sin(angle).toFloat().coerceIn(0f, 1f)
                 try { fadingOutPlayer.volume = volOut } catch (_: Exception) {}
                 try { fadingInPlayer.volume = volIn } catch (_: Exception) {}
+
+                // Switch UI and metadata seamlessly at 50% midpoint of the crossfade
+                if (t >= 0.5 && !metadataSwitched) {
+                    metadataSwitched = true
+                    _currentSong.value = nextSong
+                    sonoraPrefs.saveLastPlayback(nextSong.id, 0L, queue.map { it.id })
+                    trackSongPlay(nextSong)
+                    ensureMediaServiceStarted()
+                    scope.launch(Dispatchers.IO) {
+                        _realAudioFormat.value = AudioMetadataHelper.getAudioDetails(nextSong, context)
+                        val lyrics = mediaRepo.getLyricsForSong(nextSong)
+                        if (lyrics.isNotEmpty() && _currentSong.value?.id == nextSong.id) {
+                            _currentSong.value = _currentSong.value?.copy(lyrics = lyrics)
+                        }
+                    }
+                }
             }
 
             // 1. Promote fadingInPlayer to activePlayer FIRST
@@ -651,6 +654,12 @@ class SonoraAudioPlayer(private val context: Context) {
             activePlayer = fadingInPlayer
             standbyPlayer = fadingOutPlayer
             _activePlayerFlow.value = activePlayer
+
+            if (!metadataSwitched) {
+                _currentSong.value = nextSong
+                sonoraPrefs.saveLastPlayback(nextSong.id, 0L, queue.map { it.id })
+                trackSongPlay(nextSong)
+            }
 
             // 2. Attach effects to new active player
             equalizerManager.attachAudioSession(activePlayer.audioSessionId)
@@ -660,6 +669,7 @@ class SonoraAudioPlayer(private val context: Context) {
             try {
                 fadingOutPlayer.stop()
                 fadingOutPlayer.clearMediaItems()
+                fadingOutPlayer.volume = 1.0f
             } catch (_: Exception) {}
 
             preloadedSong = null

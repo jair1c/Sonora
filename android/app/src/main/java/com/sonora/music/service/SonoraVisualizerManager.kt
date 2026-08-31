@@ -98,9 +98,14 @@ class SonoraVisualizerManager {
                                 totalEnergy += clamped
                             }
 
-                            if (totalEnergy > 0.05f) {
+                            if (totalEnergy > 0.005f) {
                                 lastHardwareFftTime = System.currentTimeMillis()
-                                _fftData.value = magnitudes
+                                // Apply dynamic logarithmic amplification so quiet passages stay responsive
+                                val enhanced = FloatArray(bandCount)
+                                for (k in 0 until bandCount) {
+                                    enhanced[k] = kotlin.math.sqrt(magnitudes[k] * 1.5f).coerceIn(0.08f, 1f)
+                                }
+                                _fftData.value = enhanced
                             }
                         } catch (_: Throwable) {}
                     }

@@ -1708,7 +1708,7 @@ fun QuickActionCard(
                 if (isGlass) {
                     Modifier
                         .hazeChild(state = hazeState, shape = RoundedCornerShape(18.dp), style = settingsGlassStyle)
-                        .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.08f))
+                        .background(if (isDark) Color(0x351E293B) else Color(0x75FFFFFF))
                         .border(1.dp, settingsGlassGlareBorder, RoundedCornerShape(18.dp))
                 } else {
                     Modifier

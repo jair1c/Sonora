@@ -1,5 +1,9 @@
 package com.sonora.music.ui.components
 
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeChild
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +30,8 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.sonora.music.data.local.SonoraPreferences
 import com.sonora.music.data.model.Song
+
+
 
 @Composable
 fun StatsModal(

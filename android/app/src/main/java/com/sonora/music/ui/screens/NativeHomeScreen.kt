@@ -303,13 +303,8 @@ fun NativeHomeScreen(
                                             }
                                         }
 
-                                        val sortModalShape = RoundedCornerShape(20.dp)
-                                        val sortGlassGlareBorder = Brush.verticalGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = 0.45f),
-                                                Color.White.copy(alpha = 0.10f)
-                                            )
-                                        )
+                                        val sortModalShape = RoundedCornerShape(22.dp)
+                                        val sortGlassGlareBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8)))
 
                                         DropdownMenu(
                                             expanded = showSortDropdown,
@@ -319,7 +314,7 @@ fun NativeHomeScreen(
                                                 .then(
                                                     if (isGlass) {
                                                         Modifier
-                                                            .background(if (isDark) Color(0xF0141D2B) else Color(0xF6FFFFFF))
+                                                            .background(if (isDark) Color(0xEB1E293B) else Color(0xF2FFFFFF))
                                                             .border(1.2.dp, sortGlassGlareBorder, sortModalShape)
                                                     } else {
                                                         Modifier
@@ -327,6 +322,7 @@ fun NativeHomeScreen(
                                                             .border(1.dp, borderCol, sortModalShape)
                                                     }
                                                 )
+                                                .padding(vertical = 4.dp)
                                         ) {
                                             listOf(
                                                 Pair(SortMode.TITLE_AZ, "Nombre (A → Z)"),
@@ -627,7 +623,7 @@ fun NativeHomeScreen(
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
-                                        .padding(bottom = 135.dp)
+                                        .padding(bottom = 168.dp)
                                         .clip(RoundedCornerShape(100.dp))
                                         .then(
                                             if (isGlass) {

@@ -634,6 +634,9 @@ fun NativePlayerScreen(
                 lyrics.indexOfLast { currentPositionMs >= it.timeMs }.coerceAtLeast(0)
             } else 0
 
+            val lyricsGlassBg = if (isDark) Color(0x351E293B) else Color(0x75FFFFFF)
+            val lyricsGlassBorder = if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8)))
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -642,8 +645,8 @@ fun NativePlayerScreen(
                         if (isGlass) {
                             Modifier
                                 .hazeChild(state = hazeState, shape = RoundedCornerShape(20.dp), style = playerGlassStyle)
-                                .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.08f))
-                                .border(1.dp, playerGlassGlareBorder, RoundedCornerShape(20.dp))
+                                .background(lyricsGlassBg)
+                                .border(1.2.dp, lyricsGlassBorder, RoundedCornerShape(20.dp))
                         } else {
                             Modifier
                                 .background(lyricsPillBrush)

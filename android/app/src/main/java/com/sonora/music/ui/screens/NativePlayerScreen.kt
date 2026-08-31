@@ -43,8 +43,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.Usb
+import com.sonora.music.service.OutputIconType
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -550,7 +555,7 @@ fun NativePlayerScreen(
                 }
             }
 
-            // 4. Title & Artist
+            // 4. Title, Artist & Audio Output Device Glass Pill
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -572,6 +577,49 @@ fun NativePlayerScreen(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Subtle Audio Output Device Glass Pill
+                val outputDevice by audioPlayer.currentOutputDevice.collectAsState()
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .then(
+                            if (isGlass) {
+                                Modifier
+                                    .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = playerGlassStyle)
+                                    .background(if (isDark) Color(0x351E293B) else Color(0x60FFFFFF))
+                                    .border(1.dp, if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x6094A3B8))), RoundedCornerShape(100.dp))
+                            } else {
+                                Modifier
+                                    .background(badgeBrush)
+                                    .border(1.dp, badgeBorder, RoundedCornerShape(100.dp))
+                            }
+                        )
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    val icon = when (outputDevice.iconType) {
+                        OutputIconType.BLUETOOTH -> Icons.Default.Bluetooth
+                        OutputIconType.HEADPHONES -> Icons.Default.Headphones
+                        OutputIconType.USB -> Icons.Default.Usb
+                        OutputIconType.SPEAKER -> Icons.AutoMirrored.Filled.VolumeUp
+                    }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = outputDevice.name,
+                        tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = outputDevice.name,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = textColor.copy(alpha = 0.85f),
+                        letterSpacing = 0.3.sp
+                    )
+                }
             }
 
             // 5. Dynamic Luxury Playback Controls (5 Estilos Seleccionables)

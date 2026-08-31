@@ -468,6 +468,23 @@ class SonoraMediaService : MediaSessionService() {
         return mediaSession
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        val audioPlayer = SonoraAudioPlayer.getInstance(applicationContext)
+        if (audioPlayer.isPlaying.value) {
+            // Keep playing and service alive in foreground
+        } else {
+            // App swiped away while paused -> cleanup and stop service
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
+            stopSelf()
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         val audioPlayer = SonoraAudioPlayer.getInstance(applicationContext)

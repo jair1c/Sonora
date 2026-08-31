@@ -1,6 +1,7 @@
 package com.sonora.music.service
 
 import com.sonora.music.util.AudioMetadataHelper
+import com.sonora.music.util.AudioSilenceDetector
 import com.sonora.music.util.AudioFormatDetails
 
 import android.content.Context
@@ -37,6 +38,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+
+enum class OutputIconType {
+    SPEAKER,
+    BLUETOOTH,
+    HEADPHONES,
+    USB
+}
+
+data class OutputDeviceInfo(
+    val name: String,
+    val iconType: OutputIconType
+)
 
 class SonoraAudioPlayer(private val context: Context) {
 
@@ -151,6 +164,70 @@ class SonoraAudioPlayer(private val context: Context) {
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
+
+    private val _currentOutputDevice = MutableStateFlow(OutputDeviceInfo("Altavoz del teléfono", OutputIconType.SPEAKER))
+    val currentOutputDevice = _currentOutputDevice.asStateFlow()
+
+    private var preloadedStartOffsetMs = 0L
+
+    private val audioDeviceCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        object : android.media.AudioDeviceCallback() {
+            override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>?) {
+                updateOutputDevice()
+            }
+            override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>?) {
+                updateOutputDevice()
+            }
+        }
+    } else null
+
+    private fun updateOutputDevice() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                var bestDevice: OutputDeviceInfo? = null
+
+                for (device in devices) {
+                    val type = device.type
+                    val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && device.productName.isNotEmpty()) {
+                        device.productName.toString()
+                    } else null
+
+                    when (type) {
+                        android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+                        android.media.AudioDeviceInfo.TYPE_BLE_HEADSET,
+                        android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> {
+                            bestDevice = OutputDeviceInfo(name ?: "Audífonos Bluetooth", OutputIconType.BLUETOOTH)
+                            break
+                        }
+                        android.media.AudioDeviceInfo.TYPE_USB_DEVICE,
+                        android.media.AudioDeviceInfo.TYPE_USB_HEADSET -> {
+                            if (bestDevice == null || bestDevice.iconType == OutputIconType.SPEAKER) {
+                                bestDevice = OutputDeviceInfo(name ?: "Dispositivo USB", OutputIconType.USB)
+                            }
+                        }
+                        android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET,
+                        android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> {
+                            if (bestDevice == null || bestDevice.iconType == OutputIconType.SPEAKER) {
+                                bestDevice = OutputDeviceInfo(name ?: "Audífonos con cable", OutputIconType.HEADPHONES)
+                            }
+                        }
+                        android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> {
+                            if (bestDevice == null) {
+                                bestDevice = OutputDeviceInfo("Altavoz del teléfono", OutputIconType.SPEAKER)
+                            }
+                        }
+                    }
+                }
+                _currentOutputDevice.value = bestDevice ?: OutputDeviceInfo("Altavoz del teléfono", OutputIconType.SPEAKER)
+            } else {
+                _currentOutputDevice.value = OutputDeviceInfo("Altavoz del teléfono", OutputIconType.SPEAKER)
+            }
+        } catch (_: Exception) {
+            _currentOutputDevice.value = OutputDeviceInfo("Altavoz del teléfono", OutputIconType.SPEAKER)
+        }
+    }
+
 
     private val _currentPositionMs = MutableStateFlow(0L)
     val currentPositionMs = _currentPositionMs.asStateFlow()
@@ -701,7 +778,8 @@ class SonoraAudioPlayer(private val context: Context) {
             try {
                 standbyPlayer.stop()
                 standbyPlayer.clearMediaItems()
-                standbyPlayer.setMediaItem(buildMediaItem(nextSong, useFileFallback = useFile))
+                val offset = AudioSilenceDetector.detectInitialSilenceMs(nextSong.filePath)
+                standbyPlayer.setMediaItem(buildMediaItem(nextSong, useFileFallback = useFile), offset)
                 standbyPlayer.prepare()
             } catch (e: Exception) {
                 android.util.Log.e("SonoraAudioPlayer", "Error preparing standbyPlayer for crossfade", e)
@@ -953,6 +1031,9 @@ class SonoraAudioPlayer(private val context: Context) {
         preloadedSong = null
         cancelSleepTimer()
         stopPositionTracking()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && audioDeviceCallback != null) {
+            try { audioManager.unregisterAudioDeviceCallback(audioDeviceCallback) } catch (_: Exception) {}
+        }
         visualizerManager.release()
         equalizerManager.release()
         try {

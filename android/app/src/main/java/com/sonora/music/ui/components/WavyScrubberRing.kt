@@ -29,9 +29,9 @@ fun WavyScrubberRing(
     onSeekPercent: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val trackBgColor = if (isDarkTheme) Color(0xFF2A2824) else Color(0xFFDED8CD)
-    val progressColor = if (isDarkTheme) Color.White else Color(0xFF121212)
-    val thumbColor = if (isDarkTheme) Color.White else Color(0xFF121212)
+    val trackBgColor = if (isDarkTheme) Color(0x55FFFFFF) else Color(0x38000000)
+    val progressColor = if (isDarkTheme) Color.White else Color(0xFF0F172A)
+    val thumbColor = if (isDarkTheme) Color.White else Color(0xFF0F172A)
 
     val petalCount = 8
     val amplitudeFactor = 0.045f
@@ -84,7 +84,7 @@ fun WavyScrubberRing(
             drawPath(
                 path = bgPath,
                 color = trackBgColor,
-                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                style = Stroke(width = 3.5.dp.toPx(), cap = StrokeCap.Round)
             )
 
             // Active Progress Path
@@ -105,7 +105,7 @@ fun WavyScrubberRing(
                 drawPath(
                     path = activePath,
                     color = progressColor,
-                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                    style = Stroke(width = 4.5.dp.toPx(), cap = StrokeCap.Round)
                 )
 
                 // Indicator Thumb Dot

@@ -1035,17 +1035,17 @@ fun NativeHomeScreen(
         if (currentSong != null) {
             val miniPlayerBrush = if (isGlass) {
                 if (isDark) {
-                    Brush.linearGradient(
+                    Brush.verticalGradient(
                         listOf(
-                            Color(0xFF283C56),
-                            Color(0xFF1D2C40)
+                            Color(0x75283C56),
+                            Color(0x551B2A3E)
                         )
                     )
                 } else {
-                    Brush.linearGradient(
+                    Brush.verticalGradient(
                         listOf(
-                            Color(0xFFFFFFFF),
-                            Color(0xFFE8EEF6)
+                            Color(0x85FFFFFF),
+                            Color(0x60E5ECF4)
                         )
                     )
                 }
@@ -1177,15 +1177,15 @@ fun NativeHomeScreen(
             if (isDark) {
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF263A52),
-                        Color(0xFF1B2A3E)
+                        Color(0x70263A52),
+                        Color(0x50182436)
                     )
                 )
             } else {
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFFFFFFFF),
-                        Color(0xFFE5ECF4)
+                        Color(0x85FFFFFF),
+                        Color(0x60E5ECF4)
                     )
                 )
             }

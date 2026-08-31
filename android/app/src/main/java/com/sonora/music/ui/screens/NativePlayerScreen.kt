@@ -213,13 +213,14 @@ fun NativePlayerScreen(
                     }
                 )
             }
-            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         if (isGlass) {
             com.sonora.music.ui.theme.LiquidGlassBackdrop(isDark = isDark)
         }
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -803,6 +804,7 @@ private fun PlaybackControlsDock(
         } else {
             SolidColor(textColor)
         }
+        val dockPlayIconTint = if (isGlass) (if (isDark) Color(0xFF0A0C10) else Color.White) else (if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA))
 
         Box(
             modifier = Modifier
@@ -815,7 +817,7 @@ private fun PlaybackControlsDock(
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                tint = bgColor,
+                tint = dockPlayIconTint,
                 modifier = Modifier.size(42.dp)
             )
         }
@@ -1013,18 +1015,25 @@ private fun PlaybackControlsOrganic(
             )
         }
 
+        val organicPlayBrush = if (isGlass) {
+            if (isDark) Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFD8E4F0))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+        } else {
+            SolidColor(textColor)
+        }
+        val organicPlayIconTint = if (isGlass) (if (isDark) Color(0xFF0A0C10) else Color.White) else (if (isDark) Color(0xFF0F0E0D) else Color(0xFFF5F2EA))
+
         Box(
             modifier = Modifier
                 .size(86.dp)
                 .clip(Organic8PetalShape(petalCount = 8, amplitude = 0.12f))
-                .background(textColor)
+                .background(organicPlayBrush)
                 .clickable { audioPlayer.togglePlay() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                tint = bgColor,
+                tint = organicPlayIconTint,
                 modifier = Modifier.size(44.dp)
             )
         }

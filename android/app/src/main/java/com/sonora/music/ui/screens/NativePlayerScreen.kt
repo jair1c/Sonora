@@ -237,7 +237,6 @@ fun NativePlayerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .haze(state = hazeState)
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween

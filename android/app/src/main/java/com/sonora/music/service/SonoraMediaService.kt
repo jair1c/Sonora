@@ -144,7 +144,7 @@ class SonoraMediaService : MediaSessionService() {
                 when (playerCommand) {
                     Player.COMMAND_SEEK_TO_NEXT,
                     Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> {
-                        audioPlayer.nextTrack()
+                        audioPlayer.nextTrack(isManualSkip = true)
                         return SessionResult.RESULT_SUCCESS
                     }
                     Player.COMMAND_SEEK_TO_PREVIOUS,

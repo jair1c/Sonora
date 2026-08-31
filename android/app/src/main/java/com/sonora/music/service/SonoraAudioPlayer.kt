@@ -679,7 +679,7 @@ class SonoraAudioPlayer(private val context: Context) {
         }
     }
 
-    fun nextTrack() {
+    fun nextTrack(isManualSkip: Boolean = true) {
         val queue = _playlist.value
         val current = _currentSong.value
         val currentIdx = if (current != null) queue.indexOfFirst { it.id == current.id } else -1
@@ -692,7 +692,7 @@ class SonoraAudioPlayer(private val context: Context) {
         }
 
         if (nextSong != null) {
-            if (crossfadeSeconds > 0 && activePlayer.isPlaying && !isCrossfading) {
+            if (!isManualSkip && crossfadeSeconds > 0 && activePlayer.isPlaying && !isCrossfading) {
                 performCrossfadeTransition(nextSong)
             } else {
                 playSong(nextSong, queue)

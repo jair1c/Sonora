@@ -1,4 +1,8 @@
 package com.sonora.music.ui.screens
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 
 import com.sonora.music.ui.components.PlaybackSpeedModal
 import com.sonora.music.util.AudioFormatDetails
@@ -118,6 +122,7 @@ fun NativePlayerScreen(
     val currentSpeed by audioPlayer.playbackSpeed.collectAsState()
     val currentPitch by audioPlayer.playbackPitch.collectAsState()
 
+    val hazeState = remember { HazeState() }
     var showExpandedLyrics by remember { mutableStateOf(false) }
     var showQueueSheet by remember { mutableStateOf(false) }
     var showSpeedModal by remember { mutableStateOf(false) }
@@ -217,9 +222,22 @@ fun NativePlayerScreen(
         if (isGlass) {
             com.sonora.music.ui.theme.LiquidGlassBackdrop(isDark = isDark)
         }
+        val playerGlassStyle = HazeStyle(
+            blurRadius = 24.dp,
+            tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.08f),
+            noiseFactor = 0.05f
+        )
+        val playerGlassGlareBorder = Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.25f),
+                Color.White.copy(alpha = 0.05f)
+            )
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .haze(state = hazeState)
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
@@ -555,8 +573,18 @@ fun NativePlayerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(lyricsPillBrush)
-                    .border(if (isGlass) 1.2.dp else 1.dp, lyricsPillBorder, RoundedCornerShape(20.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(20.dp), style = playerGlassStyle)
+                                .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.08f))
+                                .border(1.dp, playerGlassGlareBorder, RoundedCornerShape(20.dp))
+                        } else {
+                            Modifier
+                                .background(lyricsPillBrush)
+                                .border(1.dp, SolidColor(borderCol), RoundedCornerShape(20.dp))
+                        }
+                    )
                     .clickable { showExpandedLyrics = true }
                     .padding(horizontal = 20.dp, vertical = 14.dp)
             ) {

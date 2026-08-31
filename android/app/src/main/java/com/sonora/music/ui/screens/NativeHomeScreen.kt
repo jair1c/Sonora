@@ -1,5 +1,9 @@
 package com.sonora.music.ui.screens
 import androidx.compose.ui.graphics.Brush
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -168,6 +172,7 @@ fun NativeHomeScreen(
         navTabs = sonoraPrefs.getNavTabs()
     }
 
+    val hazeState = remember { HazeState() }
     val currentSong by audioPlayer.currentSong.collectAsState()
     val isPlaying by audioPlayer.isPlaying.collectAsState()
     val sleepTimerSeconds by audioPlayer.sleepTimerSecondsLeft.collectAsState()
@@ -215,6 +220,7 @@ fun NativeHomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .haze(state = hazeState)
                 .padding(horizontal = 20.dp)
         ) {
             Spacer(modifier = Modifier.height(14.dp))
@@ -1031,48 +1037,19 @@ fun NativeHomeScreen(
             }
         }
 
-        // 6. FLOATING MINIPLAYER (Luminous Liquid Glass Capsule - Floating above Dock)
+        // 6. FLOATING MINIPLAYER (Real-time Glass Backdrop Blur & Glare Border)
         if (currentSong != null) {
-            val miniPlayerBrush = if (isGlass) {
-                if (isDark) {
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0x75283C56),
-                            Color(0x551B2A3E)
-                        )
-                    )
-                } else {
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0x85FFFFFF),
-                            Color(0x60E5ECF4)
-                        )
-                    )
-                }
-            } else {
-                SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFFAF7F0))
-            }
-
-            val miniPlayerBorderBrush = if (isGlass) {
-                if (isDark) {
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0x99FFFFFF),
-                            Color(0x25FFFFFF),
-                            Color(0x45FFFFFF)
-                        )
-                    )
-                } else {
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFFFFFFFF),
-                            Color(0x90CBD5E1)
-                        )
-                    )
-                }
-            } else {
-                SolidColor(borderCol)
-            }
+            val glassStyle = HazeStyle(
+                blurRadius = 24.dp,
+                tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.08f),
+                noiseFactor = 0.05f
+            )
+            val glassGlareBorder = Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.25f),
+                    Color.White.copy(alpha = 0.05f)
+                )
+            )
 
             val miniPlayerTitle = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else textPrimary
             val miniPlayerSub = if (isGlass) (if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)) else textSecondary
@@ -1099,8 +1076,18 @@ fun NativeHomeScreen(
                     .height(60.dp)
                     .shadow(if (isGlass) 14.dp else 6.dp, RoundedCornerShape(22.dp), spotColor = if (isDark) Color(0x90000000) else Color(0x40000000))
                     .clip(RoundedCornerShape(22.dp))
-                    .background(miniPlayerBrush)
-                    .border(if (isGlass) 1.5.dp else 1.dp, miniPlayerBorderBrush, RoundedCornerShape(22.dp))
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = RoundedCornerShape(22.dp), style = glassStyle)
+                                .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.08f))
+                                .border(1.dp, glassGlareBorder, RoundedCornerShape(22.dp))
+                        } else {
+                            Modifier
+                                .background(SolidColor(if (isDark) Color(0xFF1A1917) else Color(0xFFFAF7F0)))
+                                .border(1.dp, SolidColor(borderCol), RoundedCornerShape(22.dp))
+                        }
+                    )
                     .clickable { onOpenPlayer() }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
@@ -1171,48 +1158,19 @@ fun NativeHomeScreen(
             }
         }
 
-        // 7. BOTTOM NAVIGATION BAR (WhatsApp DELTA Style Floating Pill Dock)
+        // 7. BOTTOM NAVIGATION BAR (Real-time Glass Backdrop Blur & Glare Border)
         val navLabelMode = remember(sonoraPrefs) { sonoraPrefs.getNavLabelMode() }
-        val navDockBg = if (isGlass) {
-            if (isDark) {
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0x70263A52),
-                        Color(0x50182436)
-                    )
-                )
-            } else {
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0x85FFFFFF),
-                        Color(0x60E5ECF4)
-                    )
-                )
-            }
-        } else {
-            SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFFAF7F0))
-        }
-
-        val navDockBorder = if (isGlass) {
-            if (isDark) {
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0x95FFFFFF),
-                        Color(0x20FFFFFF),
-                        Color(0x40FFFFFF)
-                    )
-                )
-            } else {
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFFFFFFFF),
-                        Color(0x80CBD5E1)
-                    )
-                )
-            }
-        } else {
-            SolidColor(borderCol)
-        }
+        val glassStyle = HazeStyle(
+            blurRadius = 24.dp,
+            tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.08f),
+            noiseFactor = 0.05f
+        )
+        val glassGlareBorder = Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.25f),
+                Color.White.copy(alpha = 0.05f)
+            )
+        )
 
         Box(
             modifier = Modifier
@@ -1223,8 +1181,18 @@ fun NativeHomeScreen(
                 .height(62.dp)
                 .shadow(if (isGlass) 18.dp else 8.dp, RoundedCornerShape(32.dp), spotColor = if (isDark) Color(0x99000000) else Color(0x45000000))
                 .clip(RoundedCornerShape(32.dp))
-                .background(navDockBg)
-                .border(if (isGlass) 1.5.dp else 1.dp, navDockBorder, RoundedCornerShape(32.dp))
+                .then(
+                    if (isGlass) {
+                        Modifier
+                            .hazeChild(state = hazeState, shape = RoundedCornerShape(32.dp), style = glassStyle)
+                            .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.08f))
+                            .border(1.dp, glassGlareBorder, RoundedCornerShape(32.dp))
+                    } else {
+                        Modifier
+                            .background(SolidColor(if (isDark) Color(0xFF141312) else Color(0xFFFAF7F0)))
+                            .border(1.dp, SolidColor(borderCol), RoundedCornerShape(32.dp))
+                    }
+                )
                 .clickable(enabled = false) {} // Intercept taps
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center

@@ -32,6 +32,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -758,22 +759,38 @@ fun NativeHomeScreen(
                 }
         }
 
-        // 2. FLOATING TOP HEADER (OVERLAY SIBLING WITH REAL-TIME HAZECHILD)
+        // 2. FLOATING TOP HEADER (UNIFIED REAL-TIME FROSTED GLASS SURFACE)
+        val topHeaderShape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
+        val topHeaderGlassStyle = HazeStyle(
+            blurRadius = 28.dp,
+            tint = if (isDark) Color.Black.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.65f),
+            noiseFactor = 0.04f
+        )
+        val topHeaderGlareBorder = Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.40f),
+                Color.White.copy(alpha = 0.08f)
+            )
+        )
+
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            bgColor,
-                            bgColor.copy(alpha = 0.92f),
-                            bgColor.copy(alpha = 0.75f),
-                            Color.Transparent
-                        )
-                    )
+                .clip(topHeaderShape)
+                .then(
+                    if (isGlass) {
+                        Modifier
+                            .hazeChild(state = hazeState, shape = topHeaderShape, style = topHeaderGlassStyle)
+                            .background(if (isDark) Color.Black.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.60f))
+                            .border(1.dp, topHeaderGlareBorder, topHeaderShape)
+                    } else {
+                        Modifier
+                            .background(bgColor.copy(alpha = 0.96f))
+                            .border(1.dp, borderCol, topHeaderShape)
+                    }
                 )
-                .padding(start = 20.dp, end = 20.dp, bottom = 12.dp)
+                .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 14.dp)
         ) {
             Spacer(modifier = Modifier.height(14.dp))
 // 1. TOP APP BAR with (←), TU BIBLIOTECA LOCAL, and 4 Right Circle Action Buttons
@@ -1093,8 +1110,11 @@ fun NativeHomeScreen(
 
             // 4. CATEGORY HORIZONTAL PILLS
             LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clipToBounds(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 2.dp)
             ) {
                 items(LibraryTab.values()) { tab ->
                     val isSelected = currentTab == tab

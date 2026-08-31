@@ -293,8 +293,8 @@ fun NativePlayerScreen(
                                 if (isGlass) {
                                     Modifier
                                         .hazeChild(state = hazeState, shape = CircleShape, style = playerGlassStyle)
-                                        .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.12f))
-                                        .border(1.2.dp, playerGlassGlareBorder, CircleShape)
+                                        .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                        .border(1.2.dp, if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), CircleShape)
                                 } else {
                                     Modifier
                                         .background(playerBtnBrush)
@@ -324,8 +324,8 @@ fun NativePlayerScreen(
                                 if (isGlass) {
                                     Modifier
                                         .hazeChild(state = hazeState, shape = CircleShape, style = playerGlassStyle)
-                                        .background(if (isDark) Color.Black.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.12f))
-                                        .border(1.2.dp, playerGlassGlareBorder, CircleShape)
+                                        .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                        .border(1.2.dp, if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), CircleShape)
                                 } else {
                                     Modifier
                                         .background(playerBtnBrush)
@@ -368,50 +368,63 @@ fun NativePlayerScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val isHiRes = formatDetails?.isHiRes == true
+                    val hiResTextColor = if (isHiRes) (if (isDark) Color(0xFFFBBF24) else Color(0xFF92400E)) else textColor
+                    val hiResBgColor = if (isHiRes) (if (isDark) Color(0x35D97706) else Color(0x40FDE68A)) else (if (isDark) Color(0x351E293B) else Color(0x60FFFFFF))
+                    val hiResBorderBrush = if (isHiRes) SolidColor(if (isDark) Color(0xFFFBBF24).copy(alpha = 0.6f) else Color(0xFFD97706).copy(alpha = 0.7f)) else playerGlassGlareBorder
+
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .then(
                                 if (isGlass) {
                                     Modifier
-                                        .hazeChild(state = hazeState, shape = RoundedCornerShape(12.dp), style = playerGlassStyle)
-                                        .background(if (isHiRes) Color(0xFFD97706).copy(alpha = 0.25f) else (if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.15f)))
-                                        .border(1.dp, if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.6f)) else playerGlassGlareBorder, RoundedCornerShape(12.dp))
+                                        .hazeChild(state = hazeState, shape = RoundedCornerShape(10.dp), style = playerGlassStyle)
+                                        .background(hiResBgColor)
+                                        .border(1.dp, hiResBorderBrush, RoundedCornerShape(10.dp))
                                 } else {
                                     Modifier
                                         .background(if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.22f)) else badgeBrush)
-                                        .border(1.dp, if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(12.dp))
+                                        .border(1.dp, if (isHiRes) SolidColor(Color(0xFFD97706).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(10.dp))
                                 }
                             )
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                            .padding(horizontal = 10.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = formatDetails?.formattedString ?: currentSong?.audioQualityBadge ?: "Hi-Fi Audio",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace,
-                            color = if (isHiRes) Color(0xFFFBBF24) else textColor
+                            color = hiResTextColor
                         )
                     }
 
                     // Speed Pill Button
+                    val isCustomSpeed = currentSpeed != 1.0f || currentPitch != 1.0f
+                    val speedTextColor = if (isCustomSpeed) (if (isDark) Color(0xFF34D399) else Color(0xFF065F46)) else subtextColor
+                    val speedBgColor = if (isCustomSpeed) (if (isDark) Color(0x35059669) else Color(0x40A7F3D0)) else (if (isDark) Color(0x351E293B) else Color(0x60FFFFFF))
+                    val speedBorderBrush = if (isCustomSpeed) SolidColor(if (isDark) Color(0xFF34D399).copy(alpha = 0.6f) else Color(0xFF059669).copy(alpha = 0.7f)) else playerGlassGlareBorder
+
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .then(
                                 if (isGlass) {
                                     Modifier
-                                        .hazeChild(state = hazeState, shape = RoundedCornerShape(12.dp), style = playerGlassStyle)
-                                        .background(if (currentSpeed != 1.0f || currentPitch != 1.0f) Color(0xFF10B981).copy(alpha = 0.25f) else (if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.15f)))
-                                        .border(1.dp, if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.6f)) else playerGlassGlareBorder, RoundedCornerShape(12.dp))
+                                        .hazeChild(state = hazeState, shape = RoundedCornerShape(10.dp), style = playerGlassStyle)
+                                        .background(speedBgColor)
+                                        .border(1.dp, speedBorderBrush, RoundedCornerShape(10.dp))
                                 } else {
                                     Modifier
-                                        .background(if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.22f)) else badgeBrush)
-                                        .border(1.dp, if (currentSpeed != 1.0f || currentPitch != 1.0f) SolidColor(Color(0xFF10B981).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(12.dp))
+                                        .background(if (isCustomSpeed) SolidColor(Color(0xFF10B981).copy(alpha = 0.22f)) else badgeBrush)
+                                        .border(1.dp, if (isCustomSpeed) SolidColor(Color(0xFF10B981).copy(alpha = 0.6f)) else badgeBorder, RoundedCornerShape(10.dp))
                                 }
                             )
                             .clickable { showSpeedModal = true }
-                            .padding(horizontal = 9.dp, vertical = 4.dp)
+                            .padding(horizontal = 9.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = if (currentSpeed != 1.0f || currentPitch != 1.0f) "⚡ ${String.format(java.util.Locale.US, "%.2fx", currentSpeed)}" else "1.0x",

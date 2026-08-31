@@ -269,125 +269,36 @@ fun NativeHomeScreen(
                                         color = textSecondary
                                     )
 
-                                    Box {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(100.dp))
-                                                .background(subCardBg)
-                                                .border(1.dp, borderCol, RoundedCornerShape(100.dp))
-                                                .clickable { showSortDropdown = !showSortDropdown }
-                                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(100.dp))
+                                            .background(subCardBg)
+                                            .border(1.dp, borderCol, RoundedCornerShape(100.dp))
+                                            .clickable { showSortDropdown = !showSortDropdown }
+                                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Sort,
-                                                    contentDescription = null,
-                                                    tint = textPrimary,
-                                                    modifier = Modifier.size(12.dp)
-                                                )
-                                                Text(
-                                                    text = when (sortMode) {
-                                                        SortMode.TITLE_AZ -> "Nombre (A → Z)"
-                                                        SortMode.TITLE_ZA -> "Nombre (Z → A)"
-                                                        SortMode.ARTIST_AZ -> "Artista (A → Z)"
-                                                        SortMode.DATE_ADDED_DESC -> "Fecha Más Reciente"
-                                                        SortMode.DURATION_DESC -> "Mayor Duración"
-                                                    },
-                                                    fontSize = 10.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = textPrimary
-                                                )
-                                            }
-                                        }
-
-                                        androidx.compose.animation.AnimatedVisibility(
-                                            visible = showSortDropdown,
-                                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(expandFrom = Alignment.Top),
-                                            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(shrinkTowards = Alignment.Top)
-                                        ) {
-                                            val sortModalShape = RoundedCornerShape(22.dp)
-                                            val sortGlassGlareBorder = if (isDark) topGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x9094A3B8)))
-                                            val sortGlassBg = if (isDark) Color(0xDC141D2B) else Color(0xEAFFFFFF)
-
-                                            Column(
-                                                modifier = Modifier
-                                                    .padding(top = 34.dp)
-                                                    .width(220.dp)
-                                                    .clip(sortModalShape)
-                                                    .then(
-                                                        if (isGlass) {
-                                                            Modifier
-                                                                .hazeChild(state = hazeState, shape = sortModalShape, style = topGlassStyle)
-                                                                .background(sortGlassBg)
-                                                                .border(1.2.dp, sortGlassGlareBorder, sortModalShape)
-                                                        } else {
-                                                            Modifier
-                                                                .background(cardBg)
-                                                                .border(1.dp, borderCol, sortModalShape)
-                                                        }
-                                                    )
-                                                    .padding(vertical = 6.dp, horizontal = 6.dp)
-                                            ) {
-                                                listOf(
-                                                    Pair(SortMode.TITLE_AZ, "Nombre (A → Z)"),
-                                                    Pair(SortMode.TITLE_ZA, "Nombre (Z → A)"),
-                                                    Pair(SortMode.ARTIST_AZ, "Artista (A → Z)"),
-                                                    Pair(SortMode.DATE_ADDED_DESC, "Fecha Más Reciente"),
-                                                    Pair(SortMode.DURATION_DESC, "Mayor Duración")
-                                                ).forEach { (mode, label) ->
-                                                    val isSelected = sortMode == mode
-                                                    val itemShape = RoundedCornerShape(14.dp)
-                                                    val itemBg = if (isSelected) {
-                                                        if (isGlass) {
-                                                            if (isDark) Brush.linearGradient(listOf(Color.White, Color(0xFFE2E8F0))) else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
-                                                        } else {
-                                                            SolidColor(activePillBg)
-                                                        }
-                                                    } else SolidColor(Color.Transparent)
-
-                                                    val itemTextColor = if (isSelected) {
-                                                        if (isGlass) (if (isDark) Color(0xFF0F172A) else Color.White) else activePillText
-                                                    } else textPrimary
-
-                                                    Row(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .clip(itemShape)
-                                                            .background(itemBg)
-                                                            .then(
-                                                                if (isSelected && isGlass) {
-                                                                    Modifier.border(1.dp, Brush.verticalGradient(listOf(Color.White, Color.White.copy(alpha = 0.3f))), itemShape)
-                                                                } else Modifier
-                                                            )
-                                                            .clickable {
-                                                                sortMode = mode
-                                                                sonoraPrefs.setSortMode(mode.name)
-                                                                showSortDropdown = false
-                                                            }
-                                                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Text(
-                                                            text = label,
-                                                            color = itemTextColor,
-                                                            fontSize = 12.sp,
-                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                                        )
-                                                        if (isSelected) {
-                                                            Icon(
-                                                                imageVector = Icons.Default.Check,
-                                                                contentDescription = null,
-                                                                tint = itemTextColor,
-                                                                modifier = Modifier.size(15.dp)
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
+                                            Icon(
+                                                imageVector = Icons.Default.Sort,
+                                                contentDescription = null,
+                                                tint = textPrimary,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                            Text(
+                                                text = when (sortMode) {
+                                                    SortMode.TITLE_AZ -> "Nombre (A → Z)"
+                                                    SortMode.TITLE_ZA -> "Nombre (Z → A)"
+                                                    SortMode.ARTIST_AZ -> "Artista (A → Z)"
+                                                    SortMode.DATE_ADDED_DESC -> "Fecha Más Reciente"
+                                                    SortMode.DURATION_DESC -> "Mayor Duración"
+                                                },
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = textPrimary
+                                            )
                                         }
                                     }
                                 }
@@ -641,56 +552,7 @@ fun NativeHomeScreen(
                                 }
                             }
 
-                            // Floating Mix Button (Real-time Glass Backdrop Blur & Glare Border)
-                            if (selectedArtistMix.isNotEmpty()) {
-                                val mixTextCol = if (isDark) Color.White else Color(0xFF0F172A)
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .padding(bottom = 158.dp)
-                                        .clip(RoundedCornerShape(100.dp))
-                                        .then(
-                                            if (isGlass) {
-                                                Modifier
-                                                    .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
-                                                    .background(if (isDark) Color(0xD01E293B) else Color(0xF2FFFFFF))
-                                                    .border(1.2.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
-                                            } else {
-                                                Modifier
-                                                    .background(if (isDark) Color(0xFF1E293B) else Color(0xFFFFFFFF))
-                                                    .border(1.dp, borderCol, RoundedCornerShape(100.dp))
-                                            }
-                                        )
-                                        .clickable {
-                                            val mixSongs = availableSongs.filter { selectedArtistMix.contains(it.artist) }.shuffled()
-                                            if (mixSongs.isNotEmpty()) {
-                                                audioPlayer.playSong(mixSongs.first(), mixSongs)
-                                                onOpenPlayer()
-                                                selectedArtistMix.clear()
-                                            }
-                                        }
-                                        .padding(horizontal = 22.dp, vertical = 13.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Shuffle,
-                                            contentDescription = null,
-                                            tint = mixTextCol,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Text(
-                                            text = "Reproducir Mix (${selectedArtistMix.size} ${if (selectedArtistMix.size == 1) "artista" else "artistas"})",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp,
-                                            color = mixTextCol
-                                        )
-                                    }
-                                }
-                            }
+
                         }
                     }
 
@@ -1548,6 +1410,55 @@ fun NativeHomeScreen(
                 }
             }
         }
+    // TRUE FLOATING MIX BUTTON (In Root Box outside haze container -> 100% visible crisp text + real-time blur)
+    if (currentTab == LibraryTab.ARTISTAS && selectedArtistMix.isNotEmpty()) {
+        val mixTextCol = if (isDark) Color.White else Color(0xFF0F172A)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 158.dp)
+                .clip(RoundedCornerShape(100.dp))
+                .then(
+                    if (isGlass) {
+                        Modifier
+                            .hazeChild(state = hazeState, shape = RoundedCornerShape(100.dp), style = topGlassStyle)
+                            .background(if (isDark) Color(0xD01E293B) else Color(0xF5FFFFFF))
+                            .border(1.2.dp, topGlassGlareBorder, RoundedCornerShape(100.dp))
+                    } else {
+                        Modifier
+                            .background(if (isDark) Color(0xFF1E293B) else Color(0xFFFFFFFF))
+                            .border(1.dp, borderCol, RoundedCornerShape(100.dp))
+                    }
+                )
+                .clickable {
+                    val mixSongs = availableSongs.filter { selectedArtistMix.contains(it.artist) }.shuffled()
+                    if (mixSongs.isNotEmpty()) {
+                        audioPlayer.playSong(mixSongs.first(), mixSongs)
+                        onOpenPlayer()
+                        selectedArtistMix.clear()
+                    }
+                }
+                .padding(horizontal = 22.dp, vertical = 13.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Shuffle,
+                    contentDescription = null,
+                    tint = mixTextCol,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "Reproducir Mix (${selectedArtistMix.size} ${if (selectedArtistMix.size == 1) "artista" else "artistas"})",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = mixTextCol
+                )
+            }
+        }
     }
 
     // TRUE FLOATING SORT OVERLAY (Z-Index above songs list, never collapses or shifts the list)
@@ -1671,6 +1582,7 @@ fun NativeHomeScreen(
             audioPlayer.playSong(song, allSongs)
         }
     )
+    }
 }
 
 @Composable

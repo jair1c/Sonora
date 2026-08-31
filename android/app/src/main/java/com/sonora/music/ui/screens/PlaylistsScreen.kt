@@ -189,8 +189,8 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
-                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
+                        .background(if (isGlass) (if (isDark) Brush.linearGradient(listOf(Color(0x45FFFFFF), Color(0x20FFFFFF))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))) else SolidColor(if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Brush.verticalGradient(listOf(Color(0x80FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))) else SolidColor(Color.Transparent), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -261,8 +261,8 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
-                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
+                        .background(if (isGlass) (if (isDark) Brush.linearGradient(listOf(Color(0x45FFFFFF), Color(0x20FFFFFF))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))) else SolidColor(if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Brush.verticalGradient(listOf(Color(0x80FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))) else SolidColor(Color.Transparent), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -333,8 +333,8 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
-                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
+                        .background(if (isGlass) (if (isDark) Brush.linearGradient(listOf(Color(0x45FFFFFF), Color(0x20FFFFFF))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))) else SolidColor(if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Brush.verticalGradient(listOf(Color(0x80FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))) else SolidColor(Color.Transparent), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -405,8 +405,8 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
-                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
+                        .background(if (isGlass) (if (isDark) Brush.linearGradient(listOf(Color(0x45FFFFFF), Color(0x20FFFFFF))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))) else SolidColor(if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Brush.verticalGradient(listOf(Color(0x80FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))) else SolidColor(Color.Transparent), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -477,8 +477,8 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
-                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
+                        .background(if (isGlass) (if (isDark) Brush.linearGradient(listOf(Color(0x45FFFFFF), Color(0x20FFFFFF))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))) else SolidColor(if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Brush.verticalGradient(listOf(Color(0x80FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))) else SolidColor(Color.Transparent), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -549,8 +549,8 @@ fun PlaylistsScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x35000000)) else (if (isDark) Color.White else Color.Black))
-                        .border(1.dp, if (isGlass) (if (isDark) Color(0x65FFFFFF) else Color(0x65000000)) else Color.Transparent, CircleShape),
+                        .background(if (isGlass) (if (isDark) Brush.linearGradient(listOf(Color(0x45FFFFFF), Color(0x20FFFFFF))) else Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))) else SolidColor(if (isDark) Color.White else Color.Black))
+                        .border(1.dp, if (isGlass) (if (isDark) Brush.verticalGradient(listOf(Color(0x80FFFFFF), Color(0x25FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))) else SolidColor(Color.Transparent), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

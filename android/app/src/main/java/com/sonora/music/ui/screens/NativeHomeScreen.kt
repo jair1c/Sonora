@@ -28,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -603,7 +604,7 @@ fun NativeHomeScreen(
                                 state = songsListState,
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(top = 4.dp, bottom = if (currentSong != null) 175.dp else 100.dp)
+                                contentPadding = PaddingValues(top = 4.dp, bottom = if (currentSong != null) 210.dp else 140.dp)
                             ) {
                                 items(availableSongs, key = { it.id }) { song ->
                                     val isCurrent = currentSong?.id == song.id
@@ -1036,15 +1037,15 @@ fun NativeHomeScreen(
                 if (isDark) {
                     Brush.linearGradient(
                         listOf(
-                            Color(0xF21E2A3E),
-                            Color(0xF0101724)
+                            Color(0xFF1D2C40),
+                            Color(0xFF101826)
                         )
                     )
                 } else {
                     Brush.linearGradient(
                         listOf(
-                            Color(0xF8FFFFFF),
-                            Color(0xF0EDF2F7)
+                            Color(0xFFFFFFFF),
+                            Color(0xFFE6EDF5)
                         )
                     )
                 }
@@ -1056,8 +1057,9 @@ fun NativeHomeScreen(
                 if (isDark) {
                     Brush.verticalGradient(
                         listOf(
-                            Color(0x95FFFFFF),
-                            Color(0x30FFFFFF)
+                            Color(0x99FFFFFF),
+                            Color(0x25FFFFFF),
+                            Color(0x45FFFFFF)
                         )
                     )
                 } else {
@@ -1076,17 +1078,17 @@ fun NativeHomeScreen(
             val miniPlayerSub = if (isGlass) (if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)) else textSecondary
             val miniPlayBtnBrush = if (isGlass) {
                 if (isDark) {
-                    Brush.linearGradient(listOf(Color(0x45FFFFFF), Color(0x20FFFFFF)))
+                    Brush.linearGradient(listOf(Color(0x55FFFFFF), Color(0x25FFFFFF)))
                 } else {
-                    Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B)))
+                    Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE2E8F0)))
                 }
             } else {
                 SolidColor(if (isDark) Color.White else Color(0xFF121212))
             }
             val miniPlayBtnBorderBrush = if (isGlass) {
-                if (isDark) Brush.verticalGradient(listOf(Color(0x85FFFFFF), Color(0x25FFFFFF))) else SolidColor(Color.Transparent)
+                if (isDark) Brush.verticalGradient(listOf(Color(0x90FFFFFF), Color(0x30FFFFFF))) else Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0x90CBD5E1)))
             } else SolidColor(Color.Transparent)
-            val miniPlayBtnIcon = if (isGlass) (if (isDark) Color.White else Color.White) else (if (isDark) Color.Black else Color.White)
+            val miniPlayBtnIcon = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) Color.Black else Color.White)
 
             Box(
                 modifier = Modifier
@@ -1095,6 +1097,7 @@ fun NativeHomeScreen(
                     .padding(start = 16.dp, end = 16.dp, bottom = 86.dp)
                     .fillMaxWidth()
                     .height(60.dp)
+                    .shadow(if (isGlass) 14.dp else 6.dp, RoundedCornerShape(22.dp), spotColor = if (isDark) Color(0x90000000) else Color(0x40000000))
                     .clip(RoundedCornerShape(22.dp))
                     .background(miniPlayerBrush)
                     .border(if (isGlass) 1.5.dp else 1.dp, miniPlayerBorderBrush, RoundedCornerShape(22.dp))
@@ -1174,15 +1177,15 @@ fun NativeHomeScreen(
             if (isDark) {
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xF0182232),
-                        Color(0xF00D121B)
+                        Color(0xFF1B283A),
+                        Color(0xFF0F1624)
                     )
                 )
             } else {
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xF4FFFFFF),
-                        Color(0xEEF0F4F8)
+                        Color(0xFFFFFFFF),
+                        Color(0xFFE2E8F0)
                     )
                 )
             }
@@ -1194,8 +1197,9 @@ fun NativeHomeScreen(
             if (isDark) {
                 Brush.verticalGradient(
                     listOf(
-                        Color(0x85FFFFFF),
-                        Color(0x25FFFFFF)
+                        Color(0x95FFFFFF),
+                        Color(0x20FFFFFF),
+                        Color(0x40FFFFFF)
                     )
                 )
             } else {
@@ -1217,9 +1221,10 @@ fun NativeHomeScreen(
                 .padding(start = 20.dp, end = 20.dp, bottom = 12.dp)
                 .fillMaxWidth()
                 .height(62.dp)
+                .shadow(if (isGlass) 18.dp else 8.dp, RoundedCornerShape(32.dp), spotColor = if (isDark) Color(0x99000000) else Color(0x45000000))
                 .clip(RoundedCornerShape(32.dp))
                 .background(navDockBg)
-                .border(if (isGlass) 1.2.dp else 1.dp, navDockBorder, RoundedCornerShape(32.dp))
+                .border(if (isGlass) 1.5.dp else 1.dp, navDockBorder, RoundedCornerShape(32.dp))
                 .clickable(enabled = false) {} // Intercept taps
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center

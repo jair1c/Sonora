@@ -556,8 +556,8 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(if (isSelected) (if (isDark) Color(0xFF262420) else Color(0xFFDFD9CE)) else subCardBg)
-                                .border(1.dp, if (isSelected) (if (isDark) Color.White else Color.Black) else borderCol, RoundedCornerShape(14.dp))
+                                .background(if (isSelected) activePillBg else subCardBg)
+                                .border(1.dp, if (isSelected) (if (isGlass) Color.Transparent else (if (isDark) Color.White else Color.Black)) else borderCol, RoundedCornerShape(14.dp))
                                 .clickable {
                                     playerControlsStyle = id
                                     sonoraPrefs.setPlayerControlsStyle(id)
@@ -571,7 +571,7 @@ fun SettingsScreen(
                                     text = title,
                                     fontSize = 13.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = textPrimary
+                                    color = if (isSelected) activePillText else textPrimary
                                 )
                                 Text(
                                     text = subtitle,
@@ -587,8 +587,8 @@ fun SettingsScreen(
                                     sonoraPrefs.setPlayerControlsStyle(id)
                                 },
                                 colors = RadioButtonDefaults.colors(
-                                    selectedColor = if (isDark) Color.White else Color.Black,
-                                    unselectedColor = borderCol
+                                    selectedColor = activePillText,
+                                    unselectedColor = if (isGlass) (if (isDark) Color(0x60FFFFFF) else Color(0x600F172A)) else borderCol
                                 )
                             )
                         }
@@ -1150,8 +1150,8 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     activeNavTabs.forEachIndexed { index, tabId ->
                         val tabName = allAvailableTabs.firstOrNull { it.first == tabId }?.second ?: tabId
-                        val rowBg = if (isDark) Color(0xFF262420) else Color(0xFFE3DDD1)
-                        val badgeBg = if (isDark) Color(0xFF38352F) else Color(0xFFD2CBC0)
+                        val rowBg = subCardBg
+                        val badgeBg = if (isGlass) (if (isDark) Color(0x35FFFFFF) else Color(0x250F172A)) else (if (isDark) Color(0xFF38352F) else Color(0xFFD2CBC0))
                         
                         Row(
                             modifier = Modifier
@@ -1386,7 +1386,8 @@ fun SettingsScreen(
                             .weight(1f)
                             .height(44.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFD4AF37))
+                            .background(activePillBg)
+                            .border(1.dp, if (isGlass) borderCol else Color.Transparent, RoundedCornerShape(12.dp))
                             .clickable {
                                 importLauncher.launch(arrayOf("*/*"))
                             },
@@ -1396,8 +1397,8 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color(0xFF121212), modifier = Modifier.size(16.dp))
-                            Text("Restaurar", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF121212))
+                            Icon(Icons.Default.CloudDownload, contentDescription = null, tint = activePillText, modifier = Modifier.size(16.dp))
+                            Text("Restaurar", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = activePillText)
                         }
                     }
                 }
@@ -1520,6 +1521,14 @@ fun QuickActionCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val themeColors = com.sonora.music.ui.theme.LocalSonoraColors.current
+    val isGlass = themeColors.isGlass
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme() // or based on textPrimary brightness
+    val iconBg = if (isGlass) (if (textPrimary == Color.White) Color(0x35FFFFFF) else Color(0x200F172A)) else (if (textPrimary == Color.White) Color.White else Color.Black)
+    val iconTint = if (isGlass) (if (textPrimary == Color.White) Color.White else Color(0xFF0F172A)) else (if (textPrimary == Color.White) Color.Black else Color.White)
+    val badgeBg = if (isGlass) (if (textPrimary == Color.White) Color(0x35FFFFFF) else Color(0x200F172A)) else Color.Gray.copy(alpha = 0.2f)
+    val badgeText = if (isGlass) (if (textPrimary == Color.White) Color(0xFFF1F5F9) else Color(0xFF0F172A)) else textSecondary
+
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(18.dp))
@@ -1538,13 +1547,14 @@ fun QuickActionCard(
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
-                    .background(Color.Black),
+                    .background(iconBg)
+                    .border(if (isGlass) 1.dp else 0.dp, if (isGlass) borderCol else Color.Transparent, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = iconTint,
                     modifier = Modifier.size(17.dp)
                 )
             }
@@ -1553,14 +1563,15 @@ fun QuickActionCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
-                        .background(Color.Gray.copy(alpha = 0.2f))
+                        .background(badgeBg)
+                        .border(if (isGlass) 1.dp else 0.dp, if (isGlass) borderCol else Color.Transparent, RoundedCornerShape(100.dp))
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = badge,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = textSecondary
+                        color = badgeText
                     )
                 }
             }

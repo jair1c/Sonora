@@ -1587,6 +1587,16 @@ fun NativeHomeScreen(
             audioPlayer.playSong(song, allSongs)
         }
     )
+
+    CreatePlaylistModal(
+        isOpen = showCreatePlaylistModal,
+        onClose = { showCreatePlaylistModal = false },
+        sonoraPrefs = sonoraPrefs,
+        isDark = isDark,
+        onPlaylistCreated = {
+            customPlaylistsRefreshTrigger++
+        }
+    )
     }
 }
 

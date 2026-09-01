@@ -170,6 +170,7 @@ fun NativePlayerScreen(
         label = "flower_scale"
     )
 
+    val playerHazeState = remember { dev.chrisbanes.haze.HazeState() }
     val basePlayerBg = if (isGlass) (if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg else com.sonora.music.ui.theme.SonoraGlassLightBg) else themeColors.bg
     val playerBtnBrush = if (isGlass) {
         if (isDark) Brush.linearGradient(listOf(Color(0x606080A8), Color(0x35385070))) else Brush.linearGradient(listOf(Color(0xEEFFFFFF), Color(0xC0E2E8F0)))
@@ -243,6 +244,7 @@ fun NativePlayerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .then(if (isGlass) Modifier.haze(state = playerHazeState) else Modifier)
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
@@ -741,8 +743,9 @@ fun NativePlayerScreen(
             }
         }
 
-        // Fullscreen Synchronized Lyrics Overlay with Frosted Glass & Dedicated Empty State
+        // Fullscreen Synchronized Lyrics Overlay with Real Haze Glass & Touch Event Blocking
         if (showExpandedLyrics) {
+            androidx.activity.compose.BackHandler { showExpandedLyrics = false }
             val listState = rememberLazyListState()
             val lyrics = currentSong?.lyrics ?: emptyList()
             val activeIdx = if (lyrics.isNotEmpty()) {
@@ -755,16 +758,29 @@ fun NativePlayerScreen(
                 }
             }
 
-            val lyricsFrostedBg = if (isGlass) {
-                if (isDark) Color(0xF60F172A) else Color(0xF6F8FAFC)
-            } else {
-                if (isDark) Color(0xFF121110) else Color(0xFFFAF7F0)
-            }
+            val lyricsGlassStyle = dev.chrisbanes.haze.HazeStyle(
+                blurRadius = 36.dp,
+                tint = if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg.copy(alpha = 0.55f) else com.sonora.music.ui.theme.SonoraGlassLightBg.copy(alpha = 0.45f),
+                noiseFactor = 0.05f
+            )
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(lyricsFrostedBg)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = playerHazeState, shape = RoundedCornerShape(0.dp), style = lyricsGlassStyle)
+                                .background(if (isDark) Color(0x650F172A) else Color(0x95FFFFFF))
+                        } else {
+                            Modifier.background(if (isDark) Color(0xFF121110) else Color(0xFFFAF7F0))
+                        }
+                    )
+                    .clickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null,
+                        onClick = {} // Consumes all taps so nothing behind is triggered
+                    )
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {

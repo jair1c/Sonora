@@ -43,6 +43,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Favorite
@@ -740,7 +741,7 @@ fun NativePlayerScreen(
             }
         }
 
-        // Fullscreen Synchronized Lyrics Overlay with Smooth Auto-Centering
+        // Fullscreen Synchronized Lyrics Overlay with Frosted Glass & Dedicated Empty State
         if (showExpandedLyrics) {
             val listState = rememberLazyListState()
             val lyrics = currentSong?.lyrics ?: emptyList()
@@ -754,33 +755,28 @@ fun NativePlayerScreen(
                 }
             }
 
+            val lyricsFrostedBg = if (isGlass) {
+                if (isDark) Color(0xF60F172A) else Color(0xF6F8FAFC)
+            } else {
+                if (isDark) Color(0xFF121110) else Color(0xFFFAF7F0)
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(
-                        if (isGlass) {
-                            Modifier
-                                .hazeChild(
-                                    state = hazeState,
-                                    shape = RoundedCornerShape(0.dp),
-                                    style = playerGlassStyle
-                                )
-                                .background(if (isDark) Color(0x351E293B) else Color(0x60FFFFFF))
-                        } else {
-                            Modifier.background(bgColor)
-                        }
-                    )
+                    .background(lyricsFrostedBg)
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
+                    // Header Bar
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp),
+                            .padding(top = 16.dp, bottom = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "LETRAS SINCRONIZADAS",
                                 fontSize = 12.sp,
@@ -790,21 +786,32 @@ fun NativePlayerScreen(
                             )
                             Text(
                                 text = currentSong?.title ?: "",
-                                fontSize = 11.sp,
-                                color = subtextColor,
-                                maxLines = 1
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
+                            if (!currentSong?.artist.isNullOrBlank()) {
+                                Text(
+                                    text = currentSong?.artist ?: "",
+                                    fontSize = 11.sp,
+                                    color = subtextColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
+
                         IconButton(
                             onClick = { showExpandedLyrics = false },
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(44.dp)
                                 .clip(CircleShape)
                                 .then(
                                     if (isGlass) {
                                         Modifier
-                                            .hazeChild(state = hazeState, shape = CircleShape, style = playerGlassStyle)
-                                            .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                            .background(if (isDark) Color(0x351E293B) else Color(0x80FFFFFF))
                                             .border(1.2.dp, if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), CircleShape)
                                     } else {
                                         Modifier
@@ -816,31 +823,77 @@ fun NativePlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Cerrar",
-                                tint = textColor
+                                tint = textColor,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
 
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 220.dp, bottom = 280.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        itemsIndexed(lyrics) { idx, line ->
-                            val isActive = idx == activeIdx
-                            Text(
-                                text = line.text,
-                                fontSize = if (isActive) 24.sp else 16.sp,
-                                fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
-                                color = if (isActive) textColor else subtextColor.copy(alpha = 0.45f),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { audioPlayer.seekTo(line.timeMs) }
-                                    .padding(vertical = 6.dp)
-                            )
+                    if (lyrics.isNotEmpty()) {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 100.dp, bottom = 200.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            itemsIndexed(lyrics) { idx, line ->
+                                val isActive = idx == activeIdx
+                                Text(
+                                    text = line.text,
+                                    fontSize = if (isActive) 24.sp else 16.sp,
+                                    fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
+                                    color = if (isActive) textColor else subtextColor.copy(alpha = 0.45f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { audioPlayer.seekTo(line.timeMs) }
+                                        .padding(vertical = 6.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        // Empty State when no .lrc is found
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(68.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isGlass) (if (isDark) Color(0x30FFFFFF) else Color(0x80FFFFFF)) else (if (isDark) Color(0xFF22201C) else Color(0xFFE6E1D5)))
+                                        .border(1.dp, if (isGlass) (if (isDark) Color(0x45FFFFFF) else Color(0xB5FFFFFF)) else borderCol, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MusicNote,
+                                        contentDescription = null,
+                                        tint = textColor,
+                                        modifier = Modifier.size(34.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "Sin Letras Sincronizadas",
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textColor,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "No se encontró un archivo .lrc sincronizado para esta canción.\nPuedes añadir un archivo .lrc con el mismo nombre en la carpeta de la canción.",
+                                    fontSize = 12.sp,
+                                    color = subtextColor,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 18.sp
+                                )
+                            }
                         }
                     }
                 }

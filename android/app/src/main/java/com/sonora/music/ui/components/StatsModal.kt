@@ -99,7 +99,7 @@ fun StatsModal(
                         if (isGlass) {
                             Modifier
                                 .hazeChild(state = hazeState, shape = modalShape, style = modalGlassStyle)
-                                .background(if (isDark) Color(0xEB141D2B) else Color(0xF2FFFFFF))
+                                .background(if (isDark) Color(0xEB141D2B) else Color(0xD8FFFFFF))
                                 .border(1.2.dp, modalGlareBorder, modalShape)
                         } else {
                             Modifier
@@ -211,7 +211,7 @@ fun StatsModal(
                             .padding(14.dp)
                     ) {
                         Text(
-                            text = "CANCIÓN ACTIVAS",
+                            text = "CANCIONES ACTIVAS",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = textSecondary

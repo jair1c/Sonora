@@ -757,7 +757,19 @@ fun NativePlayerScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(bgColor)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(
+                                    state = hazeState,
+                                    shape = RoundedCornerShape(0.dp),
+                                    style = playerGlassStyle
+                                )
+                                .background(if (isDark) Color(0x351E293B) else Color(0x60FFFFFF))
+                        } else {
+                            Modifier.background(bgColor)
+                        }
+                    )
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -788,7 +800,18 @@ fun NativePlayerScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(if (isDark) Color(0xFF1A1917) else Color(0xFFEAE5DA))
+                                .then(
+                                    if (isGlass) {
+                                        Modifier
+                                            .hazeChild(state = hazeState, shape = CircleShape, style = playerGlassStyle)
+                                            .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                            .border(1.2.dp, if (isDark) playerGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), CircleShape)
+                                    } else {
+                                        Modifier
+                                            .background(playerBtnBrush)
+                                            .border(1.dp, playerBtnBorder, CircleShape)
+                                    }
+                                )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,

@@ -165,6 +165,8 @@ class SonoraAudioPlayer(private val context: Context) {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
 
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
     private val _currentOutputDevice = MutableStateFlow(OutputDeviceInfo("Altavoz del teléfono", OutputIconType.SPEAKER))
     val currentOutputDevice = _currentOutputDevice.asStateFlow()
 
@@ -189,30 +191,37 @@ class SonoraAudioPlayer(private val context: Context) {
 
                 for (device in devices) {
                     val type = device.type
-                    val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && device.productName.isNotEmpty()) {
+                    val rawName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && device.productName.isNotBlank()) {
                         device.productName.toString()
                     } else null
 
                     when (type) {
                         android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
                         android.media.AudioDeviceInfo.TYPE_BLE_HEADSET,
-                        android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> {
-                            bestDevice = OutputDeviceInfo(name ?: "Audífonos Bluetooth", OutputIconType.BLUETOOTH)
+                        android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+                        26, // TYPE_BLE_SPEAKER
+                        27  // TYPE_BLE_BROADCAST
+                        -> {
+                            bestDevice = OutputDeviceInfo(rawName ?: "Audífonos Bluetooth", OutputIconType.BLUETOOTH)
                             break
                         }
                         android.media.AudioDeviceInfo.TYPE_USB_DEVICE,
-                        android.media.AudioDeviceInfo.TYPE_USB_HEADSET -> {
+                        android.media.AudioDeviceInfo.TYPE_USB_HEADSET,
+                        android.media.AudioDeviceInfo.TYPE_USB_ACCESSORY -> {
                             if (bestDevice == null || bestDevice.iconType == OutputIconType.SPEAKER) {
-                                bestDevice = OutputDeviceInfo(name ?: "Dispositivo USB", OutputIconType.USB)
+                                bestDevice = OutputDeviceInfo(rawName ?: "Dispositivo USB", OutputIconType.USB)
                             }
                         }
                         android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET,
-                        android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> {
+                        android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+                        android.media.AudioDeviceInfo.TYPE_LINE_ANALOG,
+                        android.media.AudioDeviceInfo.TYPE_LINE_DIGITAL -> {
                             if (bestDevice == null || bestDevice.iconType == OutputIconType.SPEAKER) {
-                                bestDevice = OutputDeviceInfo(name ?: "Audífonos con cable", OutputIconType.HEADPHONES)
+                                bestDevice = OutputDeviceInfo(rawName ?: "Audífonos con cable", OutputIconType.HEADPHONES)
                             }
                         }
-                        android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> {
+                        android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER,
+                        android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE -> {
                             if (bestDevice == null) {
                                 bestDevice = OutputDeviceInfo("Altavoz del teléfono", OutputIconType.SPEAKER)
                             }
@@ -228,6 +237,17 @@ class SonoraAudioPlayer(private val context: Context) {
         }
     }
 
+    init {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && audioDeviceCallback != null) {
+            try {
+                audioManager.registerAudioDeviceCallback(audioDeviceCallback, null)
+            } catch (e: Exception) {
+                android.util.Log.e("SonoraAudioPlayer", "Error registering audioDeviceCallback", e)
+            }
+        }
+        updateOutputDevice()
+    }
+
 
     private val _currentPositionMs = MutableStateFlow(0L)
     val currentPositionMs = _currentPositionMs.asStateFlow()
@@ -238,7 +258,6 @@ class SonoraAudioPlayer(private val context: Context) {
     private val _playlist = MutableStateFlow<List<Song>>(emptyList())
     val playlist = _playlist.asStateFlow()
 
-    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var audioFocusRequest: AudioFocusRequest? = null
     private var resumeOnFocusGain = false
     private var isDucked = false

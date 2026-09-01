@@ -57,19 +57,19 @@ class SonoraPreferences(private val context: Context) {
 
     // --- TOOLS & PREFERENCES ---
     fun getPlayerControlsStyle(): String = prefs.getString(KEY_PLAYER_CONTROLS_STYLE, "dock") ?: "dock"
-    fun setPlayerControlsStyle(style: String) = prefs.edit().putString(KEY_PLAYER_CONTROLS_STYLE, style).apply()
+    fun setPlayerControlsStyle(style: String) { prefs.edit().putString(KEY_PLAYER_CONTROLS_STYLE, style).apply(); notifyPrefsChanged() }
 
     fun getNavLabelMode(): String = prefs.getString(KEY_NAV_LABEL_MODE, "active_only") ?: "active_only"
-    fun setNavLabelMode(mode: String) = prefs.edit().putString(KEY_NAV_LABEL_MODE, mode).apply()
+    fun setNavLabelMode(mode: String) { prefs.edit().putString(KEY_NAV_LABEL_MODE, mode).apply(); notifyPrefsChanged() }
 
     fun getPetalRoundness(): Int = prefs.getInt(KEY_PETAL_ROUNDNESS, 30)
-    fun setPetalRoundness(value: Int) = prefs.edit().putInt(KEY_PETAL_ROUNDNESS, value).apply()
+    fun setPetalRoundness(value: Int) { prefs.edit().putInt(KEY_PETAL_ROUNDNESS, value).apply(); notifyPrefsChanged() }
 
     fun getCrossfadeSeconds(): Int = prefs.getInt(KEY_CROSSFADE_SECONDS, 0)
-    fun setCrossfadeSeconds(sec: Int) = prefs.edit().putInt(KEY_CROSSFADE_SECONDS, sec).apply()
+    fun setCrossfadeSeconds(sec: Int) { prefs.edit().putInt(KEY_CROSSFADE_SECONDS, sec).apply(); notifyPrefsChanged() }
 
     fun getPlaybackSpeed(): Float = prefs.getFloat(KEY_PLAYBACK_SPEED, 1.0f)
-    fun setPlaybackSpeed(speed: Float) = prefs.edit().putFloat(KEY_PLAYBACK_SPEED, speed).apply()
+    fun setPlaybackSpeed(speed: Float) { prefs.edit().putFloat(KEY_PLAYBACK_SPEED, speed).apply(); notifyPrefsChanged() }
 
     fun getNavTabs(): List<String> {
         val json = prefs.getString(KEY_NAV_TABS, "[\"canciones\",\"listas\",\"ajustes\"]") ?: "[\"canciones\",\"listas\",\"ajustes\"]"
@@ -87,6 +87,7 @@ class SonoraPreferences(private val context: Context) {
         val arr = JSONArray()
         tabs.forEach { arr.put(it) }
         prefs.edit().putString(KEY_NAV_TABS, arr.toString()).apply()
+        notifyPrefsChanged()
     }
 
     // --- FAVORITES ---
@@ -105,6 +106,7 @@ class SonoraPreferences(private val context: Context) {
             true
         }
         prefs.edit().putStringSet(KEY_LIKED_IDS, current.map { it.toString() }.toSet()).apply()
+        notifyPrefsChanged()
         return isNowLiked
     }
 

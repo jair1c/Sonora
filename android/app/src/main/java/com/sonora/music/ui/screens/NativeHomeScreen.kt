@@ -160,6 +160,7 @@ fun NativeHomeScreen(
     var showCreatePlaylistModal by remember { mutableStateOf(false) }
     var customPlaylistsRefreshTrigger by remember { mutableIntStateOf(0) }
     var navTabs by remember { mutableStateOf(sonoraPrefs.getNavTabs()) }
+    var navLabelMode by remember { mutableStateOf(sonoraPrefs.getNavLabelMode()) }
 
     val blacklistedFolders = remember { mutableStateListOf<String>() }
     val likedSongIds = remember { mutableStateListOf<Long>() }
@@ -176,6 +177,7 @@ fun NativeHomeScreen(
         likedSongIds.addAll(sonoraPrefs.getLikedSongIds())
 
         navTabs = sonoraPrefs.getNavTabs()
+        navLabelMode = sonoraPrefs.getNavLabelMode()
     }
 
     val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { HazeState() }
@@ -1287,7 +1289,6 @@ fun NativeHomeScreen(
         }
 
         // 7. BOTTOM NAVIGATION BAR (Real-time Glass Backdrop Blur & Glare Border)
-        val navLabelMode = remember(sonoraPrefs) { sonoraPrefs.getNavLabelMode() }
         val glassStyle = HazeStyle(
             blurRadius = 24.dp,
             tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.08f),

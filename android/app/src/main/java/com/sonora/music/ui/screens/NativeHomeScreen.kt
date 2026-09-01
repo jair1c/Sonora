@@ -59,6 +59,7 @@ import com.sonora.music.service.SonoraAudioPlayer
 import com.sonora.music.ui.components.Organic8PetalShape
 import com.sonora.music.ui.components.SleepTimerModal
 import com.sonora.music.ui.components.StatsModal
+import com.sonora.music.ui.components.CreatePlaylistModal
 import com.sonora.music.ui.components.SonoraSongCover
 import com.sonora.music.data.repository.SongCoverRepository
 
@@ -156,6 +157,8 @@ fun NativeHomeScreen(
 
     var showSleepModal by remember { mutableStateOf(false) }
     var showStatsModal by remember { mutableStateOf(false) }
+    var showCreatePlaylistModal by remember { mutableStateOf(false) }
+    var customPlaylistsRefreshTrigger by remember { mutableIntStateOf(0) }
     var navTabs by remember { mutableStateOf(sonoraPrefs.getNavTabs()) }
 
     val blacklistedFolders = remember { mutableStateListOf<String>() }
@@ -624,7 +627,9 @@ fun NativeHomeScreen(
                             audioPlayer = audioPlayer,
                             sonoraPrefs = sonoraPrefs,
                             isDark = isDark,
-                            onOpenPlayer = onOpenPlayer
+                            onOpenPlayer = onOpenPlayer,
+                            onCreatePlaylistClick = { showCreatePlaylistModal = true },
+                            refreshTrigger = customPlaylistsRefreshTrigger
                         )
                     }
 

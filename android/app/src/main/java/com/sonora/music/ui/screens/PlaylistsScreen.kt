@@ -40,7 +40,9 @@ fun PlaylistsScreen(
     audioPlayer: SonoraAudioPlayer,
     sonoraPrefs: SonoraPreferences,
     isDark: Boolean,
-    onOpenPlayer: () -> Unit
+    onOpenPlayer: () -> Unit,
+    onCreatePlaylistClick: () -> Unit = {},
+    refreshTrigger: Int = 0
 ) {
     val context = LocalContext.current
 
@@ -55,9 +57,7 @@ fun PlaylistsScreen(
     val activePillBg = themeColors.activePillBg
     val activePillText = themeColors.activePillText
 
-    var showCreateDialog by remember { mutableStateOf(false) }
-    var newPlaylistName by remember { mutableStateOf("") }
-    var customPlaylists by remember { mutableStateOf<List<Playlist>>(sonoraPrefs.getCustomPlaylists()) }
+    var customPlaylists by remember(refreshTrigger) { mutableStateOf(sonoraPrefs.getCustomPlaylists()) }
 
     val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { dev.chrisbanes.haze.HazeState() }
     val cardShape = RoundedCornerShape(20.dp)
@@ -107,8 +107,7 @@ fun PlaylistsScreen(
         allSongs.filter { (playCounts[it.id] ?: 0) == 0 }.shuffled().take(25)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
+    LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             contentPadding = PaddingValues(top = 224.dp, bottom = 180.dp)
@@ -135,7 +134,7 @@ fun PlaylistsScreen(
                         .clip(RoundedCornerShape(100.dp))
                         .background(newPlBtnBg)
                         .border(1.dp, newPlBtnBorder, RoundedCornerShape(100.dp))
-                        .clickable { showCreateDialog = true }
+                        .clickable { onCreatePlaylistClick() }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
@@ -687,176 +686,5 @@ fun PlaylistsScreen(
         }
     }
 
-        // Custom Organic Luxury Create Playlist Full-Screen Glass Overlay
-        if (showCreateDialog) {
-            androidx.activity.compose.BackHandler { showCreateDialog = false }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.55f))
-                    .clickable(
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                        indication = null,
-                        onClick = { showCreateDialog = false }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                val dialogShape = RoundedCornerShape(28.dp)
-                val dialogGlassStyle = dev.chrisbanes.haze.HazeStyle(
-                    blurRadius = 26.dp,
-                    tint = if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg.copy(alpha = 0.45f) else com.sonora.music.ui.theme.SonoraGlassLightBg.copy(alpha = 0.25f),
-                    noiseFactor = 0.04f
-                )
-                val dialogGlareBorder = Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = if (isDark) 0.45f else 0.85f),
-                        Color.White.copy(alpha = 0.10f)
-                    )
-                )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .clip(dialogShape)
-                        .then(
-                            if (isGlass) {
-                                Modifier
-                                    .hazeChild(state = hazeState, shape = dialogShape, style = dialogGlassStyle)
-                                    .background(if (isDark) Color(0xEB141D2B) else Color(0xD8FFFFFF))
-                                    .border(1.2.dp, dialogGlareBorder, dialogShape)
-                            } else {
-                                Modifier
-                                    .background(if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA))
-                                    .border(1.dp, borderCol, dialogShape)
-                            }
-                        )
-                        .clickable(
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                            indication = null,
-                            onClick = {} // Consumes clicks inside the card
-                        )
-                        .padding(24.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Circular Icon Badge with Liquid Glass
-                        Box(
-                            modifier = Modifier
-                                .size(52.dp)
-                                .clip(CircleShape)
-                                .background(if (isGlass) (if (isDark) Color(0x30FFFFFF) else Color(0x75FFFFFF)) else (if (isDark) Color(0xFF22201C) else Color(0xFFE6E1D5)))
-                                .border(1.dp, if (isGlass) (if (isDark) Color(0x50FFFFFF) else Color(0xB5FFFFFF)) else borderCol, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlaylistAdd,
-                                contentDescription = null,
-                                tint = textPrimary,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "NUEVA LISTA",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 2.sp,
-                                color = textPrimary
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Crea una lista personalizada para tus canciones",
-                                fontSize = 11.sp,
-                                color = textSecondary,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-
-                        // Luxury Styled Capsule TextField with Glass
-                        OutlinedTextField(
-                            value = newPlaylistName,
-                            onValueChange = { newPlaylistName = it },
-                            placeholder = { Text("Nombre de la lista...", color = textSecondary, fontSize = 13.sp) },
-                            singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = if (isGlass) (if (isDark) Color(0x25FFFFFF) else Color(0x70FFFFFF)) else (if (isDark) Color(0xFF1E1C19) else Color(0xFFEBE6DC)),
-                                unfocusedContainerColor = if (isGlass) (if (isDark) Color(0x18FFFFFF) else Color(0x50FFFFFF)) else (if (isDark) Color(0xFF1E1C19) else Color(0xFFEBE6DC)),
-                                focusedBorderColor = if (isGlass) (if (isDark) Color.White else Color(0xFF0F172A)) else textPrimary,
-                                unfocusedBorderColor = if (isGlass) (if (isDark) Color(0x40FFFFFF) else Color(0x90CBD5E1)) else borderCol,
-                                focusedTextColor = textPrimary,
-                                unfocusedTextColor = textPrimary,
-                                cursorColor = textPrimary
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        // Action Buttons Row with Glass / Glare styling
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // Cancel Button
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(46.dp)
-                                    .clip(RoundedCornerShape(100.dp))
-                                    .background(if (isGlass) (if (isDark) Color(0x25FFFFFF) else Color(0x70FFFFFF)) else (if (isDark) Color(0xFF1E1C19) else Color(0xFFE6E1D5)))
-                                    .border(1.dp, if (isGlass) (if (isDark) Color(0x45FFFFFF) else Color(0xB5FFFFFF)) else borderCol, RoundedCornerShape(100.dp))
-                                    .clickable {
-                                        newPlaylistName = ""
-                                        showCreateDialog = false
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Cancelar",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = textPrimary
-                                )
-                            }
-
-                            // Create Button with High-Contrast Gradient Pill
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(46.dp)
-                                    .clip(RoundedCornerShape(100.dp))
-                                    .background(
-                                        if (isGlass) {
-                                            if (isDark) Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF6366F1)))
-                                            else Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF334155)))
-                                        } else {
-                                            SolidColor(if (isDark) Color.White else Color(0xFF121212))
-                                        }
-                                    )
-                                    .clickable {
-                                        if (newPlaylistName.isNotBlank()) {
-                                            sonoraPrefs.createCustomPlaylist(newPlaylistName.trim())
-                                            customPlaylists = sonoraPrefs.getCustomPlaylists()
-                                            newPlaylistName = ""
-                                            showCreateDialog = false
-                                            Toast.makeText(context, "Lista creada con éxito", Toast.LENGTH_SHORT).show()
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Crear Lista",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

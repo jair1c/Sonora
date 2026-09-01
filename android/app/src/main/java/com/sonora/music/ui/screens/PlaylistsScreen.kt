@@ -1,6 +1,9 @@
 package com.sonora.music.ui.screens
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Brush
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeChild
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -56,6 +59,20 @@ fun PlaylistsScreen(
     var newPlaylistName by remember { mutableStateOf("") }
     var customPlaylists by remember { mutableStateOf<List<Playlist>>(sonoraPrefs.getCustomPlaylists()) }
 
+    val hazeState = com.sonora.music.ui.theme.LocalHazeState.current ?: remember { dev.chrisbanes.haze.HazeState() }
+    val cardShape = RoundedCornerShape(20.dp)
+    val cardGlassStyle = dev.chrisbanes.haze.HazeStyle(
+        blurRadius = 24.dp,
+        tint = if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.08f),
+        noiseFactor = 0.05f
+    )
+    val cardGlassGlareBorder = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = 0.25f),
+            Color.White.copy(alpha = 0.05f)
+        )
+    )
+
     // Smart playlists data
     val likedIds = sonoraPrefs.getLikedSongIds()
     val favoriteSongs = remember(allSongs, likedIds) {
@@ -93,7 +110,7 @@ fun PlaylistsScreen(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 180.dp)
+        contentPadding = PaddingValues(top = 224.dp, bottom = 180.dp)
     ) {
         // Section Header: TUS LISTAS DE REPRODUCCIÓN + [ + Nueva Lista ]
         item {
@@ -110,13 +127,22 @@ fun PlaylistsScreen(
                     color = textSecondary
                 )
 
-                val newPlBtnBg = if (isGlass) (if (isDark) Color(0x28FFFFFF) else Color(0x75FFFFFF)) else subCardBg
-                val newPlBtnBorder = if (isGlass) (if (isDark) Color(0x45FFFFFF) else Color(0xB5FFFFFF)) else borderCol
+                val newPlBtnShape = RoundedCornerShape(100.dp)
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(100.dp))
-                        .background(newPlBtnBg)
-                        .border(1.dp, newPlBtnBorder, RoundedCornerShape(100.dp))
+                        .clip(newPlBtnShape)
+                        .then(
+                            if (isGlass) {
+                                Modifier
+                                    .hazeChild(state = hazeState, shape = newPlBtnShape, style = cardGlassStyle)
+                                    .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                    .border(1.dp, if (isDark) cardGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), newPlBtnShape)
+                            } else {
+                                Modifier
+                                    .background(subCardBg)
+                                    .border(1.dp, borderCol, newPlBtnShape)
+                            }
+                        )
                         .clickable { showCreateDialog = true }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
@@ -135,9 +161,19 @@ fun PlaylistsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clip(cardShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = cardShape, style = cardGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                .border(1.2.dp, if (isDark) cardGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), cardShape)
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, cardShape)
+                        }
+                    )
                     .clickable {
                         if (favoriteSongs.isNotEmpty()) {
                             audioPlayer.playSong(favoriteSongs[0], favoriteSongs)
@@ -208,9 +244,19 @@ fun PlaylistsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clip(cardShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = cardShape, style = cardGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                .border(1.2.dp, if (isDark) cardGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), cardShape)
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, cardShape)
+                        }
+                    )
                     .clickable {
                         if (top25Songs.isNotEmpty()) {
                             audioPlayer.playSong(top25Songs[0], top25Songs)
@@ -280,9 +326,19 @@ fun PlaylistsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clip(cardShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = cardShape, style = cardGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                .border(1.2.dp, if (isDark) cardGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), cardShape)
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, cardShape)
+                        }
+                    )
                     .clickable {
                         if (recentSongs.isNotEmpty()) {
                             audioPlayer.playSong(recentSongs[0], recentSongs)
@@ -352,9 +408,19 @@ fun PlaylistsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clip(cardShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = cardShape, style = cardGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                .border(1.2.dp, if (isDark) cardGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), cardShape)
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, cardShape)
+                        }
+                    )
                     .clickable {
                         if (hiResSongs.isNotEmpty()) {
                             audioPlayer.playSong(hiResSongs[0], hiResSongs)
@@ -424,9 +490,19 @@ fun PlaylistsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clip(cardShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = cardShape, style = cardGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                .border(1.2.dp, if (isDark) cardGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), cardShape)
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, cardShape)
+                        }
+                    )
                     .clickable {
                         if (newlyAddedSongs.isNotEmpty()) {
                             audioPlayer.playSong(newlyAddedSongs[0], newlyAddedSongs)
@@ -496,9 +572,19 @@ fun PlaylistsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(cardBg)
-                    .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                    .clip(cardShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = cardShape, style = cardGlassStyle)
+                                .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                .border(1.2.dp, if (isDark) cardGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), cardShape)
+                        } else {
+                            Modifier
+                                .background(cardBg)
+                                .border(1.dp, borderCol, cardShape)
+                        }
+                    )
                     .clickable {
                         if (forgottenSongs.isNotEmpty()) {
                             audioPlayer.playSong(forgottenSongs[0], forgottenSongs)
@@ -581,9 +667,19 @@ fun PlaylistsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(cardBg)
-                        .border(1.dp, borderCol, RoundedCornerShape(20.dp))
+                        .clip(cardShape)
+                        .then(
+                            if (isGlass) {
+                                Modifier
+                                    .hazeChild(state = hazeState, shape = cardShape, style = cardGlassStyle)
+                                    .background(if (isDark) Color(0x351E293B) else Color(0x70FFFFFF))
+                                    .border(1.2.dp, if (isDark) cardGlassGlareBorder else Brush.verticalGradient(listOf(Color.White, Color(0x8094A3B8))), cardShape)
+                            } else {
+                                Modifier
+                                    .background(cardBg)
+                                    .border(1.dp, borderCol, cardShape)
+                            }
+                        )
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -674,12 +770,35 @@ fun PlaylistsScreen(
         Dialog(
             onDismissRequest = { showCreateDialog = false }
         ) {
+            val dialogShape = RoundedCornerShape(28.dp)
+            val dialogGlassStyle = dev.chrisbanes.haze.HazeStyle(
+                blurRadius = 26.dp,
+                tint = if (isDark) com.sonora.music.ui.theme.SonoraGlassDarkBg.copy(alpha = 0.40f) else com.sonora.music.ui.theme.SonoraGlassLightBg.copy(alpha = 0.25f),
+                noiseFactor = 0.04f
+            )
+            val dialogGlareBorder = Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = if (isDark) 0.45f else 0.85f),
+                    Color.White.copy(alpha = 0.10f)
+                )
+            )
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA))
-                    .border(1.dp, borderCol, RoundedCornerShape(28.dp))
+                    .clip(dialogShape)
+                    .then(
+                        if (isGlass) {
+                            Modifier
+                                .hazeChild(state = hazeState, shape = dialogShape, style = dialogGlassStyle)
+                                .background(if (isDark) Color(0xEB141D2B) else Color(0xF2FFFFFF))
+                                .border(1.2.dp, dialogGlareBorder, dialogShape)
+                        } else {
+                            Modifier
+                                .background(if (isDark) Color(0xFF161513) else Color(0xFFF5F2EA))
+                                .border(1.dp, borderCol, dialogShape)
+                        }
+                    )
                     .padding(24.dp)
             ) {
                 Column(
